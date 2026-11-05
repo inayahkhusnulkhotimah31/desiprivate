@@ -46,7 +46,7 @@ def test_postgres_connection():
     if not db_url:
         print("[INFO] DATABASE_URL belum diatur di .env.")
         print("       Untuk menghubungkan PostgreSQL langsung, tambahkan DATABASE_URL di .env atau Vercel:")
-        print("       DATABASE_URL=postgresql://postgres.kzefvgtrcurbdrfujfcy:[PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?sslmode=require")
+        print("       DATABASE_URL=postgresql://postgres.kzefvgtrcurbdrfujfcy:[PASSWORD]@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require")
         return None
 
     try:
