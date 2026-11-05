@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Masuk - DESI PRIVAT</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body class="login-body">
+  <div class="login-card">
+    <div class="login-brand">
+      <img src="{{ url_for('static', filename='images/logo_main.svg') }}" class="login-logo-img" alt="Logo DESI PRIVAT">
+      <h1 class="login-title"><span class="brand-desi">DESI</span> <span class="brand-privat">PRIVAT</span></h1>
+      <p class="login-subtitle">Sistem Informasi Manajemen Tempat Les Privat</p>
+    </div>
+
+    <!-- FLASH MESSAGES -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert-box alert-{{ category }}">
+            <div>{{ message }}</div>
+            <button type="button" onclick="this.parentElement.style.display='none'" style="background:none;border:none;cursor:pointer;font-weight:700;">&times;</button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('auth.login') }}" autocomplete="off">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label class="form-label" for="usernameInput">ID Pengguna (Username)</label>
+        <input
+          type="text"
+          class="form-control"
+          id="usernameInput"
+          name="username"
+          placeholder="Masukkan ID pengguna..."
+          required
+          autofocus
+        >
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="passwordInput">Kata Sandi (Password)</label>
+        <div class="password-input-wrapper">
+          <input
+            type="password"
+            class="form-control"
+            id="passwordInput"
+            name="password"
+            placeholder="Masukkan kata sandi..."
+            required
+            style="padding-right: 120px;"
+          >
+          <button type="button" class="toggle-password-btn" id="togglePasswordBtn">
+            👁️ Tampilkan
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 10px; font-size: 15px;">
+        Masuk ke Sistem
+      </button>
+    </form>
+
+    <div style="text-align: center; margin-top: 24px; font-size: 11px; color: var(--gray-500);">
+      Keamanan sesi aktif dengan enkripsi kata sandi Scrypt & proteksi CSRF.
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

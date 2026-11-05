@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Laporan Perkembangan Siswa (Mentor){% endblock %}
+{% block page_title %}Laporan Perkembangan Belajar Siswa{% endblock %}
+{% block page_subtitle %}Tuliskan capaian materi, penguasaan kemampuan, dan rekomendasi tindak lanjut bagi orang tua{% endblock %}
+
+{% block content %}
+<div class="grid-2-col">
+  <!-- FORM LAPORAN PERKEMBANGAN -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span>📝</span> Formulir Perkembangan Belajar Siswa</div>
+    </div>
+    <div class="card-body">
+      <div class="alert-box alert-info" style="margin-bottom: 16px;">
+        💡 <strong>Keterhubungan Langsung:</strong> Setelah Anda menyimpan laporan ini, data perkembangan akan langsung tampil di dashboard akun orang tua/wali siswa yang bersangkutan.
+      </div>
+
+      <form method="POST" action="{{ url_for('mentor.progress') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="form-group">
+          <label class="form-label">Pilih Sesi Jadwal Les</label>
+          <select class="form-select" name="schedule_id" id="progressScheduleSelect" required onchange="populateProgressFields(this)">
+            <option value="">-- Pilih Sesi Jadwal --</option>
+            {% for sc in schedules %}
+              <option
+                value="{{ sc.id }}"
+                {% if target_schedule_id == sc.id|string %}selected{% endif %}
+                data-topics="{{ sc.topics_covered or '' }}"
+                data-skills="{{ sc.skills_mastered or '' }}"
+                data-difficulties="{{ sc.difficulties or '' }}"
+                data-recommendations="{{ sc.recommendations or '' }}"
+                data-notes="{{ sc.additional_notes or '' }}"
+              >
+                {{ sc.schedule_date|date_indo }} &bull; {{ sc.student_name }} ({{ sc.program_name }})
+                {% if sc.progress_id %} [Laporan Sudah Ada]{% endif %}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Materi yang Dipelajari (Wajib)</label>
+          <textarea class="form-control" name="topics_covered" id="fTopics" placeholder="Contoh: Operasi Aljabar, Persamaan Linier Satu Variabel, dan Pembahasan Soal Cerita..." required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Kemampuan yang Telah Dikuasai</label>
+          <textarea class="form-control" name="skills_mastered" id="fSkills" placeholder="Contoh: Mampu mengelompokkan variabel sejenis dan melakukan eliminasi dasar secara mandiri..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Kesulitan yang Dialami</label>
+          <textarea class="form-control" name="difficulties" id="fDifficulties" placeholder="Contoh: Masih ragu pada aturan tanda negatif saat pindah ruas..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Rekomendasi untuk Sesi Berikutnya</label>
+          <textarea class="form-control" name="recommendations" id="fRecommendations" placeholder="Contoh: Perlu latihan mandiri 3 soal operasi pecahan bentuk aljabar di rumah..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Catatan Tambahan</label>
+          <textarea class="form-control" name="additional_notes" id="fNotes" placeholder="Catatan motivasi, keaktifan, atau sikap belajar siswa..."></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;">
+          💾 Simpan & Publikasikan Laporan
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- RIWAYAT LAPORAN YANG TELAH DIBUAT MENTOR -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span>📋</span> Riwayat Laporan yang Pernah Dibuat</div>
+    </div>
+    <div class="card-body" style="max-height: 800px; overflow-y: auto;">
+      {% for prog in history %}
+      <div class="progress-card">
+        <div class="progress-header">
+          <div>
+            <strong style="color: var(--navy-primary); font-size: 15px;">{{ prog.student_name }}</strong>
+            <span style="font-size: 12px; color: var(--gray-700);"> &bull; {{ prog.program_name }}</span>
+          </div>
+          <div style="font-size: 11px; color: var(--gray-500);">
+            Sesi: {{ prog.session_date|date_indo }}
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div>
+            <span style="font-size: 11px; font-weight: 700; color: var(--gray-500); text-transform: uppercase;">Materi:</span>
+            <div style="font-size: 13px; color: var(--gray-900);">{{ prog.topics_covered }}</div>
+          </div>
+          {% if prog.skills_mastered %}
+          <div>
+            <span style="font-size: 11px; font-weight: 700; color: #065F46; text-transform: uppercase;">Dikuasai:</span>
+            <div style="font-size: 13px; color: var(--gray-900);">{{ prog.skills_mastered }}</div>
+          </div>
+          {% endif %}
+          {% if prog.difficulties %}
+          <div>
+            <span style="font-size: 11px; font-weight: 700; color: #991B1B; text-transform: uppercase;">Kesulitan:</span>
+            <div style="font-size: 13px; color: var(--gray-900);">{{ prog.difficulties }}</div>
+          </div>
+          {% endif %}
+          {% if prog.recommendations %}
+          <div>
+            <span style="font-size: 11px; font-weight: 700; color: var(--blue-brand); text-transform: uppercase;">Rekomendasi:</span>
+            <div style="font-size: 13px; color: var(--gray-900);">{{ prog.recommendations }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% else %}
+      <div style="text-align: center; color: var(--gray-500); padding: 24px;">
+        Belum ada laporan perkembangan belajar yang dibuat.
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+  function populateProgressFields(sel) {
+    const opt = sel.options[sel.selectedIndex];
+    document.getElementById("fTopics").value = opt.getAttribute("data-topics") || "";
+    document.getElementById("fSkills").value = opt.getAttribute("data-skills") || "";
+    document.getElementById("fDifficulties").value = opt.getAttribute("data-difficulties") || "";
+    document.getElementById("fRecommendations").value = opt.getAttribute("data-recommendations") || "";
+    document.getElementById("fNotes").value = opt.getAttribute("data-notes") || "";
+  }
+
+  // Isi otomatis jika target_schedule_id sudah terpilih
+  window.addEventListener("DOMContentLoaded", () => {
+    const sel = document.getElementById("progressScheduleSelect");
+    if (sel && sel.value) {
+      populateProgressFields(sel);
+    }
+  });
+</script>
+{% endblock %}

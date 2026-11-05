@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Pemberitahuan Sistem{% endblock %}
+{% block page_title %}Pusat Pemberitahuan Sistem{% endblock %}
+{% block page_subtitle %}Riwayat pemberitahuan aktivitas penting internal pada sistem DESI PRIVAT{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div>
+      <div class="card-title"><span>🔔</span> Daftar Pemberitahuan Sistem In-App</div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
+        Pemberitahuan terkait pendaftaran siswa, jadwal rutin, dan pencatatan absensi mentor.
+      </div>
+    </div>
+    {% if notifications %}
+    <form method="POST" action="{{ url_for('admin.read_all_notifications') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-secondary btn-sm">Tandai Semua Dibaca</button>
+    </form>
+    {% endif %}
+  </div>
+  <div class="card-body">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      {% for n in notifications %}
+      <div style="background: {% if not n.is_read %}var(--blue-ultra-soft){% else %}var(--white){% endif %}; padding: 16px 20px; border-radius: var(--radius-md); border-left: 4px solid {% if not n.is_read %}var(--blue-brand){% else %}var(--border-subtle){% endif %}; border: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
+        <div style="flex: 1;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <strong style="color: var(--navy-dark); font-size: 14px;">{{ n.title }}</strong>
+            {% if not n.is_read %}
+              <span class="badge badge-primary" style="font-size: 10px; padding: 2px 6px;">Baru</span>
+            {% endif %}
+          </div>
+          <p style="font-size: 13px; color: var(--text-body); margin: 0 0 8px 0; line-height: 1.5;">
+            {{ n.message }}
+          </p>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 11.5px; color: var(--text-muted);">🕒 {{ n.created_at|date_indo }}</span>
+            {% if n.reference_url %}
+              <a href="{{ n.reference_url }}" style="font-size: 12px; color: var(--blue-brand); font-weight: 600; text-decoration: none;">
+                Buka Halaman Terkait &rarr;
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div style="text-align: center; color: var(--text-muted); padding: 48px 20px;">
+        <div style="font-size: 32px; margin-bottom: 8px;">🔔</div>
+        <div style="font-weight: 600; font-size: 14px; color: var(--text-main);">Tidak ada pemberitahuan sistem baru</div>
+        <p style="font-size: 12px; margin-top: 4px;">Semua aktivitas operasional saat ini berjalan lancar.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

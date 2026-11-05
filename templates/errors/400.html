@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Permintaan Tidak Valid (400){% endblock %}
+{% block page_title %}Permintaan Tidak Valid{% endblock %}
+{% block page_subtitle %}Validasi Keamanan Sistem{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 650px; margin: 40px auto; text-align: center; padding: 40px 20px;">
+  <div style="font-size: 64px; margin-bottom: 16px;">⚠️</div>
+  <h2 style="font-size: 22px; color: var(--navy-dark); margin-bottom: 12px;">Permintaan Tidak Valid (400)</h2>
+  <p style="color: var(--gray-700); font-size: 14.5px; margin-bottom: 24px;">
+    {{ description or 'Permintaan tidak dapat diproses karena data formulir atau token keamanan (CSRF) tidak valid atau telah kedaluwarsa.' }}
+  </p>
+  <div>
+    <a href="javascript:history.back()" class="btn btn-secondary" style="margin-right: 8px;">Kembali</a>
+    <a href="{{ url_for('auth.index') }}" class="btn btn-primary">Ke Halaman Utama</a>
+  </div>
+</div>
+{% endblock %}

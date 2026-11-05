@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Wali Murid{% endblock %}
+{% block page_title %}Portal Belajar Ananda{% endblock %}
+{% block page_subtitle %}Informasi lengkap program les, jadwal, kehadiran, dan perkembangan belajar ananda di DESI PRIVAT{% endblock %}
+
+{% block content %}
+<!-- PEMILIH ANAK (CHILD SELECTOR JIKA WALI MEMILIKI LEBIH DARI 1 ANAK) -->
+{% if children|length > 1 %}
+<div class="card" style="margin-bottom: 24px; background: linear-gradient(90deg, #EFF6FF 0%, #FFFFFF 100%); border-left: 4px solid var(--blue-brand);">
+  <div class="card-body" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+    <div>
+      <span style="font-size: 13px; font-weight: 700; color: var(--navy-dark);">Pilih Profil Ananda:</span>
+      <span style="font-size: 12px; color: var(--gray-500); margin-left: 6px;">(Akun Anda terhubung dengan {{ children|length }} anak)</span>
+    </div>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+      {% for ch in children %}
+        <a
+          href="{{ url_for('parent.dashboard', student_id=ch.id) }}"
+          class="btn btn-sm {% if ch.id == selected_child.id %}btn-primary{% else %}btn-secondary{% endif %}"
+          style="border-radius: 20px; padding: 6px 14px;"
+        >
+          🎓 {{ ch.full_name }} ({{ ch.grade or 'Siswa' }})
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- RINGKASAN PROFIL ANAK & PROGRAM LES -->
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px; margin-bottom: 24px;">
+  <!-- PROFIL ANAK -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span>👤</span> Profil Ananda</div>
+    </div>
+    <div class="card-body">
+      <div style="text-align: center; margin-bottom: 16px;">
+        <div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--navy-primary) 0%, var(--blue-brand) 100%); color: var(--white); display: inline-flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700;">
+          {{ selected_child.full_name[:1] }}
+        </div>
+        <h2 style="font-size: 18px; color: var(--navy-dark); margin-top: 10px; font-weight: 800;">
+          {{ selected_child.full_name }}
+        </h2>
+        <div style="font-size: 13px; color: var(--gray-500);">
+          {{ selected_child.school or 'Sekolah' }} &bull; {{ selected_child.grade or '-' }}
+        </div>
+        <div style="margin-top: 8px;">
+          {{ selected_child.status|status_badge|safe }}
+        </div>
+      </div>
+
+      <div style="border-top: 1px solid var(--gray-200); padding-top: 14px; font-size: 13px; display: flex; flex-direction: column; gap: 8px;">
+        <div><strong>Alamat:</strong> {{ selected_child.address or '-' }}</div>
+        <div><strong>Fokus Belajar:</strong> {{ selected_child.notes or 'Pendampingan reguler' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROGRAM LES & MENTOR PENDAMPING -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span>📖</span> Program Les & Mentor Pendamping</div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <div class="table-responsive">
+        <table class="table-desi">
+          <thead>
+            <tr>
+              <th>Program Les</th>
+              <th>Mentor Pembimbing</th>
+              <th>Kontak Mentor</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pr in programs %}
+            <tr>
+              <td>
+                <strong style="color: var(--navy-dark); font-size: 14px;">{{ pr.program_name }}</strong>
+                <div style="font-size: 11.5px; color: var(--gray-500);">{{ pr.program_desc or '' }}</div>
+              </td>
+              <td>
+                <strong style="color: var(--navy-primary);">{{ pr.mentor_name or 'Dalam Penugasan' }}</strong>
+              </td>
+              <td>
+                {% if pr.mentor_phone %}
+                  <span style="font-size: 12px; color: var(--blue-brand);">📞 {{ pr.mentor_phone }}</span>
+                {% else %}
+                  <span style="color: var(--gray-500);">-</span>
+                {% endif %}
+              </td>
+              <td>
+                {{ pr.status|status_badge|safe }}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="4" style="text-align: center; color: var(--gray-500); padding: 20px;">
+                Belum ada program aktif untuk ananda ini.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JADWAL LES MENDATANG & LAPORAN PERKEMBANGAN TERAKHIR -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 24px;">
+  <!-- JADWAL LES MENDATANG -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span>🗓️</span> Jadwal Sesi Les Mendatang</div>
+      <a href="{{ url_for('parent.schedules', student_id=selected_child.id) }}" class="btn btn-secondary btn-sm">Kalender Lengkap</a>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <div class="table-responsive">
+        <table class="table-desi">
+          <thead>
+            <tr>
+              <th>Tanggal & Waktu</th>
+              <th>Program</th>
+              <th>Mentor</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sc in upcoming_schedules %}
+            <tr>
+              <td>
+                <strong>{{ sc.schedule_date|date_indo }}</strong>
+                <div style="font-size: 11.5px; color: var(--blue-brand);">{{ sc.start_time }} - {{ sc.end_time }} WIB</div>
+              </td>
+              <td>{{ sc.program_name }}</td>
+              <td>{{ sc.mentor_name }}</td>
+              <td>{{ sc.status|status_badge|safe }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="4" style="text-align: center; color: var(--gray-500); padding: 24px;">
+                Belum ada jadwal les mendatang.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- LAPORAN PERKEMBANGAN TERAKHIR -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span>📈</span> Laporan Perkembangan Terakhir</div>
+      <a href="{{ url_for('parent.progress', student_id=selected_child.id) }}" class="btn btn-secondary btn-sm">Lihat Semua Riwayat</a>
+    </div>
+    <div class="card-body">
+      {% if latest_progress %}
+      <div class="progress-card" style="margin-bottom: 0;">
+        <div class="progress-header">
+          <div>
+            <strong style="color: var(--navy-primary); font-size: 14px;">{{ latest_progress.program_name }}</strong>
+            <div style="font-size: 11px; color: var(--gray-500);">Mentor: {{ latest_progress.mentor_name }} &bull; Tanggal Sesi: {{ latest_progress.session_date|date_indo }}</div>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div>
+            <div class="progress-item-label">Materi yang Dipelajari</div>
+            <div class="progress-item-text">{{ latest_progress.topics_covered }}</div>
+          </div>
+          {% if latest_progress.skills_mastered %}
+          <div>
+            <div class="progress-item-label" style="color: #065F46;">Kemampuan Telah Dikuasai</div>
+            <div class="progress-item-text">{{ latest_progress.skills_mastered }}</div>
+          </div>
+          {% endif %}
+          {% if latest_progress.difficulties %}
+          <div>
+            <div class="progress-item-label" style="color: #991B1B;">Kesulitan yang Dihadapi</div>
+            <div class="progress-item-text">{{ latest_progress.difficulties }}</div>
+          </div>
+          {% endif %}
+          {% if latest_progress.recommendations %}
+          <div>
+            <div class="progress-item-label" style="color: var(--blue-brand);">Rekomendasi untuk Sesi Berikutnya</div>
+            <div class="progress-item-text">{{ latest_progress.recommendations }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% else %}
+      <div style="text-align: center; color: var(--gray-500); padding: 24px;">
+        Belum ada laporan perkembangan belajar yang diunggah mentor untuk ananda ini.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

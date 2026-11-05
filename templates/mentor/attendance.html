@@ -1,0 +1,416 @@
+{% extends "base.html" %}
+{% block title %}Absensi & Dokumentasi Belajar{% endblock %}
+{% block page_title %}Absensi Sesi & Dokumentasi Belajar{% endblock %}
+{% block page_subtitle %}Dokumentasikan kehadiran mengajar, hari, tanggal, nomor pertemuan otomatis, materi, serta perkembangan belajar siswa{% endblock %}
+
+{% block content %}
+<div class="grid-2-col">
+  <!-- FORM INPUT ABSENSI & DOKUMENTASI KEGIATAN -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span class="card-icon">📝</span> Formulir Absensi &amp; Dokumentasi Sesi</div>
+      <button
+        type="button"
+        id="btnToggleMode"
+        class="btn btn-secondary btn-sm"
+        onclick="toggleEntryMode()"
+      >
+        📅 Pilih Dari Jadwal Terdaftar
+      </button>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('mentor.attendance') }}" id="mentorAttendanceForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <!-- MODE 1: INPUT LANGSUNG (PILIH SISWA, HARI, TANGGAL, JAM) - DEFAULT -->
+        <div id="directEntrySection">
+          <div class="alert-box alert-info" style="margin-bottom: 16px; padding: 10px 14px; font-size: 12px;">
+            <span>💡</span> <strong>Mode Catat Langsung:</strong>
+            Pilih siswa bimbingan Anda, masukkan hari dan tanggal pelaksanaan les. Sistem akan otomatis menghitung nomor pertemuan dan periode resmi siswa.
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="directStudentSelect">
+              Pilih Siswa Bimbingan <span style="color: var(--danger);">*</span>
+            </label>
+            <select class="form-select" name="student_id" id="directStudentSelect" required onchange="onDirectStudentChange(this)">
+              <option value="">-- Pilih Siswa yang Diajar --</option>
+              {% for st in students %}
+                <option
+                  value="{{ st.id }}"
+                  data-name="{{ st.full_name }}"
+                  data-program-id="{{ st.program_id or '' }}"
+                  data-program-name="{{ st.program_name or '' }}"
+                  data-next-meeting="{{ st.next_meeting_str }}"
+                  {% if (preselect_student_id and preselect_student_id|string == st.id|string) or (not preselect_student_id and loop.first and students|length == 1) %}selected{% endif %}
+                >
+                  {{ st.full_name }} &bull; {{ st.program_name or 'Les Privat' }} [Siklus: {{ st.next_meeting_str }}]
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="directProgramSelect">Program Les</label>
+            <select class="form-select" name="program_id" id="directProgramSelect">
+              {% for pr in programs %}
+                <option value="{{ pr.id }}">{{ pr.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- TANGGAL & HARI PELAKSANAAN (BISA DIKETIK / DIPILIH) -->
+          <div class="grid-form-2" style="margin-bottom: 14px;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="directDateInput">
+                Tanggal Pelaksanaan <span style="color: var(--danger);">*</span>
+              </label>
+              <input
+                type="date"
+                class="form-control"
+                name="schedule_date"
+                id="directDateInput"
+                value="{{ today_str }}"
+                required
+                onchange="onDateInputChange(this.value)"
+              >
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="directDayInput">
+                Hari Pelaksanaan <span style="color: var(--danger);">*</span>
+              </label>
+              <input
+                type="text"
+                class="form-control"
+                name="day_name"
+                id="directDayInput"
+                placeholder="Contoh: Kamis"
+                required
+                style="background: var(--blue-ultra-soft); font-weight: 700; color: var(--navy-dark);"
+              >
+            </div>
+          </div>
+
+          <!-- JAM DAN DURASI -->
+          <div class="grid-form-2" style="margin-bottom: 14px;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label">Jam Mulai (WIB)</label>
+              <input type="time" class="form-control" name="start_time" value="16:00" required>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label">Durasi Sesi</label>
+              <select class="form-select" name="duration_minutes">
+                <option value="60">60 Menit (1 Jam)</option>
+                <option value="90" selected>90 Menit (1.5 Jam)</option>
+                <option value="120">120 Menit (2 Jam)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODE 2: PILIH DARI JADWAL TERDAFTAR (TERSEMBUNYI SECARA DEFAULT) -->
+        <div id="scheduleSelectSection" style="display: none;">
+          <div class="alert-box alert-info" style="margin-bottom: 16px; padding: 10px 14px; font-size: 12px;">
+            <span>📅</span> <strong>Mode Pilih Jadwal:</strong>
+            Pilih dari jadwal sesi yang sebelumnya telah disetujui Admin.
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="attendanceScheduleSelect">Pilih Sesi Jadwal Les</label>
+            <select class="form-select" name="schedule_id" id="attendanceScheduleSelect" onchange="onScheduleSelectChange(this)">
+              <option value="">-- Pilih Sesi Les Yang Diampu --</option>
+              {% for sc in schedules %}
+                <option
+                  value="{{ sc.id }}"
+                  data-student="{{ sc.student_name }}"
+                  data-program="{{ sc.program_name }}"
+                  data-date="{{ sc.schedule_date }}"
+                  data-date-indo="{{ sc.schedule_date|date_indo }}"
+                  data-time="{{ sc.start_time }} - {{ sc.end_time }} WIB"
+                  data-meeting="{{ sc.calculated_meeting_label }}"
+                  data-status="{{ sc.attendance_status or 'hadir' }}"
+                  data-topics="{{ sc.topics_covered or '' }}"
+                  data-progress="{{ sc.progress_notes or '' }}"
+                  data-notes="{{ sc.attendance_notes or '' }}"
+                >
+                  {{ sc.schedule_date|date_indo }} ({{ sc.start_time }}) &bull; {{ sc.student_name }} - {{ sc.program_name }}
+                  {% if sc.attendance_status %} [Sudah Absen: {{ sc.attendance_status|upper }}]{% endif %}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <!-- KOTAK INFO SIKLUS PERTEMUAN OTOMATIS (LIVE BADGE) -->
+        <div id="scheduleAutoInfoBox" style="background: var(--blue-ultra-soft); border: 1px solid var(--border-blue); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
+          <div class="grid-form-2" style="gap: 8px; font-size: 12.5px; margin-bottom: 8px;">
+            <div>
+              <span style="color: var(--text-muted); display: block; font-size: 11px;">Siswa:</span>
+              <strong id="infoStudentName" style="color: var(--text-main);">Pilih Siswa</strong>
+            </div>
+            <div>
+              <span style="color: var(--text-muted); display: block; font-size: 11px;">Mentor Pengajar:</span>
+              <strong style="color: var(--text-main);">{{ current_user.full_name }}</strong>
+            </div>
+          </div>
+          <div style="border-top: 1px dashed var(--border-subtle); padding-top: 8px; display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 12.5px; font-weight: 700; color: var(--text-heading);">Siklus Pertemuan Otomatis:</span>
+            <span class="badge badge-period" id="infoMeetingLabel" style="font-size: 13px; font-weight: 700;">Pertemuan 1 (1)</span>
+          </div>
+        </div>
+
+        <!-- STATUS KEHADIRAN SISWA -->
+        <div class="form-group">
+          <label class="form-label">Status Kehadiran Siswa</label>
+          <div style="display: flex; gap: 14px; margin-top: 6px; flex-wrap: wrap;">
+            <label style="cursor: pointer; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 5px;">
+              <input type="radio" name="status" value="hadir" id="attHadir" checked onchange="toggleAttendanceFields('hadir')">
+              <span class="badge badge-success">Hadir (Mengajar)</span>
+            </label>
+            <label style="cursor: pointer; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 5px;">
+              <input type="radio" name="status" value="izin" id="attIzin" onchange="toggleAttendanceFields('izin')">
+              <span class="badge badge-warning">Izin</span>
+            </label>
+            <label style="cursor: pointer; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 5px;">
+              <input type="radio" name="status" value="tidak_hadir" id="attAlpa" onchange="toggleAttendanceFields('tidak_hadir')">
+              <span class="badge badge-danger">Tidak Hadir (Alpa)</span>
+            </label>
+          </div>
+          <small id="statusHintText" style="color: var(--blue-brand); font-size: 11.5px; display: block; margin-top: 6px;">
+            💡 Status Hadir akan otomatis dihitung ke dalam siklus periode belajar (8 pertemuan = 1 periode).
+          </small>
+        </div>
+
+        <!-- FIELD DOKUMENTASI MATERI & PERKEMBANGAN (MUNCUL JIKA STATUS HADIR) -->
+        <div id="learningDocContainer">
+          <div class="form-group">
+            <label class="form-label" for="topicsCoveredInput">
+              Materi yang Diajarkan <span style="color: var(--danger);">*</span>
+            </label>
+            <input
+              type="text"
+              class="form-control"
+              name="topics_covered"
+              id="topicsCoveredInput"
+              placeholder="Contoh: Operasi Aljabar, Persamaan Linier Satu Variabel, Latihan Soal 1-15"
+              required
+            >
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="progressNotesInput">
+              Perkembangan Belajar Siswa
+            </label>
+            <textarea
+              class="form-control"
+              name="progress_notes"
+              id="progressNotesInput"
+              rows="3"
+              placeholder="Contoh: Siswa sudah memahami konsep dasar aljabar dengan baik. Perlu latihan tambahan pada soal cerita perkalian suku dua."
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="attendanceNotesInput">Catatan Tambahan (Opsional)</label>
+          <textarea
+            class="form-control"
+            name="notes"
+            id="attendanceNotesInput"
+            rows="2"
+            placeholder="Keterangan kehadiran, kendala teknis, dll..."
+          ></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 14.5px; font-weight: 700;">
+          💾 Simpan Dokumentasi Absensi
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- RIWAYAT PERTEMUAN & ABSENSI YANG DIAMPU -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span class="card-icon">📋</span> Riwayat Pertemuan Siswa Bimbingan Anda</div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <div class="table-responsive">
+        <table class="table-desi">
+          <thead>
+            <tr>
+              <th>Tanggal &amp; Waktu</th>
+              <th>Siswa &amp; Program</th>
+              <th>Pertemuan (Periode)</th>
+              <th>Materi &amp; Catatan</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in history %}
+            <tr>
+              <td>
+                <strong>{{ a.schedule_date|date_indo }}</strong><br>
+                <small style="color: var(--text-muted);">{{ a.start_time }}-{{ a.end_time }} WIB</small>
+              </td>
+              <td>
+                <strong style="color: var(--text-main);">{{ a.student_name }}</strong>
+                <div style="font-size: 11px; color: var(--blue-brand);">{{ a.program_name }}</div>
+              </td>
+              <td>
+                {% if a.status == 'hadir' and a.meeting_number and a.period_number %}
+                  <span class="badge badge-period" style="font-size: 12px;">
+                    Pertemuan {{ a.meeting_number }} ({{ a.period_number }})
+                  </span>
+                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Kumulatif ke-{{ a.cumulative_meeting }}</div>
+                {% else %}
+                  <span class="badge badge-warning">Tidak Dihitung</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if a.topics_covered %}
+                  <div style="font-weight: 600; font-size: 12.5px; color: var(--text-main);">{{ a.topics_covered }}</div>
+                {% endif %}
+                {% if a.progress_notes %}
+                  <div style="font-size: 11.5px; color: var(--text-body); margin-top: 2px;">{{ a.progress_notes }}</div>
+                {% endif %}
+                {% if a.notes and not a.topics_covered %}
+                  <div style="font-size: 11.5px; color: var(--text-muted);">{{ a.notes }}</div>
+                {% endif %}
+              </td>
+              <td>
+                {{ a.status|status_badge|safe }}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 28px;">
+                Belum ada riwayat absensi yang tercatat untuk siswa bimbingan Anda.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const indonesianDays = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+
+  function getDayNameFromDate(dateStr) {
+    if (!dateStr) return "";
+    const parts = dateStr.split("-");
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const d = new Date(year, month, day);
+      return indonesianDays[d.getDay()] || "";
+    }
+    return "";
+  }
+
+  function onDateInputChange(dateStr) {
+    const dayInput = document.getElementById("directDayInput");
+    if (dayInput) {
+      dayInput.value = getDayNameFromDate(dateStr);
+    }
+  }
+
+  function onDirectStudentChange(selectElem) {
+    const selected = selectElem.options[selectElem.selectedIndex];
+    if (!selected || !selected.value) {
+      document.getElementById("infoStudentName").innerText = "Pilih Siswa";
+      document.getElementById("infoMeetingLabel").innerText = "Pertemuan 1 (1)";
+      return;
+    }
+
+    const stName = selected.getAttribute("data-name") || selected.text;
+    const progId = selected.getAttribute("data-program-id");
+    const nextMeeting = selected.getAttribute("data-next-meeting") || "Pertemuan 1 (1)";
+
+    document.getElementById("infoStudentName").innerText = stName;
+    document.getElementById("infoMeetingLabel").innerText = nextMeeting;
+
+    // Sinkronkan dropdown program
+    const progSelect = document.getElementById("directProgramSelect");
+    if (progSelect && progId) {
+      progSelect.value = progId;
+    }
+  }
+
+  function onScheduleSelectChange(selectElem) {
+    const selected = selectElem.options[selectElem.selectedIndex];
+    if (!selected || !selected.value) return;
+
+    document.getElementById("infoStudentName").innerText = selected.getAttribute("data-student") || "-";
+    document.getElementById("infoMeetingLabel").innerText = selected.getAttribute("data-meeting") || "Pertemuan 1 (1)";
+
+    // Isi status dan materi jika sudah ada
+    const currentStatus = selected.getAttribute("data-status") || "hadir";
+    const radio = document.querySelector("input[name='status'][value='" + currentStatus + "']");
+    if (radio) {
+      radio.checked = true;
+      toggleAttendanceFields(currentStatus);
+    }
+    document.getElementById("topicsCoveredInput").value = selected.getAttribute("data-topics") || "";
+    document.getElementById("progressNotesInput").value = selected.getAttribute("data-progress") || "";
+    document.getElementById("attendanceNotesInput").value = selected.getAttribute("data-notes") || "";
+  }
+
+  let isDirectMode = true;
+  function toggleEntryMode() {
+    isDirectMode = !isDirectMode;
+    const directSec = document.getElementById("directEntrySection");
+    const schedSec = document.getElementById("scheduleSelectSection");
+    const btn = document.getElementById("btnToggleMode");
+    const schedSelect = document.getElementById("attendanceScheduleSelect");
+    const stSelect = document.getElementById("directStudentSelect");
+
+    if (isDirectMode) {
+      directSec.style.display = "block";
+      schedSec.style.display = "none";
+      btn.innerText = "📅 Pilih Dari Jadwal Terdaftar";
+      schedSelect.value = "";
+      schedSelect.required = false;
+      stSelect.required = true;
+    } else {
+      directSec.style.display = "none";
+      schedSec.style.display = "block";
+      btn.innerText = "✍️ Input Siswa & Tanggal Langsung";
+      schedSelect.required = true;
+      stSelect.required = false;
+    }
+  }
+
+  function toggleAttendanceFields(status) {
+    const docContainer = document.getElementById("learningDocContainer");
+    const hint = document.getElementById("statusHintText");
+    const topicsInput = document.getElementById("topicsCoveredInput");
+
+    if (status === "hadir") {
+      docContainer.style.display = "block";
+      topicsInput.required = true;
+      hint.innerHTML = "💡 Status <strong>Hadir</strong> akan otomatis dihitung ke dalam siklus periode belajar (8 pertemuan = 1 periode).";
+    } else {
+      docContainer.style.display = "none";
+      topicsInput.required = false;
+      hint.innerHTML = "⚠️ Siswa tidak hadir/izin: Tidak ada kegiatan belajar, sesi ini <strong>tidak akan dihitung</strong> ke penambahan nomor pertemuan atau periode.";
+    }
+  }
+
+  // Inisialisasi awal saat halaman dimuat
+  document.addEventListener("DOMContentLoaded", function() {
+    const dateInput = document.getElementById("directDateInput");
+    if (dateInput && dateInput.value) {
+      onDateInputChange(dateInput.value);
+    }
+    const stSelect = document.getElementById("directStudentSelect");
+    if (stSelect && stSelect.value) {
+      onDirectStudentChange(stSelect);
+    }
+  });
+</script>
+{% endblock %}

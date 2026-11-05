@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+{% block title %}Data Orang Tua / Wali{% endblock %}
+{% block page_title %}Kelola Data Orang Tua / Wali Murid{% endblock %}
+{% block page_subtitle %}Manajemen data kontak wali dan hubungan keluarga dengan siswa DESI PRIVAT{% endblock %}
+
+{% block content %}
+<!-- INFORMASI KEBIJAKAN AKUN ORANG TUA -->
+<div class="card" style="margin-bottom: 24px; background: linear-gradient(135deg, rgba(238, 246, 255, 0.95), rgba(240, 253, 250, 0.9)); border: 1px solid rgba(37, 99, 235, 0.15);">
+  <div class="card-body" style="padding: 16px 20px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="font-size: 26px;">👨‍👩‍👦</div>
+        <div>
+          <h4 style="margin: 0; font-size: 15px; color: var(--navy-dark); font-weight: 700;">
+            Manajemen Relasi Kontak Orang Tua / Wali
+          </h4>
+          <p style="margin: 2px 0 0 0; font-size: 12.5px; color: var(--navy-muted);">
+            Data orang tua tersimpan sebagai relasi keluarga dan kontak resmi siswa untuk laporan serta notifikasi WhatsApp. Sesuai arsitektur sistem terbaru, wali tidak memerlukan akun login mandiri.
+          </p>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('addParentModal')">
+        ➕ Tambah Data Wali
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><span>📋</span> Daftar Orang Tua / Wali Murid Terdaftar</div>
+  </div>
+  <div class="card-body">
+    <!-- FILTER & PENCARIAN -->
+    <form method="GET" action="{{ url_for('admin.parents') }}" class="filter-bar">
+      <input
+        type="text"
+        name="q"
+        value="{{ search }}"
+        placeholder="Cari nama wali, no. telp, atau email..."
+        class="form-control"
+        style="max-width: 320px;"
+      >
+      <select name="status" class="form-select" style="max-width: 180px;">
+        <option value="">-- Semua Status --</option>
+        <option value="aktif" {% if status_filter == 'aktif' %}selected{% endif %}>Aktif</option>
+        <option value="nonaktif" {% if status_filter == 'nonaktif' %}selected{% endif %}>Nonaktif</option>
+      </select>
+      <button type="submit" class="btn btn-secondary">Filter</button>
+      {% if search or status_filter %}
+        <a href="{{ url_for('admin.parents') }}" class="btn btn-secondary">Reset</a>
+      {% endif %}
+    </form>
+
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nama Lengkap Wali</th>
+            <th>Kontak &amp; WhatsApp</th>
+            <th>Anak yang Terhubung (Siswa)</th>
+            <th>Alamat Domisili</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in parents %}
+          <tr>
+            <td>#{{ p.id }}</td>
+            <td>
+              <strong style="color: var(--navy-dark); font-size: 13.5px;">{{ p.full_name }}</strong>
+              {% if p.notes %}
+                <div style="font-size: 11px; color: var(--gray-500);">Catatan: {{ p.notes }}</div>
+              {% endif %}
+            </td>
+            <td>
+              <div>
+                📞 <strong style="font-family: monospace;">{{ p.phone }}</strong>
+              </div>
+              {% if p.phone %}
+                <a
+                  href="https://wa.me/{{ p.phone|replace(' ', '')|replace('-', '') }}"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style="font-size: 11px; color: #16A34A; text-decoration: none; font-weight: 600;"
+                >
+                  🟢 Kirim WA &rarr;
+                </a>
+              {% endif %}
+              {% if p.email %}
+                <div style="font-size: 11px; color: var(--gray-500); margin-top: 2px;">✉️ {{ p.email }}</div>
+              {% endif %}
+            </td>
+            <td>
+              {% if p.children_names %}
+                <div style="font-weight: 600; color: var(--navy-primary);">
+                  {{ p.children_names }}
+                </div>
+                <div style="font-size: 11px; color: var(--gray-500);">({{ p.children_count }} anak terdaftar)</div>
+              {% else %}
+                <span style="color: var(--gray-500); font-size: 12px;">Belum terhubung siswa</span>
+              {% endif %}
+            </td>
+            <td>
+              <div style="font-size: 12px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ p.address }}">
+                {{ p.address or '-' }}
+              </div>
+            </td>
+            <td>
+              {{ (p.status or 'aktif')|status_badge|safe }}
+            </td>
+            <td>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  onclick="openEditParentModal({{ p.id }}, '{{ p.full_name }}', '{{ p.phone }}', '{{ p.email or '' }}', '{{ p.address or '' }}', '{{ p.notes or '' }}', '{{ p.status or 'aktif' }}')"
+                  title="Ubah Data Profil Wali"
+                >
+                  ✏️ Ubah
+                </button>
+                <form method="POST" action="{{ url_for('admin.toggle_parent_status', parent_id=p.id) }}" onsubmit="return confirm('Ubah status keaktifan orang tua/wali ini?');" style="margin: 0;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  {% if (p.status or 'aktif') == 'aktif' %}
+                    <button type="submit" class="btn btn-warning btn-sm" title="Nonaktifkan Status Wali">Nonaktifkan</button>
+                  {% else %}
+                    <button type="submit" class="btn btn-success btn-sm" title="Aktifkan Status Wali">Aktifkan</button>
+                  {% endif %}
+                </form>
+                <button
+                  type="button"
+                  class="btn btn-danger btn-sm"
+                  onclick="confirmDeleteParent({{ p.id }}, '{{ p.full_name }}', {{ p.children_count }})"
+                  title="Kelola / Hapus Data Wali"
+                >
+                  🗑️ Hapus
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--gray-500); padding: 32px;">
+              Belum ada data orang tua/wali murid terdaftar.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TAMBAH WALI -->
+<div class="modal-overlay" id="addParentModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">Tambah Data Orang Tua / Wali Murid</div>
+      <button class="modal-close-btn" onclick="closeModal('addParentModal')">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('admin.create_parent') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Nama Lengkap Orang Tua / Wali</label>
+          <input type="text" class="form-control" name="full_name" placeholder="Contoh: Ibu Ratna Kumalasari" required>
+        </div>
+
+        <div class="grid-form-2">
+          <div class="form-group">
+            <label class="form-label">No. Telepon / WhatsApp</label>
+            <input type="text" class="form-control" name="phone" placeholder="08123456789" required>
+            <small style="font-size: 11px; color: var(--gray-500);">Untuk menerima notifikasi sesi les.</small>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email (Opsional)</label>
+            <input type="email" class="form-control" name="email" placeholder="wali@email.com">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Alamat Rumah / Tempat Tinggal</label>
+          <textarea class="form-control" name="address" placeholder="Alamat lengkap domisili wali..." rows="2"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Catatan Tambahan (Hubungan / Instruksi Khusus)</label>
+          <input type="text" class="form-control" name="notes" placeholder="Contoh: Ibu kandung Kevin, kontak utama konfirmasi">
+        </div>
+
+        <div style="background: rgba(238, 246, 255, 0.7); padding: 12px 14px; border-radius: var(--radius-md); border: 1px solid rgba(37, 99, 235, 0.2); font-size: 12px; color: var(--navy-muted);">
+          ℹ️ Sesuai ketentuan sistem, profil wali digunakan untuk relasi data siswa dan notifikasi WhatsApp tanpa memerlukan pembuatan akun login.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('addParentModal')">Batal</button>
+        <button type="submit" class="btn btn-primary">Simpan Data Wali</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL UBAH WALI -->
+<div class="modal-overlay" id="editParentModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">Ubah Data Orang Tua / Wali</div>
+      <button class="modal-close-btn" onclick="closeModal('editParentModal')">&times;</button>
+    </div>
+    <form method="POST" id="editParentForm" action="">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Nama Lengkap Wali</label>
+          <input type="text" class="form-control" id="editParentName" name="full_name" required>
+        </div>
+        <div class="grid-form-2">
+          <div class="form-group">
+            <label class="form-label">No. Telepon / WhatsApp</label>
+            <input type="text" class="form-control" id="editParentPhone" name="phone" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" id="editParentEmail" name="email">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Alamat Rumah</label>
+          <textarea class="form-control" id="editParentAddress" name="address" rows="2"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Catatan Tambahan</label>
+          <input type="text" class="form-control" id="editParentNotes" name="notes">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status Keaktifan</label>
+          <select class="form-select" id="editParentStatus" name="status">
+            <option value="aktif">Aktif</option>
+            <option value="nonaktif">Nonaktif</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('editParentModal')">Batal</button>
+        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL PILIHAN HAPUS / NONAKTIFKAN WALI -->
+<div class="modal-overlay" id="deleteParentModal">
+  <div class="modal-content" style="max-width: 520px;">
+    <div class="modal-header">
+      <div class="modal-title">🗑️ Kelola / Hapus Orang Tua / Wali</div>
+      <button class="modal-close-btn" onclick="closeModal('deleteParentModal')">&times;</button>
+    </div>
+    <form method="POST" id="deleteParentForm" action="">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <p style="margin-bottom: 12px; font-size: 14px; color: var(--gray-700);">
+          Pilih tindakan untuk data orang tua/wali <strong id="deleteParentName" style="color: var(--navy-dark);"></strong>:
+        </p>
+
+        <div id="deleteParentChildrenWarning" style="display: none; background: #EFF6FF; border: 1px solid #BFDBFE; color: #1E40AF; padding: 10px; border-radius: 6px; font-size: 12px; margin-bottom: 14px;">
+        </div>
+
+        <!-- OPSI 1: HANYA ARSIP / NONAKTIFKAN -->
+        <div style="background: #FFFBEB; border: 1.5px solid #FCD34D; border-radius: 8px; padding: 14px; margin-bottom: 14px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <strong style="color: #92400E; font-size: 14px;">📦 Opsi 1: Hanya Arsip / Nonaktifkan</strong>
+            <span class="badge badge-warning">Disarankan</span>
+          </div>
+          <p style="font-size: 12.5px; color: #78350F; margin: 0 0 12px 0; line-height: 1.45;">
+            Menonaktifkan status wali. Data profil wali serta relasi anak-anak yang terhubung tetap tersimpan aman di database tanpa kehilangan riwayat belajar apapun.
+          </p>
+          <button type="submit" name="action_type" value="archive" class="btn btn-warning btn-sm" style="font-weight: 600;">
+            📦 Hanya Arsip / Nonaktifkan
+          </button>
+        </div>
+
+        <!-- OPSI 2: HAPUS OTOMATIS (PERMANEN) -->
+        <div style="background: #FEF2F2; border: 1.5px solid #FCA5A5; border-radius: 8px; padding: 14px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <strong style="color: #991B1B; font-size: 14px;">🗑️ Opsi 2: Hapus Otomatis (Permanen)</strong>
+            <span class="badge badge-danger">Hapus Total</span>
+          </div>
+          <p style="font-size: 12.5px; color: #7F1D1D; margin: 0 0 12px 0; line-height: 1.45;">
+            Menghapus data wali serta membersihkan seluruh data anak/siswa yang terhubung dan riwayat jadwal/absensinya secara otomatis dan permanen.
+          </p>
+          <button type="submit" name="action_type" value="auto_delete" class="btn btn-danger btn-sm" style="font-weight: 600;" onclick="return confirm('Peringatan: Seluruh data wali, anak yang terhubung, dan riwayat jadwalnya akan dihapus permanen secara otomatis. Lanjutkan?');">
+            🗑️ Hapus Otomatis
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('deleteParentModal')">Batal</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openEditParentModal(id, name, phone, email, address, notes, status) {
+    document.getElementById("editParentForm").action = "/admin/parents/" + id + "/edit";
+    document.getElementById("editParentName").value = name;
+    document.getElementById("editParentPhone").value = phone;
+    document.getElementById("editParentEmail").value = email;
+    document.getElementById("editParentAddress").value = address;
+    document.getElementById("editParentNotes").value = notes;
+    document.getElementById("editParentStatus").value = status || "aktif";
+    openModal("editParentModal");
+  }
+
+  function confirmDeleteParent(parentId, parentName, childrenCount) {
+    document.getElementById("deleteParentForm").action = "/admin/parents/" + parentId + "/delete";
+    document.getElementById("deleteParentName").innerText = parentName;
+    const warningEl = document.getElementById("deleteParentChildrenWarning");
+    if (childrenCount > 0) {
+      warningEl.innerText = "Perhatian: Wali ini terhubung dengan " + childrenCount + " data siswa. Opsi 'Hapus Otomatis' akan menghapus seluruh data siswa ini beserta jadwal lesnya.";
+      warningEl.style.display = "block";
+    } else {
+      warningEl.style.display = "none";
+    }
+    openModal("deleteParentModal");
+  }
+</script>
+{% endblock %}

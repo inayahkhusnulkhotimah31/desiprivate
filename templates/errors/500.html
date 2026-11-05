@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Kesalahan Server (500){% endblock %}
+{% block page_title %}Terjadi Kesalahan Server{% endblock %}
+{% block page_subtitle %}Error 500 - Internal Server Error{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 650px; margin: 40px auto; text-align: center; padding: 40px 20px;">
+  <div style="font-size: 64px; margin-bottom: 16px;">⚙️</div>
+  <h2 style="font-size: 22px; color: var(--navy-dark); margin-bottom: 12px;">Terjadi Kesalahan pada Server (500)</h2>
+  <p style="color: var(--gray-700); font-size: 14.5px; margin-bottom: 24px;">
+    Sistem mengalami kendala sementara saat memproses permintaan Anda. Silakan muat ulang halaman atau hubungi pengelola sistem jika kendala berlanjut.
+  </p>
+  <div>
+    <a href="{{ url_for('auth.index') }}" class="btn btn-primary">Kembali ke Halaman Utama</a>
+  </div>
+</div>
+{% endblock %}

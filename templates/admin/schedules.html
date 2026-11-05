@@ -1,0 +1,466 @@
+{% extends "base.html" %}
+{% block title %}Penjadwalan Les Rutin{% endblock %}
+{% block page_title %}Penjadwalan Les Privat{% endblock %}
+{% block page_subtitle %}Kelola jadwal les rutin mingguan siswa dan pantau riwayat pelaksanaan sesi bimbingan DESI PRIVAT{% endblock %}
+
+{% block content %}
+<!-- ======================================================= -->
+<!-- 1. KARTU JADWAL RUTIN MINGGUAN SISWA (JADWAL UTAMA) -->
+<!-- ======================================================= -->
+<div class="card" style="margin-bottom: 24px;">
+  <div class="card-header">
+    <div>
+      <div class="card-title">
+        <span class="card-icon">🗓️</span> Jadwal Les Rutin Mingguan Siswa
+      </div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
+        Jadwal tetap berulang setiap minggu yang ditetapkan Admin. Periode dan nomor pertemuan dihitung otomatis dari absensi kehadiran mentor.
+      </div>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="openModal('addRoutineModal')">
+      ➕ Tambah Jadwal Rutin
+    </button>
+  </div>
+  <div class="card-body">
+    <!-- FILTER JADWAL RUTIN -->
+    <form method="GET" action="{{ url_for('admin.schedules') }}" class="filter-bar">
+      <select name="day" class="form-select" style="max-width: 170px;">
+        <option value="">-- Semua Hari --</option>
+        {% for idx, dname in [(0, 'Senin'), (1, 'Selasa'), (2, 'Rabu'), (3, 'Kamis'), (4, 'Jumat'), (5, 'Sabtu'), (6, 'Minggu')] %}
+          <option value="{{ idx }}" {% if day_filter == idx|string %}selected{% endif %}>{{ dname }}</option>
+        {% endfor %}
+      </select>
+      <select name="student_id" class="form-select" style="max-width: 200px;">
+        <option value="">-- Semua Siswa --</option>
+        {% for st in students %}
+          <option value="{{ st.id }}" {% if student_filter == st.id|string %}selected{% endif %}>{{ st.full_name }}</option>
+        {% endfor %}
+      </select>
+      <select name="mentor_id" class="form-select" style="max-width: 200px;">
+        <option value="">-- Semua Mentor --</option>
+        {% for m in mentors %}
+          <option value="{{ m.id }}" {% if mentor_filter == m.id|string %}selected{% endif %}>{{ m.full_name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-secondary">Filter</button>
+      {% if day_filter or student_filter or mentor_filter %}
+        <a href="{{ url_for('admin.schedules') }}" class="btn btn-secondary">Reset</a>
+      {% endif %}
+    </form>
+
+    <!-- TABEL JADWAL RUTIN -->
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>Hari & Jam Les</th>
+            <th>Siswa & Kelas</th>
+            <th>Program & Fokus Materi</th>
+            <th>Mentor Pengampu</th>
+            <th>Orang Tua / Wali</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for rs in routine_schedules %}
+          <tr>
+            <td>
+              <div style="font-weight: 700; color: var(--navy-dark); font-size: 13.5px;">
+                🗓️ {{ rs.day_name }}
+              </div>
+              <div style="font-size: 12px; color: var(--blue-brand); font-weight: 600;">
+                ⏰ {{ rs.start_time }} - {{ rs.end_time }} WIB
+              </div>
+            </td>
+            <td>
+              <a href="{{ url_for('admin.student_detail', student_id=rs.student_id) }}" style="font-weight: 700; color: var(--text-heading); text-decoration: none;">
+                {{ rs.student_name }}
+              </a>
+              <div style="font-size: 11px; color: var(--text-muted);">
+                {{ rs.student_school or '-' }} ({{ rs.student_grade or '-' }})
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 600; color: var(--text-main); font-size: 12.5px;">
+                {{ rs.program_name }}
+              </div>
+              {% if rs.subject_info %}
+                <div style="font-size: 11px; color: var(--blue-brand);">
+                  🎯 {{ rs.subject_info }}
+                </div>
+              {% endif %}
+            </td>
+            <td>
+              <div style="font-weight: 600; color: var(--navy-dark);">
+                🧑‍🏫 {{ rs.mentor_name }}
+              </div>
+              {% if rs.mentor_phone %}
+                <div style="font-size: 11px; color: var(--text-muted);">
+                  📞 {{ rs.mentor_phone }}
+                </div>
+              {% endif %}
+            </td>
+            <td>
+              <div>{{ rs.parent_name or '-' }}</div>
+              {% if rs.parent_phone %}
+                <div style="font-size: 11px; color: var(--text-muted);">📞 {{ rs.parent_phone }}</div>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge badge-success">Rutin Aktif</span>
+            </td>
+            <td>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  onclick="openEditRoutineModal({{ rs.id }}, {{ rs.day_of_week }}, '{{ rs.start_time }}', '{{ rs.end_time }}', {{ rs.mentor_id }}, '{{ rs.subject_info|default('', true) }}', '{{ rs.notes|default('', true) }}')"
+                  title="Ubah Jadwal Rutin"
+                >
+                  ✏️ Edit
+                </button>
+                <form method="POST" action="{{ url_for('admin.admin_delete_routine_schedule', routine_id=rs.id) }}" onsubmit="return confirm('Hapus slot jadwal rutin hari {{ rs.day_name }} ini? Riwayat absensi sebelumnya tetap tersimpan aman.');" style="display: inline;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-danger btn-sm" title="Hapus Slot">
+                    🗑️
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 28px;">
+              Belum ada jadwal rutin mingguan. Klik tombol <strong>➕ Tambah Jadwal Rutin</strong> di atas atau tetapkan saat pendaftaran siswa baru.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================= -->
+<!-- 2. KARTU RIWAYAT PELAKSANAAN SESI & LOG ABSENSI -->
+<!-- ======================================================= -->
+<div class="card">
+  <div class="card-header">
+    <div>
+      <div class="card-title">
+        <span class="card-icon">📋</span> Riwayat Pelaksanaan Sesi &amp; Absensi
+      </div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
+        Dokumentasi sesi bimbingan yang telah dicatat atau dijadwalkan secara spesifik.
+      </div>
+    </div>
+  </div>
+  <div class="card-body">
+    <!-- FILTER RIWAYAT SESI -->
+    <form method="GET" action="{{ url_for('admin.schedules') }}" class="filter-bar">
+      <input type="date" name="date" value="{{ date_filter or '' }}" class="form-control" style="max-width: 180px;">
+      <select name="student_id" class="form-select" style="max-width: 200px;">
+        <option value="">-- Semua Siswa --</option>
+        {% for st in students %}
+          <option value="{{ st.id }}" {% if student_filter == st.id|string %}selected{% endif %}>{{ st.full_name }}</option>
+        {% endfor %}
+      </select>
+      <select name="mentor_id" class="form-select" style="max-width: 200px;">
+        <option value="">-- Semua Mentor --</option>
+        {% for m in mentors %}
+          <option value="{{ m.id }}" {% if mentor_filter == m.id|string %}selected{% endif %}>{{ m.full_name }}</option>
+        {% endfor %}
+      </select>
+      <select name="status" class="form-select" style="max-width: 200px;">
+        <option value="">-- Semua Status --</option>
+        <option value="disetujui" {% if status_filter == 'disetujui' %}selected{% endif %}>Fix / Terlaksana</option>
+        <option value="ditolak" {% if status_filter == 'ditolak' %}selected{% endif %}>Dibatalkan</option>
+      </select>
+      <button type="submit" class="btn btn-secondary">Filter Sesi</button>
+      {% if date_filter or status_filter %}
+        <a href="{{ url_for('admin.schedules') }}" class="btn btn-secondary">Reset Filter</a>
+      {% endif %}
+    </form>
+
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>Tanggal & Jam</th>
+            <th>Siswa & Program</th>
+            <th>Mentor Pengampu</th>
+            <th>Status Pelaksanaan</th>
+            <th>Aksi & Pengelolaan</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sc in schedules %}
+          <tr>
+            <td>
+              <div style="font-weight: 700; color: var(--navy-dark);">{{ sc.schedule_date|date_indo }}</div>
+              <div style="font-size: 11.5px; color: var(--blue-brand); font-weight: 600;">
+                {{ sc.start_time }} - {{ sc.end_time }} WIB ({{ sc.duration_minutes }} mnt)
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 600;">{{ sc.student_name }}</div>
+              <div style="font-size: 11.5px; color: var(--text-muted);">{{ sc.program_name }}</div>
+              {% if sc.title %}
+                <div style="font-size: 11px; color: var(--text-body); font-style: italic;">{{ sc.title }}</div>
+              {% endif %}
+            </td>
+            <td>
+              <div style="font-weight: 600; color: var(--navy-dark);">{{ sc.mentor_name }}</div>
+            </td>
+            <td>
+              {% if sc.attendance_status %}
+                <span class="badge badge-success">Sudah Absen</span>
+              {% elif sc.status == 'ditolak' %}
+                <span class="badge badge-danger">Dibatalkan</span>
+              {% else %}
+                <span class="badge badge-neutral">Belum Terlaksana</span>
+              {% endif %}
+            </td>
+            <td>
+              <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                {% if not sc.attendance_status and sc.status != 'ditolak' %}
+                  <button
+                    type="button"
+                    class="btn btn-warning btn-sm"
+                    onclick="prepareMentorReplacementModal({{ sc.id }}, '{{ sc.mentor_name }}')"
+                    title="Ganti Mentor Pengganti"
+                  >
+                    🔄 Ganti Mentor
+                  </button>
+                  <form method="POST" action="{{ url_for('admin.admin_reject_schedule', schedule_id=sc.id) }}" onsubmit="return confirm('Batalkan sesi jadwal les ini?');" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger btn-sm" title="Batalkan Jadwal">Batalkan</button>
+                  </form>
+                {% else %}
+                  <span style="font-size: 11.5px; color: var(--text-muted);">-</span>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 24px;">
+              Belum ada riwayat sesi spesifik yang tercatat pada filter ini.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================= -->
+<!-- MODAL TAMBAH JADWAL RUTIN -->
+<!-- ======================================================= -->
+<div class="modal-overlay" id="addRoutineModal">
+  <div class="modal-dialog" style="max-width: 600px;">
+    <div class="modal-header">
+      <div class="modal-title">🗓️ Tambah Jadwal Les Rutin Siswa</div>
+      <button class="modal-close-btn" onclick="closeModal('addRoutineModal')">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('admin.admin_create_routine_schedule') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px;">
+          Jadwal les akan berulang setiap minggu dan langsung aktif untuk siswa dan mentor yang dipilih. Sistem otomatis memvalidasi bentrokan mentor sebelum disimpan.
+        </p>
+
+        <div class="form-group">
+          <label class="form-label">Pilih Siswa <span style="color: var(--danger);">*</span></label>
+          <select class="form-select" name="student_id" required>
+            <option value="">-- Pilih Siswa Aktif --</option>
+            {% for st in students %}
+              <option value="{{ st.id }}">{{ st.full_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="grid-form-2">
+          <div class="form-group">
+            <label class="form-label">Program Les <span style="color: var(--danger);">*</span></label>
+            <select class="form-select" name="program_id" required>
+              <option value="">-- Pilih Program --</option>
+              {% for pr in programs %}
+                <option value="{{ pr.id }}">{{ pr.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Mentor Pengampu <span style="color: var(--danger);">*</span></label>
+            <select class="form-select" name="mentor_id" required>
+              <option value="">-- Pilih Mentor --</option>
+              {% for m in mentors %}
+                <option value="{{ m.id }}">{{ m.full_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="grid-form-3">
+          <div class="form-group">
+            <label class="form-label">Hari Les <span style="color: var(--danger);">*</span></label>
+            <select class="form-select" name="day_of_week" required>
+              <option value="0">Senin</option>
+              <option value="1">Selasa</option>
+              <option value="2">Rabu</option>
+              <option value="3">Kamis</option>
+              <option value="4">Jumat</option>
+              <option value="5" selected>Sabtu</option>
+              <option value="6">Minggu</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Jam Mulai <span style="color: var(--danger);">*</span></label>
+            <input type="time" class="form-control" name="start_time" value="09:00" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Jam Selesai <span style="color: var(--danger);">*</span></label>
+            <input type="time" class="form-control" name="end_time" value="10:30" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Informasi Mata Pelajaran / Materi Fokus</label>
+          <input type="text" class="form-control" name="subject_info" placeholder="Contoh: Matematika Persiapan Ujian, Bahasa Inggris, Mengaji Iqra 3...">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Catatan Tambahan</label>
+          <input type="text" class="form-control" name="notes" placeholder="Lokasi les, catatan khusus orang tua...">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('addRoutineModal')">Batal</button>
+        <button type="submit" class="btn btn-primary">Simpan Jadwal Rutin</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ======================================================= -->
+<!-- MODAL EDIT JADWAL RUTIN -->
+<!-- ======================================================= -->
+<div class="modal-overlay" id="editRoutineModal">
+  <div class="modal-dialog" style="max-width: 580px;">
+    <div class="modal-header">
+      <div class="modal-title">✏️ Perbarui Jadwal Rutin Siswa</div>
+      <button class="modal-close-btn" onclick="closeModal('editRoutineModal')">&times;</button>
+    </div>
+    <form method="POST" id="editRoutineForm" action="">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <div class="grid-form-3">
+          <div class="form-group">
+            <label class="form-label">Hari Les <span style="color: var(--danger);">*</span></label>
+            <select class="form-select" name="day_of_week" id="editRoutineDay" required>
+              <option value="0">Senin</option>
+              <option value="1">Selasa</option>
+              <option value="2">Rabu</option>
+              <option value="3">Kamis</option>
+              <option value="4">Jumat</option>
+              <option value="5">Sabtu</option>
+              <option value="6">Minggu</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Jam Mulai <span style="color: var(--danger);">*</span></label>
+            <input type="time" class="form-control" name="start_time" id="editRoutineStart" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Jam Selesai <span style="color: var(--danger);">*</span></label>
+            <input type="time" class="form-control" name="end_time" id="editRoutineEnd" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Mentor Pengampu <span style="color: var(--danger);">*</span></label>
+          <select class="form-select" name="mentor_id" id="editRoutineMentor" required>
+            {% for m in mentors %}
+              <option value="{{ m.id }}">{{ m.full_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Informasi Mata Pelajaran / Fokus</label>
+          <input type="text" class="form-control" name="subject_info" id="editRoutineSubject" placeholder="Contoh: Matematika Aljabar">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Catatan Tambahan</label>
+          <input type="text" class="form-control" name="notes" id="editRoutineNotes">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('editRoutineModal')">Batal</button>
+        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ======================================================= -->
+<!-- MODAL GANTI MENTOR PENGGANTI SESI -->
+<!-- ======================================================= -->
+<div class="modal-overlay" id="replacementModal">
+  <div class="modal-dialog" style="max-width: 520px;">
+    <div class="modal-header">
+      <div class="modal-title">🔄 Ganti Mentor Pengganti Sesi</div>
+      <button class="modal-close-btn" onclick="closeModal('replacementModal')">&times;</button>
+    </div>
+    <form method="POST" id="replaceMentorForm" action="">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" id="replaceScheduleId" name="schedule_id" value="">
+      <div class="modal-body">
+        <p style="font-size: 13px; color: var(--text-body); margin-bottom: 12px;">
+          Menggantikan mentor utama (<strong id="replaceCurrentMentorName">-</strong>) untuk sesi ini saja dengan mentor pengganti yang tersedia.
+        </p>
+        <div class="form-group">
+          <label class="form-label">Pilih Mentor Pengganti</label>
+          <select class="form-select" name="replacement_mentor_id" required>
+            <option value="">-- Pilih Mentor Pengganti --</option>
+            {% for m in mentors %}
+              <option value="{{ m.id }}">{{ m.full_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Alasan Penggantian</label>
+          <input type="text" class="form-control" name="reason" placeholder="Contoh: Sakit, keperluan mendesak..." required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('replacementModal')">Batal</button>
+        <button type="submit" class="btn btn-primary">Simpan Pergantian Mentor</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openEditRoutineModal(id, day, start, end, mentorId, subject, notes) {
+    document.getElementById("editRoutineForm").action = "/admin/schedules/routine/" + id + "/edit";
+    document.getElementById("editRoutineDay").value = day;
+    document.getElementById("editRoutineStart").value = start;
+    document.getElementById("editRoutineEnd").value = end;
+    document.getElementById("editRoutineMentor").value = mentorId;
+    document.getElementById("editRoutineSubject").value = subject || "";
+    document.getElementById("editRoutineNotes").value = notes || "";
+    openModal("editRoutineModal");
+  }
+
+  function prepareMentorReplacementModal(schedId, currentMentorName) {
+    document.getElementById("replaceScheduleId").value = schedId;
+    document.getElementById("replaceCurrentMentorName").innerText = currentMentorName;
+    document.getElementById("replaceMentorForm").action = "/admin/schedules/" + schedId + "/replace-mentor";
+    openModal("replacementModal");
+  }
+</script>
+{% endblock %}

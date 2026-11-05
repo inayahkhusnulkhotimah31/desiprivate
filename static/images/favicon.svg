@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="favGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#f0f9ff" stroke="#e0f2fe" stroke-width="1.5" />
+  <!-- Cap -->
+  <path d="M 32 9 L 58 22 L 32 31 L 6 22 Z" fill="url(#favGrad)" />
+  <path d="M 17 27 L 17 33 Q 32 39 47 33 L 47 27 Q 32 32 17 27 Z" fill="#0369a1" />
+  <!-- Tassel -->
+  <path d="M 17 23 Q 10 27 10 35" stroke="#0284c7" stroke-width="2.5" fill="none" stroke-linecap="round" />
+  <circle cx="10" cy="36" r="3" fill="#0284c7" />
+  <!-- Figure -->
+  <circle cx="32" cy="23" r="4.5" fill="#0284c7" stroke="#ffffff" stroke-width="2" />
+  <path d="M 23 18 C 21 26 28 35 32 46 C 36 35 43 26 41 18 C 36 24 32 27 32 27 C 32 27 28 24 23 18 Z" fill="#ffffff" />
+  <path d="M 24 19 C 22 26 28 34 32 44 C 36 34 42 26 40 19 C 36 23 32 26 32 26 C 32 26 28 23 24 19 Z" fill="url(#favGrad)" />
+  <!-- Pen Nib -->
+  <path d="M 34 36 C 39 31 44 33 46 37 C 44 43 40 47 32 51 C 35 46 37 42 34 36 Z" fill="#b45309" />
+</svg>
+

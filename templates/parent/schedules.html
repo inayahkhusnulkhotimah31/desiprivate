@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Jadwal Les (Wali Murid){% endblock %}
+{% block page_title %}Jadwal & Kalender Les Ananda{% endblock %}
+{% block page_subtitle %}Jadwal bimbingan privat, status persetujuan, dan informasi perubahan atau pergantian mentor{% endblock %}
+
+{% block content %}
+<!-- CHILD SELECTOR -->
+{% if children|length > 1 %}
+<div class="card" style="margin-bottom: 20px; background: var(--blue-soft);">
+  <div class="card-body" style="padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+    <span style="font-size: 13px; font-weight: 700; color: var(--navy-dark);">Pilih Ananda:</span>
+    <div style="display: flex; gap: 8px;">
+      {% for ch in children %}
+        <a href="{{ url_for('parent.schedules', student_id=ch.id) }}" class="btn btn-sm {% if ch.id == selected_child.id %}btn-primary{% else %}btn-secondary{% endif %}">
+          🎓 {{ ch.full_name }}
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><span>🗓️</span> Jadwal Sesi Les untuk {{ selected_child.full_name }}</div>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>Tanggal Sesi</th>
+            <th>Waktu</th>
+            <th>Program Les</th>
+            <th>Mentor Pengampu</th>
+            <th>Status Jadwal</th>
+            <th>Informasi Tambahan / Pergantian</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sc in schedules %}
+          <tr>
+            <td>
+              <strong>{{ sc.schedule_date|date_indo }}</strong>
+            </td>
+            <td>
+              <span style="color: var(--blue-brand); font-weight: 600;">{{ sc.start_time }} - {{ sc.end_time }} WIB</span>
+            </td>
+            <td>
+              <strong>{{ sc.program_name }}</strong>
+              {% if sc.title %}
+                <div style="font-size: 11px; color: var(--gray-500); font-style: italic;">{{ sc.title }}</div>
+              {% endif %}
+            </td>
+            <td>
+              <strong style="color: var(--navy-dark);">{{ sc.mentor_name }}</strong>
+            </td>
+            <td>
+              {{ sc.status|status_badge|safe }}
+            </td>
+            <td>
+              {% if sc.replacement_id %}
+                <div style="background: var(--warning-bg); padding: 8px; border-radius: var(--radius-sm); border-left: 3px solid var(--warning); font-size: 11.5px;">
+                  <strong style="color: #92400E;">🔄 Terjadi Pergantian Mentor</strong>
+                  <div style="color: var(--gray-700); margin-top: 2px;">
+                    Alasan: {{ sc.replacement_reason }} (Mentor awal: {{ sc.old_mentor_name }})
+                  </div>
+                </div>
+              {% elif sc.session_notes %}
+                <span style="font-size: 12px; color: var(--gray-700);">{{ sc.session_notes }}</span>
+              {% else %}
+                <span style="font-size: 12px; color: var(--gray-500);">Sesi privat tatap muka</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--gray-500); padding: 24px;">
+              Belum ada riwayat atau agenda jadwal les untuk ananda ini.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Pemilik{% endblock %}
+{% block page_title %}Dashboard Pengawasan Eksekutif (Pemilik){% endblock %}
+{% block page_subtitle %}Ikhtisar komprehensif, supervisi operasional, dan pemantauan perkembangan les DESI PRIVAT{% endblock %}
+
+{% block content %}
+<!-- BANNER SUPERVISI BACA-SAJA PEMILIK -->
+<div class="card" style="margin-bottom: 24px; background: linear-gradient(135deg, rgba(238, 246, 255, 0.95), rgba(240, 253, 250, 0.9)); border: 1px solid rgba(14, 165, 233, 0.2);">
+  <div class="card-body" style="padding: 16px 20px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <div style="font-size: 28px;">👁️</div>
+        <div>
+          <h4 style="margin: 0; font-size: 15.5px; color: var(--navy-dark); font-weight: 700;">
+            Mode Supervisi Eksekutif (Read-Only)
+          </h4>
+          <p style="margin: 2px 0 0 0; font-size: 12.5px; color: var(--navy-muted);">
+            Anda memiliki hak pantau penuh terhadap data siswa, aktivitas mentor, siklus pertemuan otomatis, materi ajar, dan rekapitulasi operasional.
+          </p>
+        </div>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <a href="{{ url_for('owner.reports', type='schedules') }}" class="btn btn-primary btn-sm">
+          📊 Laporan &amp; Rekapitulasi
+        </a>
+        <a href="{{ url_for('owner.schedules') }}" class="btn btn-secondary btn-sm">
+          📅 Jadwal Keseluruhan
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- KARTU METRIK EKSEKUTIF -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon">🎓</div>
+    <div>
+      <div class="stat-value">{{ summary.active_students }}</div>
+      <div class="stat-label">Total Siswa Aktif</div>
+    </div>
+  </div>
+
+  <div class="stat-card success">
+    <div class="stat-icon">🧑‍🏫</div>
+    <div>
+      <div class="stat-value">{{ summary.active_mentors }}</div>
+      <div class="stat-label">Total Mentor Aktif</div>
+    </div>
+  </div>
+
+  <div class="stat-card info">
+    <div class="stat-icon">📖</div>
+    <div>
+      <div class="stat-value">{{ summary.active_programs }}</div>
+      <div class="stat-label">Program Les Aktif</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon">📅</div>
+    <div>
+      <div class="stat-value">{{ summary.monthly_sessions or summary.today_schedules }}</div>
+      <div class="stat-label">Sesi Bulan Ini</div>
+    </div>
+  </div>
+
+  <div class="stat-card success">
+    <div class="stat-icon">✅</div>
+    <div>
+      <div class="stat-value">{{ summary.completed_sessions }}</div>
+      <div class="stat-label">Pertemuan Valid Selesai</div>
+    </div>
+  </div>
+
+  <div class="stat-card danger">
+    <div class="stat-icon">🔄</div>
+    <div>
+      <div class="stat-value">{{ summary.total_replacements }}</div>
+      <div class="stat-label">Pergantian Mentor</div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2-col" style="margin-bottom: 24px;">
+  <!-- REKAP JADWAL TERBARU -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span>🗓️</span> Jadwal Sesi Terbaru</div>
+      <a href="{{ url_for('owner.schedules') }}" class="btn btn-secondary btn-sm">Kalender Lengkap</a>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <div class="table-responsive">
+        <table class="table-desi">
+          <thead>
+            <tr>
+              <th>Tanggal &amp; Jam</th>
+              <th>Siswa &amp; Program</th>
+              <th>Mentor</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sc in recent_schedules %}
+            <tr>
+              <td>
+                <div style="font-weight: 600; color: var(--navy-dark);">{{ sc.schedule_date|date_indo }}</div>
+                <div style="font-size: 11px; color: var(--gray-500);">{{ sc.start_time }} - {{ sc.end_time }} WIB</div>
+              </td>
+              <td>
+                <div style="font-weight: 600;">{{ sc.student_name }}</div>
+                <div style="font-size: 11px; color: var(--gray-500);">{{ sc.program_name }}</div>
+              </td>
+              <td>
+                <span style="color: var(--blue-dark); font-weight: 600;">{{ sc.mentor_name }}</span>
+              </td>
+              <td>{{ sc.status|status_badge|safe }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="4" style="text-align: center; padding: 24px; color: var(--gray-500);">
+                Belum ada jadwal sesi yang tercatat.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- REKAP KEHADIRAN / PERTEMUAN VALID TERBARU -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span>📋</span> Rekap Absensi &amp; Siklus Pertemuan</div>
+      <a href="{{ url_for('owner.reports', type='attendance') }}" class="btn btn-secondary btn-sm">Laporan Lengkap</a>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <div class="table-responsive">
+        <table class="table-desi">
+          <thead>
+            <tr>
+              <th>Tanggal</th>
+              <th>Siswa</th>
+              <th>Pertemuan &amp; Periode</th>
+              <th>Kehadiran</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for att in recent_attendance %}
+            <tr>
+              <td>
+                <strong>{{ att.schedule_date|date_indo }}</strong>
+              </td>
+              <td>
+                <div style="font-weight: 600;">{{ att.student_name }}</div>
+                <div style="font-size: 11px; color: var(--gray-500);">Mentor: {{ att.mentor_name }}</div>
+              </td>
+              <td>
+                {% if att.status == 'hadir' and att.meeting_number %}
+                  <span class="badge badge-success" style="font-weight: 700;">
+                    Pertemuan {{ att.meeting_number }} ({{ att.period_number }})
+                  </span>
+                {% else %}
+                  <span class="badge badge-secondary">-</span>
+                {% endif %}
+              </td>
+              <td>{{ att.status|status_badge|safe }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="4" style="text-align: center; padding: 24px; color: var(--gray-500);">
+                Belum ada data absensi tercatat.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PEMANTAUAN MATERI & PERKEMBANGAN BELAJAR SISWA -->
+<div class="card" style="margin-bottom: 24px;">
+  <div class="card-header">
+    <div class="card-title"><span>📖</span> Pemantauan Materi &amp; Perkembangan Belajar Siswa</div>
+    <a href="{{ url_for('owner.reports', type='progress') }}" class="btn btn-secondary btn-sm">Semua Laporan Perkembangan</a>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>Tanggal Sesi</th>
+            <th>Siswa</th>
+            <th>Mentor</th>
+            <th>Program</th>
+            <th>Materi yang Dipelajari</th>
+            <th>Keterampilan / Catatan Kemajuan</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in recent_progress %}
+          <tr>
+            <td>
+              <strong>{{ p.session_date|date_indo }}</strong>
+            </td>
+            <td>
+              <strong style="color: var(--navy-dark);">{{ p.student_name }}</strong>
+            </td>
+            <td>{{ p.mentor_name }}</td>
+            <td><span class="badge badge-info">{{ p.program_name }}</span></td>
+            <td>
+              <div style="font-size: 12.5px; color: var(--navy-dark); font-weight: 600; max-width: 250px;">
+                {{ p.topics_covered or '-' }}
+              </div>
+            </td>
+            <td>
+              <div style="font-size: 12px; color: var(--gray-700); max-width: 300px; line-height: 1.4;">
+                {{ p.skills_mastered or p.additional_notes or '-' }}
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 24px; color: var(--gray-500);">
+              Belum ada laporan perkembangan belajar yang diinput oleh mentor.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- RIWAYAT PERGANTIAN MENTOR -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><span>🔄</span> Riwayat Pergantian Mentor Terkini</div>
+    <a href="{{ url_for('owner.replacements') }}" class="btn btn-secondary btn-sm">Lihat Semua</a>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>Tanggal Penggantian</th>
+            <th>Tanggal Sesi Les</th>
+            <th>Siswa</th>
+            <th>Mentor Asli</th>
+            <th>Mentor Pengganti</th>
+            <th>Alasan Pergantian</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in recent_replacements %}
+          <tr>
+            <td><small>{{ r.created_at|date_indo }}</small></td>
+            <td><strong>{{ r.schedule_date|date_indo }}</strong></td>
+            <td><strong style="color: var(--navy-dark);">{{ r.student_name }}</strong></td>
+            <td><span style="color: var(--danger); font-weight: 600;">{{ r.old_mentor }}</span></td>
+            <td><span style="color: var(--success); font-weight: 600;">{{ r.new_mentor }}</span></td>
+            <td>
+              <div style="font-size: 12px; color: var(--gray-700); max-width: 250px;">
+                {{ r.reason }}
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 24px; color: var(--gray-500);">
+              Tidak ada catatan pergantian mentor terkini. Operasional berjalan lancar sesuai jadwal.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

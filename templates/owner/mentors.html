@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Daftar Mentor (Pemilik){% endblock %}
+{% block page_title %}Pengawasan Data Mentor{% endblock %}
+{% block page_subtitle %}Spesialisasi keahlian, status ketersediaan, dan beban mengajar (Akses Baca Pemilik){% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><span>🧑‍🏫</span> Daftar Mentor Pengajar</div>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nama Mentor</th>
+            <th>Kontak</th>
+            <th>Bidang Keahlian</th>
+            <th>Beban Mengajar Aktif</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in mentors %}
+          <tr>
+            <td>#{{ m.id }}</td>
+            <td><strong>{{ m.full_name }}</strong></td>
+            <td>{{ m.phone }}<br><small>{{ m.email or '-' }}</small></td>
+            <td>{{ m.expertise }}</td>
+            <td>
+              <span class="badge badge-info">{{ m.active_schedules_count }} Sesi Mendatang</span>
+            </td>
+            <td>{{ m.status|status_badge|safe }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--gray-500);">Tidak ada data mentor.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

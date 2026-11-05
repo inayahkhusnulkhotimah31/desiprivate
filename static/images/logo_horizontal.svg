@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 100" width="100%" height="100%">
+  <defs>
+    <linearGradient id="hCapGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0ea5e9" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <linearGradient id="hFigureGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <linearGradient id="hPenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#b45309" />
+      <stop offset="100%" stop-color="#78350f" />
+    </linearGradient>
+  </defs>
+
+  <!-- Mini Emblem (Left) -->
+  <g transform="translate(10, 5) scale(0.22)">
+    <path d="M 250 50 L 440 150 L 250 220 L 60 150 Z" fill="url(#hCapGrad)" />
+    <path d="M 140 190 L 140 240 Q 250 290 360 240 L 360 190 Q 250 230 140 190 Z" fill="#0369a1" />
+    <path d="M 140 160 Q 90 190 90 250" stroke="#0284c7" stroke-width="8" fill="none" stroke-linecap="round" />
+    <circle cx="90" cy="255" r="12" fill="#0284c7" />
+    <circle cx="246" cy="165" r="26" fill="none" stroke="#ffffff" stroke-width="12" />
+    <circle cx="246" cy="165" r="20" fill="#0284c7" />
+    <path d="M 185 115 C 170 185 220 255 246 330 C 275 250 340 165 348 135 C 315 180 275 225 246 225 C 220 225 195 175 185 115 Z" fill="#ffffff" />
+    <path d="M 195 125 C 185 180 225 240 246 320 C 270 245 325 170 335 145 C 305 182 270 215 246 215 C 225 215 205 175 195 125 Z" fill="url(#hFigureGrad)" />
+    <g transform="translate(260, 230)">
+      <path d="M 18 45 C 35 25 65 30 75 55 C 65 85 45 110 5 135 C 25 105 32 80 18 45 Z" fill="url(#hPenGrad)" />
+    </g>
+  </g>
+
+  <!-- Typography on the right -->
+  <text x="125" y="52" font-family="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="34" font-weight="900" letter-spacing="2">
+    <tspan fill="#0284c7">DESI </tspan>
+    <tspan fill="#8d4b26">PRIVAT</tspan>
+  </text>
+  <text x="126" y="76" font-family="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11.5" font-weight="700" fill="#64748b" letter-spacing="2.5">
+    DO THE BEST BE THE BEST
+  </text>
+</svg>
+

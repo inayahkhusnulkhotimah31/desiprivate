@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Riwayat Aktivitas (Audit Log){% endblock %}
+{% block page_title %}Riwayat Audit Log Aktivitas{% endblock %}
+{% block page_subtitle %}Catatan audit perubahan data penting yang tidak dapat diubah/dihapus (Immutable Record){% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><span>📜</span> Log Aktivitas Sistem & Pengguna</div>
+  </div>
+  <div class="card-body">
+    <!-- FILTER -->
+    <form method="GET" action="{{ url_for('admin.audit_logs') }}" class="filter-bar">
+      <select name="action_type" class="form-select" style="max-width: 220px;">
+        <option value="">-- Semua Jenis Aksi --</option>
+        <option value="LOGIN" {% if action_type == 'LOGIN' %}selected{% endif %}>LOGIN</option>
+        <option value="TAMBAH_SISWA" {% if action_type == 'TAMBAH_SISWA' %}selected{% endif %}>TAMBAH_SISWA</option>
+        <option value="UBAH_SISWA" {% if action_type == 'UBAH_SISWA' %}selected{% endif %}>UBAH_SISWA</option>
+        <option value="ARSIP_SISWA" {% if action_type == 'ARSIP_SISWA' %}selected{% endif %}>ARSIP_SISWA</option>
+        <option value="SETUJUI_JADWAL" {% if action_type == 'SETUJUI_JADWAL' %}selected{% endif %}>SETUJUI_JADWAL</option>
+        <option value="GANTI_MENTOR" {% if action_type == 'GANTI_MENTOR' %}selected{% endif %}>GANTI_MENTOR</option>
+        <option value="BACKUP_DATABASE" {% if action_type == 'BACKUP_DATABASE' %}selected{% endif %}>BACKUP_DATABASE</option>
+        <option value="RESTORE_DATABASE" {% if action_type == 'RESTORE_DATABASE' %}selected{% endif %}>RESTORE_DATABASE</option>
+      </select>
+      <input type="date" name="start_date" value="{{ start_date or '' }}" class="form-control" style="max-width: 170px;" placeholder="Dari Tanggal">
+      <input type="date" name="end_date" value="{{ end_date or '' }}" class="form-control" style="max-width: 170px;" placeholder="Sampai Tanggal">
+      <button type="submit" class="btn btn-secondary">Filter</button>
+      {% if action_type or start_date or end_date %}
+        <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-secondary">Reset</a>
+      {% endif %}
+    </form>
+
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>Waktu & Tanggal</th>
+            <th>Pengguna</th>
+            <th>Jenis Tindakan</th>
+            <th>Entitas Sasaran</th>
+            <th>Rincian Aktivitas</th>
+            <th>Alamat IP</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+          <tr>
+            <td>
+              <span style="font-size: 12.5px; font-weight: 600;">{{ log.created_at|date_indo }}</span>
+            </td>
+            <td>
+              <strong style="color: var(--navy-primary);">{{ log.user_name or 'Sistem' }}</strong>
+            </td>
+            <td>
+              <span class="badge badge-info" style="font-family: monospace;">{{ log.action_type }}</span>
+            </td>
+            <td>
+              <span style="font-size: 12px; font-weight: 500;">{{ log.target_entity }} (ID: {{ log.target_id or '-' }})</span>
+            </td>
+            <td>
+              <div style="font-size: 13px; color: var(--gray-700); max-width: 400px;">
+                {{ log.details }}
+              </div>
+            </td>
+            <td>
+              <span style="font-family: monospace; font-size: 11px; color: var(--gray-500);">{{ log.ip_address or '127.0.0.1' }}</span>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--gray-500); padding: 24px;">
+              Tidak ada riwayat aktivitas yang sesuai filter.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

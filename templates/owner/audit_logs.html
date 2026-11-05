@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Riwayat Aktivitas (Pemilik){% endblock %}
+{% block page_title %}Supervisi Riwayat Aktivitas Sistem{% endblock %}
+{% block page_subtitle %}Audit trail aktivitas admin dan perubahan data operasional DESI PRIVAT (Mode Baca Saja){% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><span>📜</span> Catatan Audit Trail Aktivitas</div>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>Waktu</th>
+            <th>Pengguna</th>
+            <th>Jenis Aksi</th>
+            <th>Entitas</th>
+            <th>Rincian Aktivitas</th>
+            <th>IP Address</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+          <tr>
+            <td><small>{{ log.created_at|date_indo }}</small></td>
+            <td><strong>{{ log.user_name or 'Sistem' }}</strong></td>
+            <td><span class="badge badge-info" style="font-family: monospace;">{{ log.action_type }}</span></td>
+            <td>{{ log.target_entity }}</td>
+            <td>{{ log.details }}</td>
+            <td><small style="font-family: monospace;">{{ log.ip_address }}</small></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--gray-500);">Tidak ada catatan audit.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

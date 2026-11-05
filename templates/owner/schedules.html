@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Rekap Jadwal & Kalender (Pemilik){% endblock %}
+{% block page_title %}Rekap Jadwal & Kalender Sesi Les{% endblock %}
+{% block page_subtitle %}Pemantauan kalender sesi les, status konfirmasi, dan persetujuan (Mode Baca Pemilik){% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><span>🗓️</span> Rekapitulasi Kalender Jadwal Les</div>
+  </div>
+  <div class="card-body">
+    <form method="GET" action="{{ url_for('owner.schedules') }}" class="filter-bar">
+      <input type="date" name="date" value="{{ date_filter or '' }}" class="form-control" style="max-width: 170px;">
+      <select name="student_id" class="form-select" style="max-width: 180px;">
+        <option value="">-- Semua Siswa --</option>
+        {% for st in students %}
+          <option value="{{ st.id }}" {% if student_filter == st.id|string %}selected{% endif %}>{{ st.full_name }}</option>
+        {% endfor %}
+      </select>
+      <select name="mentor_id" class="form-select" style="max-width: 180px;">
+        <option value="">-- Semua Mentor --</option>
+        {% for m in mentors %}
+          <option value="{{ m.id }}" {% if mentor_filter == m.id|string %}selected{% endif %}>{{ m.full_name }}</option>
+        {% endfor %}
+      </select>
+      <select name="status" class="form-select" style="max-width: 200px;">
+        <option value="">-- Semua Status --</option>
+        <option value="disetujui" {% if status_filter == 'disetujui' %}selected{% endif %}>Resmi Disetujui</option>
+        <option value="menunggu_persetujuan_admin" {% if status_filter == 'menunggu_persetujuan_admin' %}selected{% endif %}>Menunggu Persetujuan</option>
+        <option value="perlu_dijadwalkan_ulang" {% if status_filter == 'perlu_dijadwalkan_ulang' %}selected{% endif %}>Perlu Dijadwalkan Ulang</option>
+      </select>
+      <button type="submit" class="btn btn-secondary">Filter</button>
+      {% if date_filter or student_filter or mentor_filter or status_filter %}
+        <a href="{{ url_for('owner.schedules') }}" class="btn btn-secondary">Reset</a>
+      {% endif %}
+    </form>
+
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>Tanggal Sesi</th>
+            <th>Waktu</th>
+            <th>Siswa & Program</th>
+            <th>Mentor</th>
+            <th>Status Jadwal</th>
+            <th>Konfirmasi Siswa</th>
+            <th>Respons Mentor</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sc in schedules %}
+          <tr>
+            <td><strong>{{ sc.schedule_date|date_indo }}</strong></td>
+            <td>{{ sc.start_time }} - {{ sc.end_time }} WIB</td>
+            <td>
+              <strong>{{ sc.student_name }}</strong><br>
+              <small>{{ sc.program_name }}</small>
+            </td>
+            <td>{{ sc.mentor_name }}</td>
+            <td>{{ sc.status|status_badge|safe }}</td>
+            <td>
+              {% if sc.student_confirmation_status == 'bersedia' %}
+                <span class="badge badge-success">Bersedia</span>
+              {% elif sc.student_confirmation_status == 'tidak_bisa' %}
+                <span class="badge badge-danger">Tidak Bisa</span>
+              {% else %}
+                <span class="badge badge-warning">Menunggu</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if sc.mentor_response_status == 'dikonfirmasi' %}
+                <span class="badge badge-success">Dikonfirmasi</span>
+              {% elif sc.mentor_response_status == 'perlu_mentor_pengganti' %}
+                <span class="badge badge-danger">Perlu Pengganti</span>
+              {% else %}
+                <span class="badge badge-warning">Menunggu</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--gray-500);">Tidak ada jadwal yang sesuai.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

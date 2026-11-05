@@ -1,0 +1,368 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Mentor{% endblock %}
+{% block page_title %}Beranda Mentor Pengajar{% endblock %}
+{% block page_subtitle %}Jadwal mengajar resmi (Fix), absensi otomatis, dan laporan perkembangan belajar siswa{% endblock %}
+
+{% block content %}
+<!-- QUICK ACTION BAR UNTUK HP / TABLET -->
+<div class="card" style="margin-bottom: 24px; background: linear-gradient(135deg, rgba(238, 246, 255, 0.95), rgba(243, 232, 255, 0.9)); border: 1px solid rgba(37, 99, 235, 0.15);">
+  <div class="card-body" style="padding: 16px 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <h4 style="margin: 0; font-size: 16px; color: var(--navy-dark); font-weight: 700;">
+          👋 Selamat Bertugas, Mentor!
+        </h4>
+        <p style="margin: 2px 0 0 0; font-size: 12.5px; color: var(--navy-muted);">
+          Jadwal otomatis fix. Setiap 8 kehadiran valid otomatis terhitung 1 periode pembelajaran siswa.
+        </p>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <a href="{{ url_for('mentor.attendance') }}" class="btn btn-primary btn-sm">
+          📝 Catat Absensi &amp; Materi
+        </a>
+        <a href="{{ url_for('mentor.schedules') }}" class="btn btn-secondary btn-sm">
+          🗓️ Jadwal Mengajar
+        </a>
+        <a href="{{ url_for('mentor.availability') }}" class="btn btn-secondary btn-sm">
+          ⏰ Ketersediaan Waktu
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- KARTU STATISTIK MENTOR -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon">👥</div>
+    <div>
+      <div class="stat-value">{{ total_students }}</div>
+      <div class="stat-label">Siswa Bimbingan Aktif</div>
+    </div>
+  </div>
+
+  <div class="stat-card success">
+    <div class="stat-icon">✅</div>
+    <div>
+      <div class="stat-value">{{ total_sessions }}</div>
+      <div class="stat-label">Total Sesi Terlaksana</div>
+    </div>
+  </div>
+
+  <div class="stat-card info">
+    <div class="stat-icon">🗓️</div>
+    <div>
+      <div class="stat-value">{{ active_schedules_count or 0 }}</div>
+      <div class="stat-label">Jadwal Mengajar Aktif</div>
+    </div>
+  </div>
+
+  <div class="stat-card info">
+    <div class="stat-icon">📅</div>
+    <div>
+      <div class="stat-value">{{ today_schedules|length }}</div>
+      <div class="stat-label">Sesi Hari Ini</div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2-col" style="margin-bottom: 24px;">
+  <!-- JADWAL MENGAJAR HARI INI -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span>📅</span> Sesi Mengajar Hari Ini</div>
+      <a href="{{ url_for('mentor.schedules') }}" class="btn btn-secondary btn-sm">Lihat Semua</a>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <div class="table-responsive">
+        <table class="table-desi">
+          <thead>
+            <tr>
+              <th>Waktu</th>
+              <th>Siswa &amp; Program</th>
+              <th>Status / Keterangan</th>
+              <th>Aksi Pengajaran</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if today_routines %}
+              {% for tr in today_routines %}
+              <tr>
+                <td>
+                  <strong style="color: var(--blue-brand);">{{ tr.start_time }} - {{ tr.end_time }} WIB</strong>
+                  <div style="font-size: 10.5px; color: var(--navy-muted);">Jadwal Rutin {{ tr.day_name }}</div>
+                </td>
+                <td>
+                  <div style="font-weight: 700; color: var(--navy-dark);">{{ tr.student_name }}</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">{{ tr.program_name }}</div>
+                  {% if tr.subject_info %}
+                    <div style="font-size: 10.5px; color: var(--blue-brand);">🎯 {{ tr.subject_info }}</div>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge badge-success">Rutin Hari Ini</span>
+                </td>
+                <td>
+                  <a href="{{ url_for('mentor.attendance', student_id=tr.student_id) }}" class="btn btn-primary btn-sm">
+                    📝 Catat Absensi
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            {% elif today_schedules %}
+              {% for ts in today_schedules %}
+              <tr>
+                <td>
+                  <strong style="color: var(--blue-brand);">{{ ts.start_time }} - {{ ts.end_time }} WIB</strong>
+                </td>
+                <td>
+                  <div style="font-weight: 700; color: var(--navy-dark);">{{ ts.student_name }}</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">{{ ts.program_name }}</div>
+                </td>
+                <td>
+                  {% if ts.attendance_status %}
+                    <span class="badge badge-success">Sudah Absen</span>
+                  {% else %}
+                    <span class="badge badge-neutral">Belum Absen</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    <a href="{{ url_for('mentor.attendance', student_id=ts.student_id, schedule_date=ts.schedule_date) }}" class="btn btn-primary btn-sm">Absen</a>
+                    <a href="{{ url_for('mentor.progress', schedule_id=ts.id) }}" class="btn btn-secondary btn-sm">Catatan</a>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            {% else %}
+            <tr>
+              <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                Tidak ada agenda sesi rutin mengajar pada hari ini.
+              </td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- JADWAL MENGAJAR RUTIN MINGGUAN -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span>🗓️</span> Jadwal Rutin Mingguan Anda</div>
+      <a href="{{ url_for('mentor.schedules') }}" class="btn btn-secondary btn-sm">Kelola Jadwal</a>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <div class="table-responsive">
+        <table class="table-desi">
+          <thead>
+            <tr>
+              <th>Hari &amp; Jam</th>
+              <th>Siswa &amp; Program</th>
+              <th>Fokus Materi</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rs in routine_schedules %}
+            <tr>
+              <td>
+                <strong>{{ rs.day_name }}</strong>
+                <div style="font-size: 11px; color: var(--blue-brand);">{{ rs.start_time }} - {{ rs.end_time }} WIB</div>
+              </td>
+              <td>
+                <div style="font-weight: 600;">{{ rs.student_name }}</div>
+                <div style="font-size: 11px; color: var(--text-muted);">{{ rs.program_name }}</div>
+              </td>
+              <td>
+                <span style="font-size: 11.5px; color: var(--text-body);">{{ rs.subject_info or '-' }}</span>
+              </td>
+              <td>
+                <a href="{{ url_for('mentor.attendance', student_id=rs.student_id) }}" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 3px 8px;">
+                  Absen
+                </a>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                Belum ada jadwal mengajar rutin yang ditetapkan Admin.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2-col" style="margin-bottom: 24px;">
+  <!-- SISWA BIMBINGAN DENGAN SIKLUS PERTEMUAN -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span>🎓</span> Siswa Bimbingan Anda</div>
+      <a href="{{ url_for('mentor.students') }}" class="btn btn-secondary btn-sm">Daftar Lengkap</a>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <div class="table-responsive">
+        <table class="table-desi">
+          <thead>
+            <tr>
+              <th>Nama Siswa</th>
+              <th>Program &amp; Jenjang</th>
+              <th>Siklus Saat Ini</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for st in assigned_students %}
+            <tr>
+              <td>
+                <strong style="color: var(--navy-dark);">{{ st.full_name }}</strong>
+                {% if st.school %}
+                  <div style="font-size: 11px; color: var(--gray-500);">{{ st.school }}</div>
+                {% endif %}
+              </td>
+              <td>
+                <span class="badge badge-info">{{ st.program_name }}</span>
+                {% if st.grade %}
+                  <div style="font-size: 11px; color: var(--gray-500); margin-top: 2px;">Kelas {{ st.grade }}</div>
+                {% endif %}
+              </td>
+              <td>
+                {% if st.meeting_stats %}
+                  <span class="badge badge-success" style="font-size: 11.5px; font-weight: 700;">
+                    {{ st.meeting_stats.next_meeting_str }}
+                  </span>
+                  <div style="font-size: 10.5px; color: var(--navy-muted); margin-top: 3px;">
+                    Total: {{ st.meeting_stats.total_meetings }} pertemuan
+                  </div>
+                {% else %}
+                  <span class="badge badge-secondary">Pertemuan 1 (1)</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="3" style="text-align: center; color: var(--gray-500); padding: 24px;">
+                Belum ada siswa yang ditugaskan kepada Anda.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIWAYAT PERTEMUAN TERAKHIR DIAJAR -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span>📖</span> Riwayat Pertemuan Terakhir</div>
+      <a href="{{ url_for('mentor.attendance') }}" class="btn btn-secondary btn-sm">Semua Riwayat</a>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <div class="table-responsive">
+        <table class="table-desi">
+          <thead>
+            <tr>
+              <th>Tanggal</th>
+              <th>Siswa</th>
+              <th>Pertemuan</th>
+              <th>Materi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rh in recent_history %}
+            <tr>
+              <td>
+                <strong>{{ rh.schedule_date|date_indo }}</strong>
+              </td>
+              <td>{{ rh.student_name }}</td>
+              <td>
+                {% if rh.status == 'hadir' and rh.meeting_number %}
+                  <span class="badge badge-success">Pertemuan {{ rh.meeting_number }} ({{ rh.period_number }})</span>
+                {% else %}
+                  {{ rh.status|status_badge|safe }}
+                {% endif %}
+              </td>
+              <td>
+                <div style="font-size: 12px; color: var(--gray-700); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ rh.topics_covered or rh.notes or '-' }}">
+                  {{ rh.topics_covered or rh.notes or '-' }}
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="4" style="text-align: center; color: var(--gray-500); padding: 24px;">
+                Belum ada catatan pertemuan yang tersimpan.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFIKASI TERBARU -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><span>🔔</span> Pemberitahuan Terbaru</div>
+  </div>
+  <div class="card-body">
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      {% for n in recent_notifs %}
+      <div style="padding: 10px 14px; background: rgba(238, 246, 255, 0.6); border-radius: var(--radius-md); border-left: 3px solid var(--blue-brand);">
+        <strong style="color: var(--navy-dark); font-size: 13px;">{{ n.title }}</strong>
+        <p style="font-size: 12.5px; color: var(--gray-700); margin: 4px 0;">{{ n.message }}</p>
+        <small style="color: var(--gray-500); font-size: 11px;">{{ n.created_at|date_indo }}</small>
+      </div>
+      {% else %}
+      <div style="text-align: center; color: var(--gray-500); padding: 20px;">
+        Tidak ada pemberitahuan baru.
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PENOLAKAN JADWAL MENTOR (DENGAN ALASAN WAJIB) -->
+<div class="modal-overlay" id="rejectModal">
+  <div class="modal-content">
+    <div class="modal-header" style="background: var(--danger-bg);">
+      <div class="modal-title" style="color: #991B1B;">Berhalangan Mengajar</div>
+      <button class="modal-close-btn" onclick="closeModal('rejectModal')">&times;</button>
+    </div>
+    <form method="POST" id="rejectForm" action="">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="response_choice" value="tidak_bisa">
+      <div class="modal-body">
+        <p style="font-size: 13.5px; color: var(--gray-700); margin-bottom: 12px;">
+          Sesi dengan siswa: <strong id="rejectStudentName" style="color: var(--navy-dark);">Siswa</strong> pada <span id="rejectDate"></span>
+        </p>
+        <div class="form-group">
+          <label class="form-label" style="font-weight: 700;">Alasan Berhalangan Mengajar (Wajib Diisi)</label>
+          <textarea class="form-control" name="reason" placeholder="Contoh: Sakit, jadwal ujian mendadak, dinas luar kota..." required rows="4"></textarea>
+          <small style="font-size: 11px; color: var(--danger);">Admin akan menerima notifikasi otomatis untuk menyiapkan mentor pengganti.</small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('rejectModal')">Batal</button>
+        <button type="submit" class="btn btn-danger">Kirim Alasan Berhalangan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openRejectModal(id, studentName, schedDate) {
+    document.getElementById("rejectForm").action = "/mentor/schedules/" + id + "/respond";
+    document.getElementById("rejectStudentName").innerText = studentName;
+    document.getElementById("rejectDate").innerText = schedDate;
+    openModal("rejectModal");
+  }
+</script>
+{% endblock %}

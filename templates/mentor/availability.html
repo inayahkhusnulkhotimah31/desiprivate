@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Ketersediaan Waktu (Mentor){% endblock %}
+{% block page_title %}Pengaturan Ketersediaan Waktu Mengajar{% endblock %}
+{% block page_subtitle %}Atur hari dan jam kosong Anda agar Admin dan sistem dapat menjadwalkan les secara optimal{% endblock %}
+
+{% block content %}
+<div class="grid-profile-layout">
+  <!-- FORM TAMBAH KETERSEDIAAN -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span>⏰</span> Tambah Waktu Luang</div>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('mentor.availability') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="form-group">
+          <label class="form-label">Hari dalam Seminggu</label>
+          <select class="form-select" name="day_of_week" required>
+            <option value="0">Senin</option>
+            <option value="1">Selasa</option>
+            <option value="2">Rabu</option>
+            <option value="3">Kamis</option>
+            <option value="4">Jumat</option>
+            <option value="5">Sabtu</option>
+            <option value="6">Minggu</option>
+          </select>
+        </div>
+
+        <div class="grid-form-2">
+          <div class="form-group">
+            <label class="form-label">Jam Mulai</label>
+            <input type="time" class="form-control" name="start_time" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Jam Selesai</label>
+            <input type="time" class="form-control" name="end_time" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Keterangan Tambahan</label>
+          <input type="text" class="form-control" name="notes" placeholder="Contoh: Khusus Matematika atau Sains">
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;">
+          ➕ Simpan Ketersediaan
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- DAFTAR KETERSEDIAAN -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span>📅</span> Jadwal Ketersediaan Mengajar Anda</div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <div class="table-responsive">
+        <table class="table-desi">
+          <thead>
+            <tr>
+              <th>Hari</th>
+              <th>Rentang Jam</th>
+              <th>Catatan</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% set day_names = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'] %}
+            {% for av in availabilities %}
+            <tr>
+              <td>
+                <strong style="color: var(--navy-primary); font-size: 14px;">
+                  {{ day_names[av.day_of_week] }}
+                </strong>
+              </td>
+              <td>
+                <span class="badge badge-info">{{ av.start_time }} - {{ av.end_time }} WIB</span>
+              </td>
+              <td>{{ av.notes or '-' }}</td>
+              <td>
+                <form method="POST" action="{{ url_for('mentor.delete_availability', avail_id=av.id) }}" onsubmit="return confirm('Hapus slot ketersediaan ini?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="4" style="text-align: center; color: var(--gray-500); padding: 24px;">
+                Anda belum mengatur jadwal ketersediaan waktu mengajar.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

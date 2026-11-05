@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Backup & Restore{% endblock %}
+{% block page_title %}Pencadangan & Pemulihan Database{% endblock %}
+{% block page_subtitle %}Penyimpanan salinan database SQLite secara aman, tervalidasi, dan konsisten{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 24px; border-left: 4px solid var(--blue-brand);">
+  <div class="card-body" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+    <div>
+      <h3 style="font-size: 16px; color: var(--navy-dark); font-weight: 700; margin-bottom: 4px;">Pencadangan Database Manual</h3>
+      <p style="font-size: 13px; color: var(--gray-700); margin: 0;">
+        Buat snapshot salinan utuh dari database aktif saat ini. File backup akan disimpan secara terisolasi di folder <code>backups/</code>.
+      </p>
+    </div>
+    <form method="POST" action="{{ url_for('admin.create_backup_route') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="notes" value="Pencadangan manual oleh administrator">
+      <button type="submit" class="btn btn-primary">
+        💾 Cadangkan Database Sekarang
+      </button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><span>📂</span> Riwayat Berkas Cadangan (Backup Files)</div>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nama Berkas Backup</th>
+            <th>Ukuran Berkas</th>
+            <th>Waktu Pembuatan</th>
+            <th>Dibuat Oleh</th>
+            <th>Catatan</th>
+            <th>Status Berkas</th>
+            <th>Aksi Pemulihan</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in backups %}
+          <tr>
+            <td>#{{ b.id }}</td>
+            <td>
+              <strong style="color: var(--navy-primary); font-family: monospace; font-size: 13px;">
+                {{ b.filename }}
+              </strong>
+            </td>
+            <td>
+              {{ (b.file_size / 1024)|round(1) }} KB
+            </td>
+            <td>{{ b.created_at|date_indo }}</td>
+            <td>{{ b.created_by or 'Sistem' }}</td>
+            <td>
+              <span style="font-size: 12px; color: var(--gray-500);">{{ b.notes or '-' }}</span>
+            </td>
+            <td>
+              {% if b.exists_on_disk %}
+                <span class="badge badge-success">Tersedia di Disk</span>
+              {% else %}
+                <span class="badge badge-danger">Hilang dari Disk</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if b.exists_on_disk %}
+                <button
+                  type="button"
+                  class="btn btn-danger btn-sm"
+                  onclick="openRestoreModal({{ b.id }}, '{{ b.filename }}')"
+                >
+                  🔄 Pulihkan
+                </button>
+              {% else %}
+                <span style="font-size: 11px; color: var(--gray-500);">-</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="8" style="text-align: center; color: var(--gray-500); padding: 24px;">
+              Belum ada berkas backup yang tercatat. Silakan klik tombol di atas untuk membuat cadangan pertama.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL KONFIRMASI RESTORE -->
+<div class="modal-overlay" id="restoreModal">
+  <div class="modal-content">
+    <div class="modal-header" style="background: var(--danger-bg);">
+      <div class="modal-title" style="color: #991B1B;">⚠️ Konfirmasi Pemulihan Database (Restore)</div>
+      <button class="modal-close-btn" onclick="closeModal('restoreModal')">&times;</button>
+    </div>
+    <form method="POST" id="restoreForm" action="">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <div class="alert-box alert-danger" style="margin-bottom: 16px;">
+          <strong>PERINGATAN TINGKAT TINGGI:</strong> Pemulihan database akan menimpa data aktif saat ini dengan data dari file backup yang dipilih.
+        </div>
+        <p style="font-size: 13.5px; color: var(--gray-700); margin-bottom: 12px;">
+          Target Berkas: <strong id="restoreTargetFilename" style="color: var(--navy-dark); font-family: monospace;">desi_backup.db</strong>
+        </p>
+        <p style="font-size: 13px; color: var(--success); font-weight: 600; margin-bottom: 14px;">
+          ✅ Sistem pengamanan aktif: Sebelum restore berjalan, sistem akan secara otomatis membuat cadangan darurat (pre-restore snapshot) dari kondisi database saat ini.
+        </p>
+        <div class="form-group">
+          <label class="form-label" style="font-weight: 700;">Ketik <code>PULIHKAN</code> untuk mengonfirmasi:</label>
+          <input type="text" class="form-control" name="confirm_text" placeholder="Ketik kata PULIHKAN dengan huruf kapital..." required autocomplete="off">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('restoreModal')">Batal</button>
+        <button type="submit" class="btn btn-danger">Ya, Pulihkan Database Sekarang</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openRestoreModal(id, filename) {
+    document.getElementById("restoreForm").action = "/admin/backups/" + id + "/restore";
+    document.getElementById("restoreTargetFilename").innerText = filename;
+    openModal("restoreModal");
+  }
+</script>
+{% endblock %}

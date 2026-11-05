@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Siswa & Program (Pemilik){% endblock %}
+{% block page_title %}Data Siswa & Program Les{% endblock %}
+{% block page_subtitle %}Pengawasan data siswa dan program les privat (Akses Baca Pemilik){% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><span>🎓</span> Daftar Siswa Terdaftar</div>
+  </div>
+  <div class="card-body">
+    <form method="GET" action="{{ url_for('owner.students') }}" class="filter-bar">
+      <input type="text" name="q" value="{{ search }}" placeholder="Cari nama siswa, sekolah..." class="form-control" style="max-width: 300px;">
+      <select name="status" class="form-select" style="max-width: 180px;">
+        <option value="">-- Semua Status --</option>
+        <option value="aktif" {% if status_filter == 'aktif' %}selected{% endif %}>Aktif</option>
+        <option value="nonaktif" {% if status_filter == 'nonaktif' %}selected{% endif %}>Nonaktif</option>
+        <option value="berhenti" {% if status_filter == 'berhenti' %}selected{% endif %}>Berhenti (Arsip)</option>
+      </select>
+      <button type="submit" class="btn btn-secondary">Filter</button>
+      {% if search or status_filter %}
+        <a href="{{ url_for('owner.students') }}" class="btn btn-secondary">Reset</a>
+      {% endif %}
+    </form>
+
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nama Siswa</th>
+            <th>Sekolah & Kelas</th>
+            <th>Wali Murid</th>
+            <th>Program Les Diikuti</th>
+            <th>Status Siswa</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for st in students %}
+          <tr>
+            <td>#{{ st.id }}</td>
+            <td><strong>{{ st.full_name }}</strong></td>
+            <td>{{ st.school or '-' }} ({{ st.grade or '-' }})</td>
+            <td>{{ st.parent_name }} ({{ st.parent_phone }})</td>
+            <td>{{ st.enrolled_programs or '-' }}</td>
+            <td>{{ st.status|status_badge|safe }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--gray-500);">Tidak ada data siswa.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

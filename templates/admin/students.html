@@ -1,0 +1,631 @@
+{% extends "base.html" %}
+{% block title %}Data Siswa & Periode{% endblock %}
+{% block page_title %}Kelola Data Siswa & Siklus Periode{% endblock %}
+{% block page_subtitle %}Pendaftaran, pemantauan pertemuan otomatis (8 pertemuan = 1 periode), dan riwayat belajar DESI PRIVAT{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><span class="card-icon">🎓</span> Daftar Seluruh Siswa & Status Periode</div>
+    <button class="btn btn-primary btn-sm" onclick="openModal('addStudentModal')">
+      ➕ Tambah Siswa Baru
+    </button>
+  </div>
+  <div class="card-body">
+    <!-- FILTER & PENCARIAN -->
+    <form method="GET" action="{{ url_for('admin.students') }}" class="filter-bar">
+      <input
+        type="text"
+        name="q"
+        value="{{ search }}"
+        placeholder="Cari nama siswa, sekolah, atau wali..."
+        class="form-control"
+        style="max-width: 280px;"
+      >
+      <select name="status" class="form-select" style="max-width: 180px;">
+        <option value="">-- Semua Status --</option>
+        <option value="aktif" {% if status_filter == 'aktif' %}selected{% endif %}>Aktif</option>
+        <option value="nonaktif" {% if status_filter == 'nonaktif' %}selected{% endif %}>Nonaktif</option>
+        <option value="berhenti" {% if status_filter == 'berhenti' %}selected{% endif %}>Berhenti (Arsip)</option>
+      </select>
+      <select name="program_id" class="form-select" style="max-width: 220px;">
+        <option value="">-- Semua Program --</option>
+        {% for p in programs %}
+          <option value="{{ p.id }}" {% if program_filter == p.id|string %}selected{% endif %}>{{ p.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-secondary">Filter</button>
+      {% if search or status_filter or program_filter %}
+        <a href="{{ url_for('admin.students') }}" class="btn btn-secondary">Reset</a>
+      {% endif %}
+    </form>
+
+    <!-- TABEL DATA SISWA -->
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nama Siswa</th>
+            <th>Sekolah & Kelas</th>
+            <th>Wali Murid</th>
+            <th>Program Les</th>
+            <th>Riwayat Pertemuan & Periode</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for st in students %}
+          <tr>
+            <td><strong>#{{ st.id }}</strong></td>
+            <td>
+              <a href="{{ url_for('admin.student_detail', student_id=st.id) }}" style="font-weight: 700; color: var(--text-main); text-decoration: none;">
+                {{ st.full_name }}
+              </a>
+              {% if st.status == 'berhenti' %}
+                <span style="font-size: 10.5px; color: var(--text-muted); display: block;">(Data Diarsipkan)</span>
+              {% endif %}
+            </td>
+            <td>
+              <div>{{ st.school or '-' }}</div>
+              <div style="font-size: 11px; color: var(--text-muted);">{{ st.grade or '-' }}</div>
+            </td>
+            <td>
+              <div>{{ st.parent_name }}</div>
+              <div style="font-size: 11px; color: var(--blue-brand);">📞 {{ st.parent_phone }}</div>
+            </td>
+            <td>
+              <span style="font-size: 12px; font-weight: 600; color: var(--text-main);">{{ st.enrolled_programs or 'Belum ada program' }}</span>
+            </td>
+            <td>
+              {% if st.meeting_stats and st.meeting_stats.total_completed > 0 %}
+                <div style="display: flex; flex-direction: column; gap: 3px;">
+                  <div>
+                    <span class="badge badge-period" title="Pertemuan terakhir yang telah selesai dihadiri">
+                      Terakhir: {{ st.meeting_stats.last_meeting_str }}
+                    </span>
+                  </div>
+                  <div style="font-size: 11px; color: var(--blue-brand); font-weight: 600;">
+                    👉 Berikutnya: {{ st.meeting_stats.next_meeting_str }}
+                  </div>
+                  <div style="font-size: 10.5px; color: var(--text-muted);">
+                    Total: {{ st.meeting_stats.total_completed }} pertemuan
+                    {% if st.meeting_stats.initial_offset > 0 %}
+                      ({{ st.meeting_stats.initial_offset }} awal + {{ st.meeting_stats.valid_attendance_count }} sistem)
+                    {% endif %}
+                  </div>
+                </div>
+              {% else %}
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                  <span class="badge badge-secondary">Belum ada pertemuan</span>
+                  <div style="font-size: 11px; color: var(--blue-brand); font-weight: 600;">
+                    👉 Berikutnya: Pertemuan 1 (1)
+                  </div>
+                </div>
+              {% endif %}
+            </td>
+            <td>
+              {{ st.status|status_badge|safe }}
+            </td>
+            <td>
+              <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                <a href="{{ url_for('admin.student_detail', student_id=st.id) }}" class="btn btn-secondary btn-sm" title="Lihat Profil & Riwayat">
+                  🔍 Detail
+                </a>
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  onclick="openInitialMeetingModal({{ st.id }}, '{{ st.full_name }}', {{ st.meeting_stats.initial_offset if st.meeting_stats else 0 }}, '{{ st.meeting_stats.offset_notes or '' if st.meeting_stats else '' }}')"
+                  title="Atur Baseline Riwayat Siswa Lama"
+                  style="border-color: var(--lavender);"
+                >
+                  ⚙️ Riwayat
+                </button>
+                <form method="POST" action="{{ url_for('admin.archive_student', student_id=st.id) }}" onsubmit="return confirm('Apakah Anda yakin ingin mengubah status aktif/arsip siswa ini?');" style="display:inline;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  {% if st.status == 'aktif' %}
+                    <input type="hidden" name="action" value="berhenti">
+                    <button type="submit" class="btn btn-warning btn-sm" title="Arsipkan / Set Berhenti">Arsip</button>
+                  {% else %}
+                    <input type="hidden" name="action" value="aktif">
+                    <button type="submit" class="btn btn-success btn-sm" title="Aktifkan Kembali">Aktifkan</button>
+                  {% endif %}
+                </form>
+                <button
+                  type="button"
+                  class="btn btn-danger btn-sm"
+                  onclick="confirmDeleteStudent({{ st.id }}, '{{ st.full_name }}')"
+                  title="Hapus Siswa"
+                >
+                  🗑️
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 28px;">
+              Tidak ada data siswa yang cocok dengan filter pencarian.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================= -->
+<!-- MODAL TAMBAH SISWA BARU -->
+<!-- ======================================================= -->
+<div class="modal-overlay" id="addStudentModal">
+  <div class="modal-dialog" style="max-width: 640px;">
+    <div class="modal-header">
+      <div class="modal-title">Pendaftaran Siswa Baru</div>
+      <button class="modal-close-btn" onclick="closeModal('addStudentModal')">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('admin.create_student') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label class="form-label" style="margin-bottom: 0;">Data Orang Tua / Wali Murid (Wajib)</label>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnToggleNewParent" onclick="toggleNewParentInput()" style="font-size: 11px; padding: 3px 8px;">
+              ➕ Wali Baru
+            </button>
+          </div>
+          <!-- PILIH WALI YANG SUDAH ADA -->
+          <div id="existingParentDiv">
+            <select class="form-select" id="stParentSelect" name="parent_id">
+              <option value="">-- Pilih Orang Tua/Wali Terdaftar --</option>
+              {% for pr in parents %}
+                <option value="{{ pr.id }}" {% if loop.first and parents|length == 1 %}selected{% endif %}>{{ pr.full_name }} ({{ pr.phone }})</option>
+              {% endfor %}
+            </select>
+            <small style="font-size: 11px; color: var(--text-muted);">Satu wali murid dapat terhubung dengan beberapa siswa (kakak-beradik).</small>
+          </div>
+          <!-- ATAU INPUT WALI BARU LANGSUNG -->
+          <div id="newParentDiv" style="display: none; background: rgba(238, 246, 255, 0.7); border: 1px dashed var(--blue-brand); border-radius: var(--radius-md); padding: 12px; margin-top: 6px;">
+            <div class="grid-form-2" style="gap: 10px;">
+              <div>
+                <label style="font-size: 11.5px; font-weight: 600; color: var(--navy-dark);">Nama Orang Tua/Wali Baru</label>
+                <input type="text" class="form-control" name="new_parent_name" id="newParentName" placeholder="Contoh: Ibu Satriana">
+              </div>
+              <div>
+                <label style="font-size: 11.5px; font-weight: 600; color: var(--navy-dark);">No. WhatsApp / HP</label>
+                <input type="text" class="form-control" name="new_parent_phone" id="newParentPhone" placeholder="Contoh: 081244388891">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="stNameInput">Nama Lengkap Siswa <span style="color: var(--danger);">*</span></label>
+          <input type="text" class="form-control" id="stNameInput" name="full_name" placeholder="Contoh: Muhammad Kevin" required>
+        </div>
+
+        <div class="grid-form-2">
+          <div class="form-group">
+            <label class="form-label" for="stSchoolInput">Asal Sekolah</label>
+            <input type="text" class="form-control" id="stSchoolInput" name="school" placeholder="Contoh: SMPN 1 Sleman">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="stGradeInput">Tingkat / Kelas</label>
+            <input type="text" class="form-control" id="stGradeInput" name="grade" placeholder="Contoh: Kelas 8 SMP">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="stBirthInput">Tanggal Lahir Siswa</label>
+          <input type="date" class="form-control" id="stBirthInput" name="birth_date">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="stAddressInput">Alamat Tinggal Siswa</label>
+          <textarea class="form-control" id="stAddressInput" name="address" placeholder="Alamat lengkap tempat pelaksanaan les privat..."></textarea>
+        </div>
+
+        <div class="grid-form-2">
+          <div class="form-group">
+            <label class="form-label">Program Les yang Dipilih <span style="color: var(--danger);">*</span></label>
+            <select class="form-select" name="program_id" required>
+              <option value="">-- Pilih Program Les --</option>
+              {% for p in programs %}
+                <option value="{{ p.id }}">{{ p.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Mentor yang Ditugaskan <span style="color: var(--danger);">*</span></label>
+            <select class="form-select" name="mentor_id" required>
+              <option value="">-- Pilih Mentor --</option>
+              {% for m in mentors %}
+                <option value="{{ m.id }}">{{ m.full_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Informasi Mata Pelajaran / Jenis Les Sesuai Program</label>
+          <input type="text" class="form-control" name="subject_info" placeholder="Contoh: Matematika Aljabar & Geometri, Persiapan Olimpiade, Mengaji Iqra 3...">
+          <small style="font-size: 11px; color: var(--text-muted);">Materi spesifik atau target fokus pembelajaran yang akan dijalani.</small>
+        </div>
+
+        <!-- JADWAL RUTIN MINGGUAN (LANGSUNG DITETAPKAN ADMIN) -->
+        <div style="background: var(--blue-ultra-soft); border: 1.5px solid var(--blue-brand); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <label class="form-label" style="font-weight: 700; color: var(--navy-dark); margin-bottom: 0;">
+              🗓️ Jadwal Les Rutin Mingguan
+            </label>
+            <span class="badge badge-success">Langsung Aktif</span>
+          </div>
+          <p style="font-size: 11.5px; color: var(--text-body); margin-bottom: 12px;">
+            Jadwal les bersifat rutin dan berulang setiap minggu. Admin dapat menetapkan <strong>lebih dari satu hari dengan jam yang berbeda</strong> untuk satu siswa (Contoh: Sabtu 09.00–10.30 &amp; Minggu 13.00–14.30). Tidak ada pembuatan tanggal pertemuan otomatis di awal; periode dihitung dari absensi kehadiran mentor.
+          </p>
+
+          <div id="routineSlotsContainer">
+            <!-- SLOT RUTIN 1 -->
+            <div class="routine-slot-item">
+              <div>
+                <label style="font-size: 11.5px; font-weight: 600; color: var(--navy-dark);">Hari Les</label>
+                <select class="form-select form-select-sm" name="routine_day[]">
+                  <option value="0">Senin</option>
+                  <option value="1">Selasa</option>
+                  <option value="2">Rabu</option>
+                  <option value="3">Kamis</option>
+                  <option value="4">Jumat</option>
+                  <option value="5" selected>Sabtu</option>
+                  <option value="6">Minggu</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size: 11.5px; font-weight: 600; color: var(--navy-dark);">Jam Mulai</label>
+                <input type="time" class="form-control form-control-sm" name="routine_start[]" value="09:00">
+              </div>
+              <div>
+                <label style="font-size: 11.5px; font-weight: 600; color: var(--navy-dark);">Jam Selesai</label>
+                <input type="time" class="form-control form-control-sm" name="routine_end[]" value="10:30">
+              </div>
+              <div>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="removeRoutineSlotRow(this)" title="Hapus slot hari ini" style="padding: 6px 10px;">❌</button>
+              </div>
+            </div>
+          </div>
+
+          <button type="button" class="btn btn-secondary btn-sm" onclick="addRoutineSlotRow()" style="margin-top: 4px;">
+            ➕ Tambah Hari Les Lainnya
+          </button>
+        </div>
+
+        <!-- RIWAYAT AWAL PERTEMUAN (UNTUK SISWA LAMA) -->
+        <div style="background: var(--purple-badge-bg); border: 1px solid var(--purple-badge-border); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <label class="form-label" style="font-weight: 700; color: var(--purple-badge); margin-bottom: 0;">
+              ⚙️ Riwayat Pertemuan Awal (Khusus Siswa Lama)
+            </label>
+            <span class="badge badge-purple">Opsional</span>
+          </div>
+          <p style="font-size: 11.5px; color: var(--text-body); margin-bottom: 8px;">
+            Jika siswa sudah pernah les di DESI PRIVAT sebelum sistem ini digunakan, masukkan total pertemuan yang telah diselesaikan. Biarkan <strong>0</strong> untuk siswa baru agar dimulai dari <strong>Pertemuan 1 (Periode 1)</strong>.
+          </p>
+          <input type="number" class="form-control" name="initial_meeting_offset" value="0" min="0" placeholder="0">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="stNotesInput">Catatan Tambahan</label>
+          <textarea class="form-control" id="stNotesInput" name="notes" placeholder="Kebutuhan belajar, target nilai..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('addStudentModal')">Batal</button>
+        <button type="submit" class="btn btn-primary">Simpan Siswa</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ======================================================= -->
+<!-- MODAL PENGATURAN RIWAYAT AWAL PERTEMUAN (SISWA LAMA) -->
+<!-- ======================================================= -->
+<div class="modal-overlay" id="initialMeetingModal">
+  <div class="modal-dialog" style="max-width: 540px;">
+    <div class="modal-header">
+      <div class="modal-title">⚙️ Pengaturan Riwayat Awal Pertemuan</div>
+      <button class="modal-close-btn" onclick="closeModal('initialMeetingModal')">&times;</button>
+    </div>
+    <form method="POST" id="initialMeetingForm" action="" onsubmit="return confirm('Apakah Anda yakin ingin memperbarui riwayat awal pertemuan siswa ini? Penomoran sesi akan disinkronkan secara otomatis.');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <div class="alert-box alert-info" style="font-size: 12px; margin-bottom: 14px;">
+          <div>
+            Fitur ini digunakan untuk <strong>siswa lama</strong> yang telah memiliki riwayat pertemuan sebelum sistem DESI PRIVAT ini digunakan, agar nomor pertemuan dan periode dapat melanjutkan siklus aslinya secara akurat.
+          </div>
+        </div>
+
+        <p style="font-size: 13.5px; margin-bottom: 14px;">
+          Siswa: <strong id="modalStudentName" style="color: var(--text-main);">-</strong>
+        </p>
+
+        <!-- PILIHAN CARA INPUT -->
+        <div class="form-group">
+          <label class="form-label">Metode Input Baseline</label>
+          <div style="display: flex; gap: 14px; margin-bottom: 10px;">
+            <label style="font-size: 12.5px; display: flex; align-items: center; gap: 6px;">
+              <input type="radio" name="input_mode" value="total" checked onchange="toggleInitialInputMode('total')">
+              Input Total Pertemuan Langsung
+            </label>
+            <label style="font-size: 12.5px; display: flex; align-items: center; gap: 6px;">
+              <input type="radio" name="input_mode" value="period_meeting" onchange="toggleInitialInputMode('period_meeting')">
+              Berdasarkan Periode & Pertemuan
+            </label>
+          </div>
+        </div>
+
+        <!-- MODE 1: TOTAL LANGSUNG -->
+        <div id="modeTotalContainer" class="form-group">
+          <label class="form-label" for="inputInitialOffset">Total Pertemuan Diselesaikan Sebelum Sistem</label>
+          <input
+            type="number"
+            class="form-control"
+            id="inputInitialOffset"
+            name="initial_offset"
+            value="0"
+            min="0"
+            oninput="recalculateMeetingPreview()"
+          >
+          <small style="color: var(--text-muted); font-size: 11px;">Contoh: Jika sudah menyelesaikan 40 pertemuan, isi 40.</small>
+        </div>
+
+        <!-- MODE 2: PERIODE & PERTEMUAN -->
+        <div id="modePeriodMeetingContainer" style="display: none; margin-bottom: 16px;">
+          <div class="grid-form-2">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="selectLastPeriod">Periode Terakhir</label>
+              <input
+                type="number"
+                class="form-control"
+                id="selectLastPeriod"
+                name="last_period"
+                value="1"
+                min="1"
+                oninput="recalculateMeetingPreview()"
+              >
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="selectLastMeeting">Pertemuan Terakhir (1-8)</label>
+              <input
+                type="number"
+                class="form-control"
+                id="selectLastMeeting"
+                name="last_meeting"
+                value="1"
+                min="0"
+                max="8"
+                oninput="recalculateMeetingPreview()"
+              >
+            </div>
+          </div>
+          <small style="color: var(--text-muted); font-size: 11px; display: block; margin-top: 4px;">
+            Contoh: Siswa sudah menyelesaikan 3 pertemuan di Periode 4 &rarr; Masukkan Periode 4 dan Pertemuan 3.
+          </small>
+        </div>
+
+        <!-- KOTAK LIVE PREVIEW HASIL HITUNGAN -->
+        <div style="background: var(--blue-ultra-soft); border: 1px solid var(--border-blue); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
+          <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--blue-brand); letter-spacing: 0.5px; margin-bottom: 6px;">
+            Hasil Perhitungan Otomatis:
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 13px;">
+            <span>Total Pertemuan Baseline:</span>
+            <strong id="previewTotalCount" style="color: var(--text-main);">0 pertemuan</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 13px;">
+            <span>Status Pertemuan Terakhir:</span>
+            <span class="badge badge-secondary" id="previewLastMeeting">Belum ada</span>
+          </div>
+          <div style="border-top: 1px dashed var(--border-subtle); padding-top: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <strong style="font-size: 13.5px; color: var(--text-heading);">Pertemuan Selanjutnya di Sistem:</strong>
+            <span class="badge badge-period" id="previewNextMeeting" style="font-size: 13px;">Pertemuan 1 (1)</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="inputOffsetNotes">Catatan / Keterangan Penyesuaian</label>
+          <input
+            type="text"
+            class="form-control"
+            id="inputOffsetNotes"
+            name="notes"
+            placeholder="Contoh: Migrasi pembukuan manual les tahun 2025"
+          >
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('initialMeetingModal')">Batal</button>
+        <button type="submit" class="btn btn-primary">Simpan Riwayat Awal</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ======================================================= -->
+<!-- MODAL HAPUS / ARSIP SISWA -->
+<!-- ======================================================= -->
+<div class="modal-overlay" id="deleteStudentModal">
+  <div class="modal-dialog" style="max-width: 500px;">
+    <div class="modal-header">
+      <div class="modal-title">🗑️ Hapus atau Arsipkan Siswa</div>
+      <button class="modal-close-btn" onclick="closeModal('deleteStudentModal')">&times;</button>
+    </div>
+    <form method="POST" id="deleteStudentForm" action="">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <p style="font-size: 13.5px; margin-bottom: 14px;">
+          Anda memilih untuk mengelola siswa: <strong id="deleteStudentName" style="color: var(--text-main);">-</strong>
+        </p>
+
+        <div class="form-group">
+          <label class="form-label">Pilih Tindakan:</label>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <label style="display: flex; gap: 8px; align-items: flex-start; cursor: pointer; padding: 10px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--blue-ultra-soft);">
+              <input type="radio" name="action_type" value="archive" checked style="margin-top: 3px;">
+              <div>
+                <strong style="color: var(--text-heading); font-size: 13px;">Arsipkan Saja (Direkomendasikan)</strong>
+                <div style="font-size: 11px; color: var(--text-muted);">Siswa dinonaktifkan, tetapi seluruh riwayat absensi, pertemuan, dan laporan tetap tersimpan aman.</div>
+              </div>
+            </label>
+            <label style="display: flex; gap: 8px; align-items: flex-start; cursor: pointer; padding: 10px; border: 1px solid var(--danger-border); border-radius: var(--radius-sm); background: var(--danger-bg);">
+              <input type="radio" name="action_type" value="auto_delete" style="margin-top: 3px;">
+              <div>
+                <strong style="color: var(--danger); font-size: 13px;">Hapus Permanen</strong>
+                <div style="font-size: 11px; color: var(--danger);">Menghapus siswa beserta seluruh jadwal dan data terkait secara tuntas.</div>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('deleteStudentModal')">Batal</button>
+        <button type="submit" class="btn btn-danger">Lanjutkan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  let isNewParent = false;
+  function toggleNewParentInput() {
+    isNewParent = !isNewParent;
+    const existingDiv = document.getElementById("existingParentDiv");
+    const newDiv = document.getElementById("newParentDiv");
+    const btn = document.getElementById("btnToggleNewParent");
+    const parentSelect = document.getElementById("stParentSelect");
+    const newName = document.getElementById("newParentName");
+    const newPhone = document.getElementById("newParentPhone");
+
+    if (isNewParent) {
+      existingDiv.style.display = "none";
+      newDiv.style.display = "block";
+      btn.innerText = "📋 Pilih Wali Terdaftar";
+      if (parentSelect) parentSelect.value = "";
+      if (newName) newName.setAttribute("required", "required");
+      if (newPhone) newPhone.setAttribute("required", "required");
+    } else {
+      existingDiv.style.display = "block";
+      newDiv.style.display = "none";
+      btn.innerText = "➕ Wali Baru";
+      if (newName) newName.removeAttribute("required");
+      if (newPhone) newPhone.removeAttribute("required");
+    }
+  }
+
+  function addRoutineSlotRow() {
+    const container = document.getElementById("routineSlotsContainer");
+    const row = document.createElement("div");
+    row.className = "routine-slot-item";
+    row.innerHTML = `
+      <div>
+        <label style="font-size: 11.5px; font-weight: 600; color: var(--navy-dark);">Hari Les</label>
+        <select class="form-select form-select-sm" name="routine_day[]">
+          <option value="0">Senin</option>
+          <option value="1">Selasa</option>
+          <option value="2">Rabu</option>
+          <option value="3">Kamis</option>
+          <option value="4">Jumat</option>
+          <option value="5">Sabtu</option>
+          <option value="6" selected>Minggu</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size: 11.5px; font-weight: 600; color: var(--navy-dark);">Jam Mulai</label>
+        <input type="time" class="form-control form-control-sm" name="routine_start[]" value="13:00">
+      </div>
+      <div>
+        <label style="font-size: 11.5px; font-weight: 600; color: var(--navy-dark);">Jam Selesai</label>
+        <input type="time" class="form-control form-control-sm" name="routine_end[]" value="14:30">
+      </div>
+      <div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="removeRoutineSlotRow(this)" title="Hapus slot hari ini" style="padding: 6px 10px;">❌</button>
+      </div>
+    `;
+    container.appendChild(row);
+  }
+
+  function removeRoutineSlotRow(btn) {
+    const container = document.getElementById("routineSlotsContainer");
+    if (container.querySelectorAll(".routine-slot-item").length <= 1) {
+      alert("Minimal satu slot jadwal rutin harus tetap ada.");
+      return;
+    }
+    btn.closest(".routine-slot-item").remove();
+  }
+
+  function openInitialMeetingModal(studentId, studentName, currentOffset, notes) {
+    document.getElementById("modalStudentName").innerText = studentName;
+    document.getElementById("initialMeetingForm").action = "/admin/students/" + studentId + "/initial-meetings";
+    document.getElementById("inputInitialOffset").value = currentOffset || 0;
+    document.getElementById("inputOffsetNotes").value = notes || "";
+    toggleInitialInputMode("total");
+    recalculateMeetingPreview();
+    openModal("initialMeetingModal");
+  }
+
+  function toggleInitialInputMode(mode) {
+    const totalCont = document.getElementById("modeTotalContainer");
+    const pmCont = document.getElementById("modePeriodMeetingContainer");
+    if (mode === "total") {
+      totalCont.style.display = "block";
+      pmCont.style.display = "none";
+    } else {
+      totalCont.style.display = "none";
+      pmCont.style.display = "block";
+    }
+    recalculateMeetingPreview();
+  }
+
+  function recalculateMeetingPreview() {
+    const mode = document.querySelector("input[name='input_mode']:checked") ? document.querySelector("input[name='input_mode']:checked").value : "total";
+    let total = 0;
+    if (mode === "period_meeting") {
+      const p = parseInt(document.getElementById("selectLastPeriod").value) || 1;
+      const m = parseInt(document.getElementById("selectLastMeeting").value) || 0;
+      total = Math.max(0, (p - 1) * 8 + m);
+      document.getElementById("inputInitialOffset").value = total;
+    } else {
+      total = parseInt(document.getElementById("inputInitialOffset").value) || 0;
+      if (total > 0) {
+        document.getElementById("selectLastPeriod").value = Math.floor((total - 1) / 8) + 1;
+        document.getElementById("selectLastMeeting").value = ((total - 1) % 8) + 1;
+      } else {
+        document.getElementById("selectLastPeriod").value = 1;
+        document.getElementById("selectLastMeeting").value = 0;
+      }
+    }
+
+    document.getElementById("previewTotalCount").innerText = total + " pertemuan";
+
+    if (total > 0) {
+      const lastP = Math.floor((total - 1) / 8) + 1;
+      const lastM = ((total - 1) % 8) + 1;
+      document.getElementById("previewLastMeeting").innerText = "Pertemuan " + lastM + " (" + lastP + ")";
+      document.getElementById("previewLastMeeting").className = "badge badge-period";
+    } else {
+      document.getElementById("previewLastMeeting").innerText = "Belum ada";
+      document.getElementById("previewLastMeeting").className = "badge badge-secondary";
+    }
+
+    const nextTotal = total + 1;
+    const nextP = Math.floor((nextTotal - 1) / 8) + 1;
+    const nextM = ((nextTotal - 1) % 8) + 1;
+    document.getElementById("previewNextMeeting").innerText = "Pertemuan " + nextM + " (" + nextP + ")";
+  }
+
+  function confirmDeleteStudent(studentId, studentName) {
+    document.getElementById("deleteStudentName").innerText = studentName;
+    document.getElementById("deleteStudentForm").action = "/admin/students/" + studentId + "/delete";
+    openModal("deleteStudentModal");
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Rekap Perkembangan Siswa (Pemilik){% endblock %}
+{% block page_title %}Supervisi Perkembangan Siswa{% endblock %}
+{% block page_subtitle %}Evaluasi materi yang diajarkan, penguasaan kompetensi, dan capaian siswa DESI PRIVAT{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><span>📈</span> Laporan Perkembangan Belajar Siswa</div>
+  </div>
+  <div class="card-body">
+    {% for prog in progress_list %}
+    <div class="progress-card">
+      <div class="progress-header">
+        <div>
+          <strong style="color: var(--navy-primary); font-size: 15px;">{{ prog.student_name }}</strong>
+          <span style="font-size: 13px; color: var(--gray-700);"> &bull; {{ prog.program_name }}</span>
+        </div>
+        <div style="font-size: 12px; color: var(--gray-500);">
+          Mentor: {{ prog.mentor_name }} &bull; Sesi: {{ prog.session_date|date_indo }}
+        </div>
+      </div>
+      <div class="progress-grid">
+        <div class="progress-item-box">
+          <div class="progress-item-label">Materi yang Dipelajari</div>
+          <div class="progress-item-text">{{ prog.topics_covered }}</div>
+        </div>
+        <div class="progress-item-box success">
+          <div class="progress-item-label">Kemampuan Telah Dikuasai</div>
+          <div class="progress-item-text">{{ prog.skills_mastered or '-' }}</div>
+        </div>
+        <div class="progress-item-box warning">
+          <div class="progress-item-label">Kendala & Kesulitan</div>
+          <div class="progress-item-text">{{ prog.difficulties or '-' }}</div>
+        </div>
+        <div class="progress-item-box info">
+          <div class="progress-item-label">Rekomendasi Tindak Lanjut</div>
+          <div class="progress-item-text">{{ prog.recommendations or '-' }}</div>
+        </div>
+      </div>
+      {% if prog.additional_notes %}
+      <div style="margin-top: 10px; font-size: 12px; color: var(--gray-500); font-style: italic;">
+        Catatan Tambahan: {{ prog.additional_notes }}
+      </div>
+      {% endif %}
+    </div>
+    {% else %}
+    <div style="text-align: center; color: var(--gray-500); padding: 24px;">
+      Belum ada laporan perkembangan belajar yang tercatat di sistem.
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

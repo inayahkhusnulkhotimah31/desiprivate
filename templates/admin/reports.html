@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block title %}Laporan & Ekspor Data{% endblock %}
+{% block page_title %}Laporan & Ekspor Data Operasional{% endblock %}
+{% block page_subtitle %}Rekapitulasi jadwal, absensi, perkembangan belajar, dan riwayat pergantian mentor{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><span>📑</span> Konfigurasi & Filter Laporan</div>
+    <div style="display: flex; gap: 8px;">
+      <a
+        href="{{ url_for('admin.export_report_csv', type=report_type, start_date=start_date, end_date=end_date, student_id=student_id, mentor_id=mentor_id, program_id=program_id, status=status) }}"
+        class="btn btn-success btn-sm"
+      >
+        📥 Ekspor Data ke CSV
+      </a>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="window.print()">
+        🖨️ Cetak Laporan
+      </button>
+    </div>
+  </div>
+  <div class="card-body">
+    <!-- PILIHAN TIPE LAPORAN & FILTER -->
+    <form method="GET" action="{{ url_for('admin.reports') }}" class="filter-bar">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <label class="form-label" style="margin: 0; font-size: 12px;">Jenis Laporan</label>
+        <select name="type" class="form-select" style="min-width: 220px;" onchange="this.form.submit()">
+          <option value="schedules" {% if report_type == 'schedules' %}selected{% endif %}>Rekap Sesi Jadwal</option>
+          <option value="attendance" {% if report_type == 'attendance' %}selected{% endif %}>Rekap Kehadiran (Absensi)</option>
+          <option value="progress" {% if report_type == 'progress' %}selected{% endif %}>Rekap Perkembangan Siswa</option>
+          <option value="replacements" {% if report_type == 'replacements' %}selected{% endif %}>Riwayat Pergantian Mentor</option>
+          <option value="students" {% if report_type == 'students' %}selected{% endif %}>Daftar Siswa Lengkap</option>
+          <option value="mentors" {% if report_type == 'mentors' %}selected{% endif %}>Daftar Beban Mentor</option>
+        </select>
+      </div>
+
+      {% if report_type in ('schedules', 'attendance') %}
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <label class="form-label" style="margin: 0; font-size: 12px;">Dari Tanggal</label>
+        <input type="date" name="start_date" value="{{ start_date or '' }}" class="form-control" style="max-width: 160px;">
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <label class="form-label" style="margin: 0; font-size: 12px;">Sampai Tanggal</label>
+        <input type="date" name="end_date" value="{{ end_date or '' }}" class="form-control" style="max-width: 160px;">
+      </div>
+      {% endif %}
+
+      {% if report_type in ('schedules', 'attendance', 'progress') %}
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <label class="form-label" style="margin: 0; font-size: 12px;">Filter Siswa</label>
+        <select name="student_id" class="form-select" style="max-width: 180px;">
+          <option value="">-- Semua Siswa --</option>
+          {% for st in students %}
+            <option value="{{ st.id }}" {% if student_id == st.id|string %}selected{% endif %}>{{ st.full_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <label class="form-label" style="margin: 0; font-size: 12px;">Filter Mentor</label>
+        <select name="mentor_id" class="form-select" style="max-width: 180px;">
+          <option value="">-- Semua Mentor --</option>
+          {% for m in mentors %}
+            <option value="{{ m.id }}" {% if mentor_id == m.id|string %}selected{% endif %}>{{ m.full_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
+      <div style="align-self: flex-end;">
+        <button type="submit" class="btn btn-primary">Terapkan Filter</button>
+      </div>
+    </form>
+
+    <!-- DATA TABEL LAPORAN -->
+    <div class="table-responsive">
+      {% if report_type == 'schedules' %}
+        <table class="table-desi">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Tanggal & Jam</th>
+              <th>Siswa & Program</th>
+              <th>Mentor</th>
+              <th>Status Jadwal</th>
+              <th>Kehadiran</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in report_data %}
+            <tr>
+              <td>#{{ r.id }}</td>
+              <td><strong>{{ r.schedule_date|date_indo }}</strong> ({{ r.start_time }}-{{ r.end_time }})</td>
+              <td><strong>{{ r.student_name }}</strong><br><small>{{ r.program_name }}</small></td>
+              <td>{{ r.mentor_name }}</td>
+              <td>{{ r.status|status_badge|safe }}</td>
+              <td>{{ r.attendance_status|status_badge|safe if r.attendance_status else '<span class="badge badge-secondary">Belum Absen</span>'|safe }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--gray-500);">Tidak ada data jadwal yang sesuai.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+      {% elif report_type == 'attendance' %}
+        <table class="table-desi">
+          <thead>
+            <tr>
+              <th>Tanggal Sesi</th>
+              <th>Siswa</th>
+              <th>Mentor</th>
+              <th>Program</th>
+              <th>Status Kehadiran</th>
+              <th>Waktu Dicatat</th>
+              <th>Catatan</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in report_data %}
+            <tr>
+              <td><strong>{{ r.schedule_date|date_indo }}</strong> ({{ r.start_time }})</td>
+              <td><strong>{{ r.student_name }}</strong></td>
+              <td>{{ r.mentor_name }}</td>
+              <td>{{ r.program_name }}</td>
+              <td>{{ r.attendance_status|status_badge|safe }}</td>
+              <td><small>{{ r.recorded_at|date_indo }}</small></td>
+              <td>{{ r.notes or '-' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--gray-500);">Tidak ada catatan absensi yang sesuai.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+      {% elif report_type == 'progress' %}
+        <table class="table-desi">
+          <thead>
+            <tr>
+              <th>Tanggal Sesi</th>
+              <th>Siswa & Mentor</th>
+              <th>Program</th>
+              <th>Materi Dipelajari</th>
+              <th>Kemampuan Dikuasai</th>
+              <th>Kesulitan</th>
+              <th>Rekomendasi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in report_data %}
+            <tr>
+              <td><strong>{{ r.session_date|date_indo }}</strong></td>
+              <td><strong>{{ r.student_name }}</strong><br><small>Mentor: {{ r.mentor_name }}</small></td>
+              <td>{{ r.program_name }}</td>
+              <td>{{ r.topics_covered }}</td>
+              <td><span style="color: #065F46;">{{ r.skills_mastered or '-' }}</span></td>
+              <td><span style="color: #991B1B;">{{ r.difficulties or '-' }}</span></td>
+              <td>{{ r.recommendations or '-' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--gray-500);">Tidak ada laporan perkembangan yang sesuai.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+      {% elif report_type == 'replacements' %}
+        <table class="table-desi">
+          <thead>
+            <tr>
+              <th>Waktu Pergantian</th>
+              <th>Tanggal Sesi</th>
+              <th>Siswa</th>
+              <th>Mentor Awal</th>
+              <th>Mentor Pengganti</th>
+              <th>Alasan Pergantian</th>
+              <th>Petugas Admin</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in report_data %}
+            <tr>
+              <td><small>{{ r.created_at|date_indo }}</small></td>
+              <td><strong>{{ r.schedule_date|date_indo }}</strong> ({{ r.start_time }})</td>
+              <td><strong>{{ r.student_name }}</strong></td>
+              <td><span style="color:#991B1B;">{{ r.original_mentor }}</span></td>
+              <td><span style="color:#065F46; font-weight:700;">{{ r.replacement_mentor }}</span></td>
+              <td>{{ r.reason }}</td>
+              <td>{{ r.changed_by_username or 'Admin' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--gray-500);">Belum ada riwayat pergantian mentor yang tercatat.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+      {% else %}
+        <!-- STUDENTS REPORT -->
+        <table class="table-desi">
+          <thead>
+            <tr>
+              <th>Nama Siswa</th>
+              <th>Sekolah & Kelas</th>
+              <th>Nama Wali Murid</th>
+              <th>Telepon Wali</th>
+              <th>Program Terdaftar</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in report_data %}
+            <tr>
+              <td><strong>{{ r.full_name }}</strong></td>
+              <td>{{ r.school or '-' }} ({{ r.grade or '-' }})</td>
+              <td>{{ r.parent_name }}</td>
+              <td>{{ r.parent_phone }}</td>
+              <td>{{ r.enrolled_programs or '-' }}</td>
+              <td>{{ r.status|status_badge|safe }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--gray-500);">Tidak ada data yang sesuai filter.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

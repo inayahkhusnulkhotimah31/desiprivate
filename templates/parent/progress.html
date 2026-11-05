@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Laporan Perkembangan (Wali Murid){% endblock %}
+{% block page_title %}Laporan Perkembangan Belajar Ananda{% endblock %}
+{% block page_subtitle %}Pantau kemajuan akademik, materi yang dikuasai, kendala, dan rekomendasi dari mentor{% endblock %}
+
+{% block content %}
+<!-- CHILD SELECTOR -->
+{% if children|length > 1 %}
+<div class="card" style="margin-bottom: 20px; background: var(--blue-soft);">
+  <div class="card-body" style="padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+    <span style="font-size: 13px; font-weight: 700; color: var(--navy-dark);">Pilih Ananda:</span>
+    <div style="display: flex; gap: 8px;">
+      {% for ch in children %}
+        <a href="{{ url_for('parent.progress', student_id=ch.id) }}" class="btn btn-sm {% if ch.id == selected_child.id %}btn-primary{% else %}btn-secondary{% endif %}">
+          🎓 {{ ch.full_name }}
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><span>📈</span> Riwayat Perkembangan Belajar {{ selected_child.full_name }}</div>
+  </div>
+  <div class="card-body">
+    {% for prog in progress_list %}
+    <div class="progress-card">
+      <div class="progress-header">
+        <div>
+          <strong style="color: var(--navy-primary); font-size: 16px;">{{ prog.program_name }}</strong>
+          <span style="font-size: 12px; color: var(--gray-500); margin-left: 8px;">Tanggal Sesi: {{ prog.session_date|date_indo }}</span>
+        </div>
+        <div>
+          <span class="badge badge-info">Mentor: {{ prog.mentor_name }}</span>
+        </div>
+      </div>
+
+      <div class="progress-grid">
+        <div class="progress-item-box">
+          <div class="progress-item-label">Materi yang Dipelajari</div>
+          <div class="progress-item-text">{{ prog.topics_covered }}</div>
+        </div>
+
+        <div class="progress-item-box success">
+          <div class="progress-item-label" style="color: #065F46;">Kemampuan Telah Dikuasai</div>
+          <div class="progress-item-text">{{ prog.skills_mastered or 'Sedang dalam penguatan konsep dasar' }}</div>
+        </div>
+
+        <div class="progress-item-box warning">
+          <div class="progress-item-label" style="color: #92400E;">Kesulitan yang Dihadapi</div>
+          <div class="progress-item-text">{{ prog.difficulties or 'Tidak ada kendala berarti' }}</div>
+        </div>
+
+        <div class="progress-item-box info">
+          <div class="progress-item-label" style="color: var(--blue-brand);">Rekomendasi dari Mentor</div>
+          <div class="progress-item-text">{{ prog.recommendations or 'Lanjutkan latihan mandiri' }}</div>
+        </div>
+      </div>
+
+      {% if prog.additional_notes %}
+      <div style="margin-top: 14px; padding: 10px 14px; background: var(--gray-50); border-radius: var(--radius-sm); font-size: 12.5px; color: var(--gray-700);">
+        <strong>Catatan Khusus Mentor:</strong> {{ prog.additional_notes }}
+      </div>
+      {% endif %}
+    </div>
+    {% else %}
+    <div style="text-align: center; color: var(--gray-500); padding: 32px;">
+      Belum ada laporan perkembangan belajar yang diunggah oleh mentor untuk ananda ini.
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+{% block title %}Data Mentor{% endblock %}
+{% block page_title %}Kelola Data Mentor Pengajar{% endblock %}
+{% block page_subtitle %}Keahlian, waktu luang, beban mengajar, dan status respons mentor{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><span>🧑‍🏫</span> Daftar Seluruh Mentor Pengajar</div>
+    <button class="btn btn-primary btn-sm" onclick="openModal('addMentorModal')">
+      ➕ Tambah Mentor Baru
+    </button>
+  </div>
+  <div class="card-body">
+    <!-- PENCARIAN & FILTER -->
+    <form method="GET" action="{{ url_for('admin.mentors') }}" class="filter-bar">
+      <input
+        type="text"
+        name="q"
+        value="{{ search }}"
+        placeholder="Cari nama mentor atau spesialisasi keahlian..."
+        class="form-control"
+        style="max-width: 350px;"
+      >
+      <select name="status" class="form-select" style="max-width: 180px;">
+        <option value="">-- Semua Status --</option>
+        <option value="aktif" {% if status_filter == 'aktif' %}selected{% endif %}>Aktif</option>
+        <option value="nonaktif" {% if status_filter == 'nonaktif' %}selected{% endif %}>Nonaktif</option>
+      </select>
+      <button type="submit" class="btn btn-secondary">Filter</button>
+      {% if search or status_filter %}
+        <a href="{{ url_for('admin.mentors') }}" class="btn btn-secondary">Reset</a>
+      {% endif %}
+    </form>
+
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nama Lengkap</th>
+            <th>Kontak</th>
+            <th>Bidang Keahlian</th>
+            <th>Ketersediaan Waktu</th>
+            <th>Beban Mengajar Aktif</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in mentors %}
+          <tr>
+            <td>#{{ m.id }}</td>
+            <td>
+              <strong style="color: var(--navy-dark);">{{ m.full_name }}</strong>
+              {% if m.bio %}
+                <div style="font-size: 11.5px; color: var(--gray-500); max-width: 250px;">{{ m.bio }}</div>
+              {% endif %}
+            </td>
+            <td>
+              <div>📞 {{ m.phone }}</div>
+              <div style="font-size: 11px; color: var(--gray-500);">✉️ {{ m.email or '-' }}</div>
+            </td>
+            <td>
+              <span style="font-weight: 600; color: var(--navy-primary); font-size: 12.5px;">{{ m.expertise }}</span>
+            </td>
+            <td>
+              <span style="font-size: 11.5px; color: var(--gray-700);">{{ m.availability_summary }}</span>
+            </td>
+            <td>
+              <div>
+                <span class="badge badge-info">{{ m.active_schedules_count }} Sesi Mendatang</span>
+              </div>
+              {% if m.pending_responses_count > 0 %}
+                <div style="font-size: 11px; color: var(--warning); font-weight: 700; margin-top: 2px;">
+                  ⏳ {{ m.pending_responses_count }} Perlu Konfirmasi
+                </div>
+              {% endif %}
+            </td>
+            <td>
+              {{ m.status|status_badge|safe }}
+            </td>
+            <td>
+              <div style="display: flex; gap: 6px;">
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  onclick="openEditMentorModal({{ m.id }}, '{{ m.full_name }}', '{{ m.phone }}', '{{ m.email or '' }}', '{{ m.expertise }}', '{{ m.bio or '' }}', '{{ m.status }}')"
+                >
+                  ✏️ Ubah
+                </button>
+                <form method="POST" action="{{ url_for('admin.toggle_mentor_status', mentor_id=m.id) }}" onsubmit="return confirm('Ubah status keaktifan mentor ini?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  {% if m.status == 'aktif' %}
+                    <button type="submit" class="btn btn-warning btn-sm" title="Nonaktifkan">Nonaktifkan</button>
+                  {% else %}
+                    <button type="submit" class="btn btn-success btn-sm" title="Aktifkan">Aktifkan</button>
+                  {% endif %}
+                </form>
+                <button
+                  type="button"
+                  class="btn btn-danger btn-sm"
+                  onclick="confirmDeleteMentor({{ m.id }}, '{{ m.full_name }}')"
+                  title="Hapus atau Nonaktifkan Mentor"
+                >
+                  🗑️ Hapus
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="8" style="text-align: center; color: var(--gray-500); padding: 24px;">
+              Belum ada data mentor yang ditemukan.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TAMBAH MENTOR -->
+<div class="modal-overlay" id="addMentorModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">Tambah Mentor Baru</div>
+      <button class="modal-close-btn" onclick="closeModal('addMentorModal')">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('admin.create_mentor') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Nama Lengkap & Gelar</label>
+          <input type="text" class="form-control" name="full_name" placeholder="Contoh: Sarah Nurhaliza, S.Pd." required>
+        </div>
+
+        <div class="grid-form-2">
+          <div class="form-group">
+            <label class="form-label">No. Telepon / WhatsApp</label>
+            <input type="text" class="form-control" name="phone" placeholder="08123456789" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" name="email" placeholder="mentor@desiprivat.id">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Bidang Keahlian / Mata Pelajaran</label>
+          <input type="text" class="form-control" name="expertise" placeholder="Contoh: Matematika SMP, Fisika SMA, Calistung SD" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Bio / Pengalaman Mengajar</label>
+          <textarea class="form-control" name="bio" placeholder="Latar belakang pendidikan, sertifikasi, pengalaman bimbingan privat..."></textarea>
+        </div>
+
+        <div style="background: var(--blue-soft); padding: 14px; border-radius: var(--radius-md); border: 1px dashed var(--blue-brand); margin-top: 14px;">
+          <div style="font-weight: 700; font-size: 13px; color: var(--navy-primary); margin-bottom: 8px;">
+            <input type="checkbox" id="createMentorAccountCheck" name="create_account" value="1" onchange="toggleMentorAccountInputs(this.checked)">
+            <label for="createMentorAccountCheck" style="cursor: pointer;"> Buat Akun Login Mentor Sekaligus</label>
+          </div>
+          <div id="mentorAccountFields" class="grid-form-2" style="display: none; margin-top: 10px;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label">ID Pengguna (Username)</label>
+              <input type="text" class="form-control" name="username" placeholder="Contoh: mentor_sarah">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label">Kata Sandi (Password)</label>
+              <input type="password" class="form-control" name="password" placeholder="Minimal 6 karakter">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('addMentorModal')">Batal</button>
+        <button type="submit" class="btn btn-primary">Simpan Mentor</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL UBAH MENTOR -->
+<div class="modal-overlay" id="editMentorModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">Ubah Data Mentor</div>
+      <button class="modal-close-btn" onclick="closeModal('editMentorModal')">&times;</button>
+    </div>
+    <form method="POST" id="editMentorForm" action="">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Nama Lengkap</label>
+          <input type="text" class="form-control" id="editMentorName" name="full_name" required>
+        </div>
+        <div class="grid-form-2">
+          <div class="form-group">
+            <label class="form-label">No. Telepon</label>
+            <input type="text" class="form-control" id="editMentorPhone" name="phone" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" id="editMentorEmail" name="email">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Keahlian</label>
+          <input type="text" class="form-control" id="editMentorExpertise" name="expertise" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Bio / Pengalaman</label>
+          <textarea class="form-control" id="editMentorBio" name="bio"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status Keaktifan</label>
+          <select class="form-select" id="editMentorStatus" name="status">
+            <option value="aktif">Aktif</option>
+            <option value="nonaktif">Nonaktif</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('editMentorModal')">Batal</button>
+        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function toggleMentorAccountInputs(checked) {
+    document.getElementById("mentorAccountFields").style.display = checked ? "grid" : "none";
+  }
+
+  function openEditMentorModal(id, name, phone, email, expertise, bio, status) {
+    document.getElementById("editMentorForm").action = "/admin/mentors/" + id + "/edit";
+    document.getElementById("editMentorName").value = name;
+    document.getElementById("editMentorPhone").value = phone;
+    document.getElementById("editMentorEmail").value = email;
+    document.getElementById("editMentorExpertise").value = expertise;
+    document.getElementById("editMentorBio").value = bio;
+    document.getElementById("editMentorStatus").value = status;
+    openModal("editMentorModal");
+  }
+
+  function confirmDeleteMentor(mentorId, mentorName) {
+    document.getElementById("deleteMentorForm").action = "/admin/mentors/" + mentorId + "/delete";
+    document.getElementById("deleteMentorName").innerText = mentorName;
+    openModal("deleteMentorModal");
+  }
+</script>
+
+<!-- MODAL PILIHAN HAPUS / NONAKTIFKAN MENTOR -->
+<div class="modal-overlay" id="deleteMentorModal">
+  <div class="modal-content" style="max-width: 520px;">
+    <div class="modal-header">
+      <div class="modal-title">🗑️ Kelola / Hapus Mentor</div>
+      <button class="modal-close-btn" onclick="closeModal('deleteMentorModal')">&times;</button>
+    </div>
+    <form method="POST" id="deleteMentorForm" action="">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <p style="margin-bottom: 16px; font-size: 14px; color: var(--gray-700);">
+          Pilih tindakan untuk data mentor <strong id="deleteMentorName" style="color: var(--navy-dark);"></strong>:
+        </p>
+
+        <!-- OPSI 1: HANYA ARSIP / NONAKTIFKAN -->
+        <div style="background: #FFFBEB; border: 1.5px solid #FCD34D; border-radius: 8px; padding: 14px; margin-bottom: 14px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <strong style="color: #92400E; font-size: 14px;">📦 Opsi 1: Hanya Arsip / Nonaktifkan</strong>
+            <span class="badge badge-warning">Disarankan</span>
+          </div>
+          <p style="font-size: 12.5px; color: #78350F; margin: 0 0 12px 0; line-height: 1.45;">
+            Menonaktifkan status mentor dan akses akun login. Mentor tidak dapat dipilih untuk sesi jadwal baru, namun seluruh riwayat mengajar dan absensi terdahulu tetap aman tersimpan.
+          </p>
+          <button type="submit" name="action_type" value="archive" class="btn btn-warning btn-sm" style="font-weight: 600;">
+            📦 Hanya Arsip / Nonaktifkan
+          </button>
+        </div>
+
+        <!-- OPSI 2: HAPUS OTOMATIS (PERMANEN) -->
+        <div style="background: #FEF2F2; border: 1.5px solid #FCA5A5; border-radius: 8px; padding: 14px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <strong style="color: #991B1B; font-size: 14px;">🗑️ Opsi 2: Hapus Otomatis (Permanen)</strong>
+            <span class="badge badge-danger">Hapus Total</span>
+          </div>
+          <p style="font-size: 12.5px; color: #7F1D1D; margin: 0 0 12px 0; line-height: 1.45;">
+            Menghapus data mentor secara permanen beserta ketersediaan waktu, aturan jadwal berulang, sesi jadwal yang dipegang, dan akun login terkait secara otomatis.
+          </p>
+          <button type="submit" name="action_type" value="auto_delete" class="btn btn-danger btn-sm" style="font-weight: 600;" onclick="return confirm('Peringatan: Seluruh data mentor, jadwal, dan akun ini akan dihapus permanen secara otomatis. Lanjutkan?');">
+            🗑️ Hapus Otomatis
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('deleteMentorModal')">Batal</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

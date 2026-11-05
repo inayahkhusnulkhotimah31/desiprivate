@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Akses Ditolak (403){% endblock %}
+{% block page_title %}Akses Ditolak{% endblock %}
+{% block page_subtitle %}Pembatasan Hak Akses Keamanan{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 650px; margin: 40px auto; text-align: center; padding: 40px 20px;">
+  <div style="font-size: 64px; margin-bottom: 16px;">🚫</div>
+  <h2 style="font-size: 22px; color: var(--navy-dark); margin-bottom: 12px;">Akses Ditolak (Error 403)</h2>
+  <p style="color: var(--gray-700); font-size: 14.5px; margin-bottom: 24px;">
+    {{ description or 'Anda tidak memiliki wewenang untuk mengakses halaman atau fungsi ini. Sistem telah membatasi akses berdasarkan peran (role) akun Anda.' }}
+  </p>
+  <div>
+    <a href="{{ url_for('auth.index') }}" class="btn btn-primary">Kembali ke Dashboard Utama</a>
+  </div>
+</div>
+{% endblock %}

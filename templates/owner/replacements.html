@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Riwayat Pergantian Mentor (Pemilik){% endblock %}
+{% block page_title %}Riwayat Pergantian Mentor{% endblock %}
+{% block page_subtitle %}Pengawasan pergantian mentor pengajar dan alasan operasional (Akses Baca Pemilik){% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><span>🔄</span> Catatan Riwayat Pergantian Mentor</div>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>Waktu Pergantian</th>
+            <th>Tanggal Sesi</th>
+            <th>Siswa</th>
+            <th>Mentor Awal</th>
+            <th>Mentor Pengganti</th>
+            <th>Alasan Pergantian</th>
+            <th>Petugas Pengubah</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in replacements %}
+          <tr>
+            <td><small>{{ r.created_at|date_indo }}</small></td>
+            <td><strong>{{ r.schedule_date|date_indo }}</strong> ({{ r.start_time }}-{{ r.end_time }})</td>
+            <td><strong>{{ r.student_name }}</strong></td>
+            <td><span style="color: #991B1B; font-weight: 600;">{{ r.original_mentor }}</span></td>
+            <td><span style="color: #065F46; font-weight: 700;">{{ r.replacement_mentor }}</span></td>
+            <td>{{ r.reason }}</td>
+            <td>{{ r.changed_by_username or 'Admin' }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--gray-500); padding: 24px;">
+              Belum ada riwayat pergantian mentor yang tercatat.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

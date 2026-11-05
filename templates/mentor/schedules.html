@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Jadwal Mengajar Mentor{% endblock %}
+{% block page_title %}Jadwal Mengajar Mentor{% endblock %}
+{% block page_subtitle %}Jadwal mengajar rutin mingguan yang ditetapkan Admin dan dokumentasi pelaksanaan sesi bimbingan DESI PRIVAT{% endblock %}
+
+{% block content %}
+<!-- ======================================================= -->
+<!-- 1. KARTU JADWAL RUTIN MENGAJAR MINGGUAN (UTAMA) -->
+<!-- ======================================================= -->
+<div class="card" style="margin-bottom: 24px;">
+  <div class="card-header">
+    <div>
+      <div class="card-title"><span>🗓️</span> Jadwal Rutin Mengajar Mingguan Anda</div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
+        Jadwal tetap berulang setiap minggu yang ditetapkan oleh Admin. Siklus periode (8 pertemuan = 1 periode) dihitung otomatis saat Anda mencatat absensi kehadiran.
+      </div>
+    </div>
+    <a href="{{ url_for('mentor.attendance') }}" class="btn btn-primary btn-sm">
+      📝 Buka Formulir Absensi
+    </a>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>Hari & Jam Mengajar</th>
+            <th>Siswa Bimbingan</th>
+            <th>Program & Fokus Materi</th>
+            <th>Orang Tua / Wali</th>
+            <th>Catatan Sesi</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for rs in routine_schedules %}
+          <tr>
+            <td>
+              <div style="font-weight: 700; color: var(--navy-dark); font-size: 13.5px;">
+                🗓️ {{ rs.day_name }}
+              </div>
+              <div style="font-size: 12px; color: var(--blue-brand); font-weight: 600;">
+                ⏰ {{ rs.start_time }} - {{ rs.end_time }} WIB
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 700; color: var(--text-heading); font-size: 13.5px;">
+                {{ rs.student_name }}
+              </div>
+              <div style="font-size: 11px; color: var(--text-muted);">
+                {{ rs.student_school or '-' }} ({{ rs.student_grade or '-' }})
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 600; color: var(--text-main); font-size: 12.5px;">
+                {{ rs.program_name }}
+              </div>
+              {% if rs.subject_info %}
+                <div style="font-size: 11px; color: var(--blue-brand);">
+                  🎯 {{ rs.subject_info }}
+                </div>
+              {% endif %}
+            </td>
+            <td>
+              <div>{{ rs.parent_name or '-' }}</div>
+              {% if rs.parent_phone %}
+                <div style="font-size: 11px; color: var(--text-muted);">📞 {{ rs.parent_phone }}</div>
+              {% endif %}
+            </td>
+            <td>
+              <div style="font-size: 11.5px; color: var(--text-body);">{{ rs.notes or '-' }}</div>
+            </td>
+            <td>
+              <a href="{{ url_for('mentor.attendance', student_id=rs.student_id) }}" class="btn btn-primary btn-sm" title="Catat absensi untuk siswa ini">
+                📝 Catat Absensi
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 28px;">
+              Belum ada jadwal rutin mengajar yang ditetapkan oleh Admin untuk Anda.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================= -->
+<!-- 2. KARTU RIWAYAT PELAKSANAAN SESI -->
+<!-- ======================================================= -->
+<div class="card">
+  <div class="card-header">
+    <div>
+      <div class="card-title"><span>📋</span> Riwayat Pelaksanaan Sesi &amp; Absensi</div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
+        Dokumentasi tanggal pelaksanaan sesi yang telah selesai maupun terjadwal secara spesifik.
+      </div>
+    </div>
+  </div>
+  <div class="card-body">
+    <!-- FILTER -->
+    <form method="GET" action="{{ url_for('mentor.schedules') }}" class="filter-bar">
+      <label style="font-size: 13px; font-weight: 600; color: var(--navy-dark);">Filter Tanggal:</label>
+      <input type="date" name="date" value="{{ date_filter or '' }}" class="form-control" style="max-width: 180px;">
+      <button type="submit" class="btn btn-secondary btn-sm">Tampilkan</button>
+      {% if date_filter %}
+        <a href="{{ url_for('mentor.schedules') }}" class="btn btn-secondary btn-sm">Reset</a>
+      {% endif %}
+    </form>
+
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>Tanggal Sesi</th>
+            <th>Waktu &amp; Durasi</th>
+            <th>Siswa &amp; Program</th>
+            <th>Status Absensi</th>
+            <th>Aksi Pengajaran</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sc in schedules %}
+          <tr>
+            <td><strong>{{ sc.schedule_date|date_indo }}</strong></td>
+            <td>
+              <span style="color: var(--blue-brand); font-weight: 600;">{{ sc.start_time }} - {{ sc.end_time }} WIB</span>
+              <div style="font-size: 11px; color: var(--text-muted);">{{ sc.duration_minutes }} Menit</div>
+            </td>
+            <td>
+              <div style="font-weight: 700; color: var(--navy-dark);">{{ sc.student_name }}</div>
+              <div style="font-size: 11.5px; color: var(--text-muted);">{{ sc.program_name }}</div>
+              {% if sc.title %}
+                <div style="font-size: 11px; color: var(--text-body); font-style: italic;">{{ sc.title }}</div>
+              {% endif %}
+            </td>
+            <td>
+              {% if sc.attendance_id %}
+                <span class="badge badge-success">Sudah Absen</span>
+              {% else %}
+                <span class="badge badge-neutral">Belum Absen</span>
+              {% endif %}
+            </td>
+            <td>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <a href="{{ url_for('mentor.attendance', student_id=sc.student_id, schedule_date=sc.schedule_date) }}" class="btn btn-primary btn-sm">
+                  📝 Catat Absensi
+                </a>
+                <a href="{{ url_for('mentor.progress', schedule_id=sc.id) }}" class="btn btn-secondary btn-sm">
+                  {% if sc.progress_id %}Ubah Laporan{% else %}Tulis Laporan{% endif %}
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 28px;">
+              Belum ada riwayat sesi yang tercatat pada filter ini.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

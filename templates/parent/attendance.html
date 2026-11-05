@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Riwayat Kehadiran (Wali Murid){% endblock %}
+{% block page_title %}Riwayat Kehadiran Ananda{% endblock %}
+{% block page_subtitle %}Catatan absensi resmi dari mentor untuk setiap sesi les privat ananda{% endblock %}
+
+{% block content %}
+<!-- CHILD SELECTOR -->
+{% if children|length > 1 %}
+<div class="card" style="margin-bottom: 20px; background: var(--blue-soft);">
+  <div class="card-body" style="padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+    <span style="font-size: 13px; font-weight: 700; color: var(--navy-dark);">Pilih Ananda:</span>
+    <div style="display: flex; gap: 8px;">
+      {% for ch in children %}
+        <a href="{{ url_for('parent.attendance', student_id=ch.id) }}" class="btn btn-sm {% if ch.id == selected_child.id %}btn-primary{% else %}btn-secondary{% endif %}">
+          🎓 {{ ch.full_name }}
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><span>📋</span> Riwayat Absensi Kehadiran {{ selected_child.full_name }}</div>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>Tanggal Sesi</th>
+            <th>Waktu</th>
+            <th>Program Les</th>
+            <th>Mentor Pengampu</th>
+            <th>Status Kehadiran</th>
+            <th>Catatan Mentor</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in attendance_list %}
+          <tr>
+            <td><strong>{{ a.schedule_date|date_indo }}</strong></td>
+            <td>{{ a.start_time }} - {{ a.end_time }} WIB</td>
+            <td><strong>{{ a.program_name }}</strong></td>
+            <td>{{ a.mentor_name }}</td>
+            <td>{{ a.status|status_badge|safe }}</td>
+            <td>
+              <div style="font-size: 12.5px; color: var(--gray-700);">
+                {{ a.notes or 'Hadir sesuai jadwal' }}
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--gray-500); padding: 24px;">
+              Belum ada riwayat absensi kehadiran untuk ananda ini.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

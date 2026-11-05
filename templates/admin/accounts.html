@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block title %}Manajemen Akun{% endblock %}
+{% block page_title %}Manajemen Akun Pengguna{% endblock %}
+{% block page_subtitle %}Pengaturan akun login, role otorisasi, status aktif, dan reset kata sandi{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><span>🔑</span> Daftar Seluruh Akun Pengguna</div>
+    <button class="btn btn-primary btn-sm" onclick="openModal('addAccountModal')">
+      ➕ Buat Akun Baru
+    </button>
+  </div>
+  <div class="card-body">
+    <!-- FILTER -->
+    <form method="GET" action="{{ url_for('admin.accounts') }}" class="filter-bar">
+      <input
+        type="text"
+        name="q"
+        value="{{ search }}"
+        placeholder="Cari ID pengguna, nama, atau email..."
+        class="form-control"
+        style="max-width: 320px;"
+      >
+      <select name="role" class="form-select" style="max-width: 180px;">
+        <option value="">-- Semua Role --</option>
+        <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>Admin Pengelola</option>
+        <option value="owner" {% if role_filter == 'owner' %}selected{% endif %}>Pemilik</option>
+        <option value="mentor" {% if role_filter == 'mentor' %}selected{% endif %}>Mentor</option>
+      </select>
+      <button type="submit" class="btn btn-secondary">Filter</button>
+      {% if search or role_filter %}
+        <a href="{{ url_for('admin.accounts') }}" class="btn btn-secondary">Reset</a>
+      {% endif %}
+    </form>
+
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>ID Pengguna (Username)</th>
+            <th>Peran (Role)</th>
+            <th>Nama Lengkap</th>
+            <th>Kontak</th>
+            <th>Status Akun</th>
+            <th>Aksi Keamanan</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for acc in accounts %}
+          <tr>
+            <td>#{{ acc.id }}</td>
+            <td>
+              <strong style="color: var(--navy-dark); font-size: 14px;">{{ acc.username }}</strong>
+              {% if acc.id == session.user_id %}
+                <span class="badge badge-info" style="margin-left: 4px;">Akun Anda</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if acc.role == 'admin' %}
+                <span class="badge badge-info">Admin Pengelola</span>
+              {% elif acc.role == 'owner' %}
+                <span class="badge badge-warning">Pemilik (Read-Only)</span>
+              {% elif acc.role == 'mentor' %}
+                <span class="badge badge-success">Mentor Pengajar</span>
+              {% elif acc.role == 'parent' %}
+                <span class="badge badge-secondary" title="Akses login parent dinonaktifkan sistem">Orang Tua (Akses Nonaktif)</span>
+              {% endif %}
+            </td>
+            <td>{{ acc.full_name }}</td>
+            <td>
+              <div>{{ acc.phone or '-' }}</div>
+              <div style="font-size: 11px; color: var(--gray-500);">{{ acc.email or '-' }}</div>
+            </td>
+            <td>
+              {% if acc.is_active %}
+                <span class="badge badge-success">Aktif</span>
+              {% else %}
+                <span class="badge badge-danger">Dinonaktifkan</span>
+              {% endif %}
+            </td>
+            <td>
+              <div style="display: flex; gap: 6px;">
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  onclick="openResetPasswordModal({{ acc.id }}, '{{ acc.username }}')"
+                  title="Reset Kata Sandi"
+                >
+                  🔒 Reset Sandi
+                </button>
+                {% if acc.id != session.user_id %}
+                  <form method="POST" action="{{ url_for('admin.toggle_account_status', user_id=acc.id) }}" onsubmit="return confirm('Ubah status aktif akun ini?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    {% if acc.is_active %}
+                      <button type="submit" class="btn btn-danger btn-sm" title="Nonaktifkan Login">Nonaktifkan</button>
+                    {% else %}
+                      <button type="submit" class="btn btn-success btn-sm" title="Aktifkan Login">Aktifkan</button>
+                    {% endif %}
+                  </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--gray-500); padding: 24px;">
+              Tidak ada akun yang sesuai dengan filter.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL BUAT AKUN -->
+<div class="modal-overlay" id="addAccountModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">Buat Akun Pengguna Baru</div>
+      <button class="modal-close-btn" onclick="closeModal('addAccountModal')">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('admin.create_account') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <div class="grid-form-2">
+          <div class="form-group">
+            <label class="form-label">ID Pengguna (Username)</label>
+            <input type="text" class="form-control" name="username" placeholder="Contoh: staf_admin" required>
+            <small style="font-size: 11px; color: var(--gray-500);">Harus unik dan tidak duplikat.</small>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Peran (Role)</label>
+            <select class="form-select" name="role" required>
+              <option value="admin">Admin / Pengelola</option>
+              <option value="owner">Pemilik (Supervisi Baca Saja)</option>
+              <option value="mentor">Mentor Pengajar</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Nama Lengkap Pemilik Akun</label>
+          <input type="text" class="form-control" name="full_name" placeholder="Nama lengkap..." required>
+        </div>
+
+        <div class="grid-form-2">
+          <div class="form-group">
+            <label class="form-label">Kata Sandi (Password)</label>
+            <input type="password" class="form-control" name="password" placeholder="Minimal 6 karakter" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">No. Telepon</label>
+            <input type="text" class="form-control" name="phone" placeholder="08123456789">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email (Opsional)</label>
+          <input type="email" class="form-control" name="email" placeholder="user@desiprivat.id">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('addAccountModal')">Batal</button>
+        <button type="submit" class="btn btn-primary">Buat Akun</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL RESET PASSWORD -->
+<div class="modal-overlay" id="resetPasswordModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">Reset Kata Sandi Akun</div>
+      <button class="modal-close-btn" onclick="closeModal('resetPasswordModal')">&times;</button>
+    </div>
+    <form method="POST" id="resetPasswordForm" action="">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <p style="font-size: 13.5px; color: var(--gray-700); margin-bottom: 14px;">
+          Anda sedang mereset kata sandi untuk akun: <strong id="resetTargetUsername" style="color: var(--navy-primary);">user</strong>.
+        </p>
+        <div class="form-group">
+          <label class="form-label">Kata Sandi Baru</label>
+          <input type="password" class="form-control" name="new_password" placeholder="Minimal 6 karakter..." required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('resetPasswordModal')">Batal</button>
+        <button type="submit" class="btn btn-primary">Simpan Kata Sandi Baru</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openResetPasswordModal(id, username) {
+    document.getElementById("resetPasswordForm").action = "/admin/accounts/" + id + "/reset-password";
+    document.getElementById("resetTargetUsername").innerText = username;
+    openModal("resetPasswordModal");
+  }
+</script>
+{% endblock %}

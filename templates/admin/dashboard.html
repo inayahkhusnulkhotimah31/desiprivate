@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Admin{% endblock %}
+{% block page_title %}Pusat Operasional DESI PRIVAT{% endblock %}
+{% block page_subtitle %}Ringkasan operasional bimbingan belajar, siklus periode, dan aktivitas hari ini{% endblock %}
+
+{% block content %}
+<!-- KARTU RINGKASAN UTAMA (MODERN SOFT BLUE STATS) -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon blue">🎓</div>
+    <div class="stat-details">
+      <div class="stat-value">{{ summary.active_students }}</div>
+      <div class="stat-label">Siswa Aktif</div>
+      <div class="stat-subtitle">Terdaftar resmi</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon purple">🧑‍🏫</div>
+    <div class="stat-details">
+      <div class="stat-value">{{ summary.active_mentors }}</div>
+      <div class="stat-label">Mentor Aktif</div>
+      <div class="stat-subtitle">Tenaga pengajar</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon green">📖</div>
+    <div class="stat-details">
+      <div class="stat-value">{{ summary.active_programs }}</div>
+      <div class="stat-label">Program Les</div>
+      <div class="stat-subtitle">Mata pelajaran aktif</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon amber">🗓️</div>
+    <div class="stat-details">
+      <div class="stat-value">{{ summary.active_schedules }}</div>
+      <div class="stat-label">Jadwal Aktif</div>
+      <div class="stat-subtitle">Sesi mendatang</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon purple">✨</div>
+    <div class="stat-details">
+      <div class="stat-value">{{ summary.monthly_sessions }}</div>
+      <div class="stat-label">Pertemuan Bulan Ini</div>
+      <div class="stat-subtitle">Absensi valid (Hadir)</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon blue">📅</div>
+    <div class="stat-details">
+      <div class="stat-value">{{ summary.today_schedules }}</div>
+      <div class="stat-label">Sesi Hari Ini</div>
+      <div class="stat-subtitle">Agenda hari ini</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon amber">⚡</div>
+    <div class="stat-details">
+      <div class="stat-value">{{ action_schedules|length }}</div>
+      <div class="stat-label">Perlu Perhatian</div>
+      <div class="stat-subtitle">Kendala / Ganti mentor</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon green">✅</div>
+    <div class="stat-details">
+      <div class="stat-value">{{ summary.completed_sessions }}</div>
+      <div class="stat-label">Total Sesi Terabsen</div>
+      <div class="stat-subtitle">Riwayat terdokumentasi</div>
+    </div>
+  </div>
+</div>
+
+<!-- PERINGATAN KETERLAMBATAN RESPONS MENTOR (JIKA ADA) -->
+{% if overdue_responses %}
+<div class="card" style="border-left: 4px solid var(--danger); margin-top: 10px;">
+  <div class="card-header" style="background: var(--danger-bg);">
+    <div class="card-title" style="color: var(--danger);">
+      <span>🚨</span> Peringatan: Mentor Belum Merespons Jadwal Melewati Batas Waktu
+    </div>
+  </div>
+  <div class="card-body" style="padding: 16px;">
+    <p style="font-size: 13px; margin-bottom: 12px; color: var(--text-muted);">
+      Berikut adalah jadwal resmi yang telah disetujui namun mentor bersangkutan belum memberikan konfirmasi kesiapan mengajar:
+    </p>
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>Tanggal & Jam</th>
+            <th>Siswa</th>
+            <th>Mentor</th>
+            <th>Telepon Mentor</th>
+            <th>Tindakan Cepat</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ov in overdue_responses %}
+          <tr>
+            <td><strong>{{ ov.schedule_date|date_indo }}</strong> ({{ ov.start_time }}-{{ ov.end_time }})</td>
+            <td>{{ ov.student_name }}</td>
+            <td><strong style="color: var(--danger);">{{ ov.mentor_name }}</strong></td>
+            <td>{{ ov.mentor_phone or '-' }}</td>
+            <td>
+              <button class="btn btn-warning btn-sm" onclick="prepareMentorReplacementModal({{ ov.id }}, '{{ ov.mentor_name }}')">
+                Pilih Pengganti
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- SECTION 2: JADWAL MEMERLUKAN TINDAKAN & JADWAL HARI INI -->
+<div class="grid-2-col" style="margin-top: 8px;">
+  <!-- JADWAL MEMERLUKAN TINDAKAN -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span class="card-icon">⚡</span> Jadwal Memerlukan Perhatian</div>
+      <a href="{{ url_for('admin.schedules') }}" class="btn btn-secondary btn-sm">Lihat Semua</a>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <div class="table-responsive">
+        <table class="table-desi">
+          <thead>
+            <tr>
+              <th>Tanggal</th>
+              <th>Siswa & Program</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sc in action_schedules %}
+            <tr>
+              <td>
+                <div style="font-weight: 700;">{{ sc.schedule_date }}</div>
+                <div style="font-size: 11px; color: var(--text-muted);">{{ sc.start_time }} WIB</div>
+              </td>
+              <td>
+                <div style="font-weight: 600;">{{ sc.student_name }}</div>
+                <div style="font-size: 11.5px; color: var(--text-muted);">{{ sc.program_name }} &bull; {{ sc.mentor_name }}</div>
+              </td>
+              <td>
+                {% if sc.mentor_response_status == 'perlu_mentor_pengganti' %}
+                  <span class="badge badge-danger">Perlu Pengganti</span>
+                {% else %}
+                  {{ sc.status|status_badge|safe }}
+                {% endif %}
+              </td>
+              <td>
+                {% if sc.mentor_response_status == 'perlu_mentor_pengganti' %}
+                  <button class="btn btn-danger btn-sm" onclick="prepareMentorReplacementModal({{ sc.id }}, '{{ sc.mentor_name }}')">
+                    Pengganti
+                  </button>
+                {% elif sc.status == 'menunggu_persetujuan_admin' %}
+                  <form method="POST" action="{{ url_for('admin.admin_approve_schedule', schedule_id=sc.id) }}" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-success btn-sm">Setujui</button>
+                  </form>
+                {% else %}
+                  <a href="{{ url_for('admin.schedules') }}" class="btn btn-secondary btn-sm">Buka</a>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 28px;">
+                🎉 Semua jadwal les aktif dan tertata dengan baik!
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- JADWAL HARI INI -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span class="card-icon">📅</span> Jadwal Sesi Les Hari Ini</div>
+      <a href="{{ url_for('admin.schedules') }}" class="btn btn-secondary btn-sm">Kalender Lengkap</a>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <div class="table-responsive">
+        <table class="table-desi">
+          <thead>
+            <tr>
+              <th>Waktu</th>
+              <th>Siswa & Program</th>
+              <th>Mentor</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ts in today_schedules %}
+            <tr>
+              <td>
+                <strong>{{ ts.start_time }} - {{ ts.end_time }}</strong>
+              </td>
+              <td>
+                <div style="font-weight: 600;">{{ ts.student_name }}</div>
+                <div style="font-size: 11px; color: var(--text-muted);">{{ ts.program_name }}</div>
+              </td>
+              <td>{{ ts.mentor_name }}</td>
+              <td>{{ ts.status|status_badge|safe }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 28px;">
+                ☕ Tidak ada agenda sesi les yang dijadwalkan untuk hari ini.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 3: AKTIVITAS AUDIT TERBARU & NOTIFIKASI -->
+<div class="grid-2-col" style="margin-top: 8px;">
+  <!-- AUDIT LOG TERBARU -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span class="card-icon">📜</span> Aktivitas Sistem & Operasional Terbaru</div>
+      <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-secondary btn-sm">Lihat Log</a>
+    </div>
+    <div class="card-body" style="padding: 16px;">
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        {% for a in recent_audits %}
+        <div style="padding: 10px 14px; background: rgba(240, 249, 255, 0.5); border-radius: var(--radius-sm); border-left: 3px solid var(--blue-brand); font-size: 12.5px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+            <strong style="color: var(--text-main);">{{ a.user_name or 'Sistem' }} &bull; <span class="badge badge-info" style="font-size: 10px;">{{ a.action_type }}</span></strong>
+            <span style="font-size: 11px; color: var(--text-muted);">{{ a.created_at|date_indo }}</span>
+          </div>
+          <div style="color: var(--text-body);">{{ a.details }}</div>
+        </div>
+        {% else %}
+        <div style="text-align: center; color: var(--text-muted); padding: 16px;">
+          Belum ada riwayat aktivitas tercatat.
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIFIKASI & WHATSAPP STATUS -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span class="card-icon">💬</span> Notifikasi & WhatsApp Gateway</div>
+      <a href="{{ url_for('admin.notifications_center') }}" class="btn btn-secondary btn-sm">Pusat Notifikasi</a>
+    </div>
+    <div class="card-body" style="padding: 16px;">
+      <div class="alert-box alert-info" style="margin-bottom: 14px; font-size: 12.5px;">
+        <div>
+          <strong>WhatsApp Test Mode:</strong> Aktif. Pesan diverifikasi & dicatat aman tanpa pemotongan saldo gateway.
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        {% for n in recent_notifs %}
+        <div style="padding: 10px 14px; background: {% if not n.is_read %}var(--blue-soft){% else %}rgba(241, 245, 249, 0.6){% endif %}; border-radius: var(--radius-sm); border-left: 3px solid {% if not n.is_read %}var(--blue-brand){% else %}var(--border-subtle){% endif %}; font-size: 12.5px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong style="color: var(--text-main);">{{ n.title }}</strong>
+            <span style="font-size: 10.5px; color: var(--text-muted);">{{ n.created_at|date_indo }}</span>
+          </div>
+          <div style="color: var(--text-body); margin-top: 2px;">{{ n.message }}</div>
+        </div>
+        {% else %}
+        <div style="text-align: center; color: var(--text-muted); padding: 16px;">
+          Tidak ada notifikasi baru saat ini.
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PERGANTIAN MENTOR -->
+<div class="modal-overlay" id="replacementModal">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <div class="modal-title">Ganti Mentor Pengganti</div>
+      <button class="modal-close-btn" onclick="closeModal('replacementModal')">&times;</button>
+    </div>
+    <form method="POST" id="replaceMentorForm" action="">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" id="replaceScheduleId" name="schedule_id" value="">
+      <div class="modal-body">
+        <p style="font-size: 13.5px; margin-bottom: 16px; color: var(--text-muted);">
+          Mentor Saat Ini: <strong id="currentMentorSpan" style="color: var(--text-main);">Mentor</strong>
+        </p>
+        <div class="form-group">
+          <label class="form-label" for="replacementMentorSelect">Pilih Mentor Pengganti yang Tersedia</label>
+          <select class="form-select" id="replacementMentorSelect" name="replacement_mentor_id" required>
+            <option value="">-- Memuat daftar mentor... --</option>
+          </select>
+          <small style="color: var(--text-muted); font-size: 11px;">Hanya mentor aktif dan tidak bentrok yang dapat dipilih.</small>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="replaceReasonInput">Alasan Pergantian Mentor (Wajib)</label>
+          <textarea class="form-control" id="replaceReasonInput" name="reason" placeholder="Contoh: Mentor awal berhalangan karena urusan mendadak, digantikan untuk kelancaran sesi..." required></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('replacementModal')">Batal</button>
+        <button type="submit" class="btn btn-primary">Simpan Pergantian Mentor</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function prepareMentorReplacementModal(scheduleId, mentorName) {
+    document.getElementById("replaceScheduleId").value = scheduleId;
+    document.getElementById("currentMentorSpan").innerText = mentorName;
+    const select = document.getElementById("replacementMentorSelect");
+    select.innerHTML = '<option value="">Memuat daftar mentor...</option>';
+    openModal("replacementModal");
+
+    fetch("/admin/api/eligible-replacements/" + scheduleId)
+      .then(res => res.json())
+      .then(data => {
+        select.innerHTML = "";
+        if (!data || data.length === 0) {
+          select.innerHTML = '<option value="">Tidak ada mentor lain yang tersedia pada jam ini</option>';
+          return;
+        }
+        select.innerHTML = '<option value="">-- Pilih Mentor Pengganti --</option>';
+        data.forEach(m => {
+          const opt = document.createElement("option");
+          opt.value = m.id;
+          opt.textContent = m.full_name + " (" + (m.expertise || "Umum") + ")";
+          select.appendChild(opt);
+        });
+      })
+      .catch(() => {
+        select.innerHTML = '<option value="">Gagal memuat mentor pengganti</option>';
+      });
+  }
+
+  document.getElementById("replaceMentorForm").addEventListener("submit", function() {
+    const schedId = document.getElementById("replaceScheduleId").value;
+    this.action = "/admin/schedules/" + schedId + "/replace-mentor";
+  });
+</script>
+{% endblock %}

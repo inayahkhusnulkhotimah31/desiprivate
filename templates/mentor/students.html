@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Siswa Bimbingan (Mentor){% endblock %}
+{% block page_title %}Daftar Siswa Bimbingan Anda{% endblock %}
+{% block page_subtitle %}Siswa yang menjadi tanggung jawab bimbingan Anda dan pemantauan siklus pertemuan otomatis (8 pertemuan per periode){% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><span>👥</span> Siswa Aktif yang Anda Bimbing</div>
+    <a href="{{ url_for('mentor.attendance') }}" class="btn btn-primary btn-sm">
+      📝 Catat Absensi Siswa
+    </a>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>Nama Siswa</th>
+            <th>Asal Sekolah &amp; Jenjang</th>
+            <th>Program Les</th>
+            <th>Siklus Pertemuan Otomatis</th>
+            <th>Catatan Kebutuhan Belajar</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for st in students %}
+          <tr>
+            <td>
+              <strong style="color: var(--navy-dark); font-size: 14px;">{{ st.full_name }}</strong>
+              {% if st.start_date %}
+                <div style="font-size: 11px; color: var(--gray-500);">Mulai: {{ st.start_date|date_indo }}</div>
+              {% endif %}
+            </td>
+            <td>
+              <div>{{ st.school or '-' }}</div>
+              {% if st.grade %}
+                <div style="font-size: 11px; color: var(--navy-muted); font-weight: 600;">Kelas {{ st.grade }}</div>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge badge-info">{{ st.program_name }}</span>
+            </td>
+            <td>
+              {% if st.meeting_stats %}
+                <div style="display: inline-flex; align-items: center; gap: 6px;">
+                  <span class="badge badge-success" style="font-size: 12px; font-weight: 700;">
+                    {{ st.meeting_stats.next_meeting_str }}
+                  </span>
+                </div>
+                <div style="font-size: 11px; color: var(--gray-600); margin-top: 3px;">
+                  Telah selesai: <strong>{{ st.meeting_stats.total_meetings }}</strong> pertemuan valid
+                </div>
+              {% else %}
+                <span class="badge badge-secondary">Pertemuan 1 (1)</span>
+              {% endif %}
+            </td>
+            <td>
+              <div style="font-size: 12px; color: var(--gray-700); max-width: 280px; line-height: 1.4;">
+                {{ st.notes or 'Tidak ada catatan khusus' }}
+              </div>
+            </td>
+            <td>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <a href="{{ url_for('mentor.schedules') }}" class="btn btn-secondary btn-sm" title="Lihat Jadwal Siswa Ini">
+                  📅 Jadwal
+                </a>
+                <a href="{{ url_for('mentor.attendance') }}" class="btn btn-primary btn-sm" title="Absensi Pertemuan">
+                  Absen
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--gray-500); padding: 24px;">
+              Belum ada siswa yang ditugaskan kepada Anda saat ini.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>{% block title %}Sistem Informasi{% endblock %} - DESI PRIVAT</title>
+  <meta name="description" content="Sistem Informasi Manajemen Tempat Les Privat DESI PRIVAT - Pengelolaan Siswa, Mentor, Penjadwalan, dan Perkembangan Belajar.">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <div class="app-container">
+    <!-- SIDEBAR NAVIGASI -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
+          <img src="{{ url_for('static', filename='images/logo_symbol.svg') }}" class="sidebar-brand-img" alt="Logo DESI PRIVAT">
+          <div style="min-width: 0;">
+            <div class="sidebar-brand-title"><span class="brand-desi">DESI</span> <span class="brand-privat">PRIVAT</span></div>
+            <div class="sidebar-brand-sub">Sistem Manajemen Les</div>
+          </div>
+        </div>
+        <button type="button" class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Tutup Menu">&times;</button>
+      </div>
+
+      <nav class="sidebar-nav">
+        {% if current_user.role == 'admin' %}
+          <div class="nav-section-title">Operasional Utama</div>
+          <a href="{{ url_for('admin.dashboard') }}" class="nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+            <span class="nav-icon">📊</span> Dashboard Admin
+          </a>
+          <a href="{{ url_for('admin.schedules') }}" class="nav-link {% if 'admin.schedules' in request.endpoint %}active{% endif %}">
+            <span class="nav-icon">🗓️</span> Penjadwalan & Sesi
+          </a>
+          <a href="{{ url_for('admin.students') }}" class="nav-link {% if 'admin.student' in request.endpoint %}active{% endif %}">
+            <span class="nav-icon">🎓</span> Data Siswa & Periode
+          </a>
+          <a href="{{ url_for('admin.parents') }}" class="nav-link {% if 'admin.parents' in request.endpoint %}active{% endif %}">
+            <span class="nav-icon">👨‍👩‍👦</span> Data Orang Tua / Wali
+          </a>
+          <a href="{{ url_for('admin.mentors') }}" class="nav-link {% if 'admin.mentors' in request.endpoint %}active{% endif %}">
+            <span class="nav-icon">🧑‍🏫</span> Data Mentor
+          </a>
+          <a href="{{ url_for('admin.programs') }}" class="nav-link {% if 'admin.programs' in request.endpoint %}active{% endif %}">
+            <span class="nav-icon">📖</span> Program Les
+          </a>
+
+          <div class="nav-section-title">Sistem & Keamanan</div>
+          <a href="{{ url_for('admin.accounts') }}" class="nav-link {% if 'admin.accounts' in request.endpoint %}active{% endif %}">
+            <span class="nav-icon">🔑</span> Manajemen Akun
+          </a>
+          <a href="{{ url_for('admin.notifications_center') }}" class="nav-link {% if 'admin.notifications' in request.endpoint %}active{% endif %}">
+            <span class="nav-icon">🔔</span> Pemberitahuan Sistem
+          </a>
+          <a href="{{ url_for('admin.reports') }}" class="nav-link {% if 'admin.reports' in request.endpoint %}active{% endif %}">
+            <span class="nav-icon">📑</span> Laporan & Ekspor
+          </a>
+          <a href="{{ url_for('admin.audit_logs') }}" class="nav-link {% if 'admin.audit_logs' in request.endpoint %}active{% endif %}">
+            <span class="nav-icon">📜</span> Riwayat Audit Log
+          </a>
+          <a href="{{ url_for('admin.backups') }}" class="nav-link {% if 'admin.backups' in request.endpoint %}active{% endif %}">
+            <span class="nav-icon">💾</span> Backup & Restore
+          </a>
+
+        {% elif current_user.role == 'owner' %}
+          <div class="nav-section-title">Pengawasan Pemilik</div>
+          <a href="{{ url_for('owner.dashboard') }}" class="nav-link {% if request.endpoint == 'owner.dashboard' %}active{% endif %}">
+            <span class="nav-icon">📈</span> Pengawasan Eksekutif
+          </a>
+          <a href="{{ url_for('owner.schedules') }}" class="nav-link {% if request.endpoint == 'owner.schedules' %}active{% endif %}">
+            <span class="nav-icon">🗓️</span> Rekap Jadwal & Kalender
+          </a>
+          <a href="{{ url_for('owner.students') }}" class="nav-link {% if request.endpoint == 'owner.students' %}active{% endif %}">
+            <span class="nav-icon">🎓</span> Siswa & Perkembangan
+          </a>
+          <a href="{{ url_for('owner.mentors') }}" class="nav-link {% if request.endpoint == 'owner.mentors' %}active{% endif %}">
+            <span class="nav-icon">🧑‍🏫</span> Daftar Mentor
+          </a>
+          <a href="{{ url_for('owner.progress') }}" class="nav-link {% if request.endpoint == 'owner.progress' %}active{% endif %}">
+            <span class="nav-icon">📝</span> Perkembangan Siswa
+          </a>
+          <a href="{{ url_for('owner.replacements') }}" class="nav-link {% if request.endpoint == 'owner.replacements' %}active{% endif %}">
+            <span class="nav-icon">🔄</span> Riwayat Ganti Mentor
+          </a>
+          <a href="{{ url_for('owner.reports') }}" class="nav-link {% if request.endpoint == 'owner.reports' %}active{% endif %}">
+            <span class="nav-icon">📑</span> Rekap Laporan
+          </a>
+          <a href="{{ url_for('owner.audit_logs') }}" class="nav-link {% if request.endpoint == 'owner.audit_logs' %}active{% endif %}">
+            <span class="nav-icon">📜</span> Riwayat Aktivitas
+          </a>
+
+        {% elif current_user.role == 'mentor' %}
+          <div class="nav-section-title">Menu Pengajaran</div>
+          <a href="{{ url_for('mentor.dashboard') }}" class="nav-link {% if request.endpoint == 'mentor.dashboard' %}active{% endif %}">
+            <span class="nav-icon">🏠</span> Beranda Mentor
+          </a>
+          <a href="{{ url_for('mentor.schedules') }}" class="nav-link {% if request.endpoint == 'mentor.schedules' %}active{% endif %}">
+            <span class="nav-icon">🗓️</span> Jadwal Mengajar
+          </a>
+          <a href="{{ url_for('mentor.availability') }}" class="nav-link {% if request.endpoint == 'mentor.availability' %}active{% endif %}">
+            <span class="nav-icon">⏰</span> Ketersediaan Waktu
+          </a>
+          <a href="{{ url_for('mentor.students') }}" class="nav-link {% if request.endpoint == 'mentor.students' %}active{% endif %}">
+            <span class="nav-icon">👥</span> Siswa Bimbingan
+          </a>
+          <a href="{{ url_for('mentor.attendance') }}" class="nav-link {% if request.endpoint == 'mentor.attendance' %}active{% endif %}">
+            <span class="nav-icon">✅</span> Absensi Kehadiran & Sesi
+          </a>
+          <a href="{{ url_for('mentor.progress') }}" class="nav-link {% if request.endpoint == 'mentor.progress' %}active{% endif %}">
+            <span class="nav-icon">📝</span> Laporan Perkembangan
+          </a>
+        {% endif %}
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-badge">
+          <div class="user-avatar">{{ current_user.full_name[:1] if (current_user and current_user.full_name) else 'U' }}</div>
+          <div class="user-info">
+            <div class="user-name">{{ current_user.full_name if (current_user and current_user.full_name) else 'Pengguna' }}</div>
+            <div class="user-role-label">
+              Role: 
+              {% if current_user.role == 'admin' %}Admin Pengelola
+              {% elif current_user.role == 'owner' %}Pemilik
+              {% elif current_user.role == 'mentor' %}Mentor
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- BACKDROP DRAWER UNTUK TABLET & SMARTPHONE -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
+
+    <!-- KONTEN UTAMA -->
+    <div class="main-wrapper">
+      <header class="top-navbar">
+        <div class="top-navbar-left">
+          <button class="mobile-toggle-btn" id="mobileToggleBtn" aria-label="Buka Navigasi">☰</button>
+          <div class="page-title-box">
+            <h1>{% block page_title %}DESI PRIVAT{% endblock %}</h1>
+            <p>{% block page_subtitle %}Sistem Informasi Manajemen Tempat Les Privat{% endblock %}</p>
+          </div>
+        </div>
+
+        <div class="navbar-actions">
+          {% if current_user %}
+            {% if current_user.role == 'admin' %}
+              <a href="{{ url_for('admin.notifications_center') }}" class="notif-bell-btn" title="Pusat Notifikasi">
+                🔔
+                {% if unread_count > 0 %}
+                  <span class="notif-badge-count">{{ unread_count }}</span>
+                {% endif %}
+              </a>
+            {% endif %}
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-sm navbar-logout-btn" title="Keluar dari sistem">
+              🚪 <span class="logout-text">Keluar</span>
+            </a>
+          {% endif %}
+        </div>
+      </header>
+
+      <main class="content-body">
+        <!-- FLASH MESSAGES -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert-box alert-{{ category }}">
+                <div>{{ message }}</div>
+                <button type="button" onclick="this.parentElement.style.display='none'" style="background:none;border:none;cursor:pointer;font-weight:700;">&times;</button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+      </main>
+
+      <footer style="padding: 16px 28px; text-align: center; font-size: 12px; color: var(--gray-500); border-top: 1px solid var(--gray-200); background: var(--white);">
+        &copy; {{ current_year }} <strong>DESI PRIVAT</strong> - Sistem Informasi Manajemen Tempat Les Privat. Hak cipta dilindungi undang-undang.
+      </footer>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 640" width="100%" height="100%">
+  <defs>
+    <linearGradient id="mCapGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0ea5e9" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <linearGradient id="mFigureGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <linearGradient id="mPenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#b45309" />
+      <stop offset="100%" stop-color="#78350f" />
+    </linearGradient>
+    <filter id="mShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#0284c7" flood-opacity="0.12" />
+    </filter>
+  </defs>
+
+  <!-- Emblem Group -->
+  <g transform="translate(50, 10)" filter="url(#mShadow)">
+    <!-- Top Cap Diamond -->
+    <path d="M 250 50 L 440 150 L 250 220 L 60 150 Z" fill="url(#mCapGrad)" />
+    
+    <!-- Under Cap Body Band -->
+    <path d="M 140 190 L 140 240 Q 250 290 360 240 L 360 190 Q 250 230 140 190 Z" fill="#0369a1" />
+
+    <!-- Tassel on left -->
+    <path d="M 140 160 Q 90 190 90 250" stroke="#0284c7" stroke-width="8" fill="none" stroke-linecap="round" />
+    <circle cx="90" cy="255" r="12" fill="#0284c7" />
+    <path d="M 82 265 L 98 265 L 94 300 L 86 300 Z" fill="#0284c7" />
+
+    <!-- Joyous Reaching Figure -->
+    <circle cx="246" cy="165" r="26" fill="none" stroke="#ffffff" stroke-width="12" />
+    <circle cx="246" cy="165" r="20" fill="#0284c7" />
+
+    <!-- Dynamic Joyful Body with Raised Arms -->
+    <path d="M 185 115 C 170 185 220 255 246 330 C 275 250 340 165 348 135 C 315 180 275 225 246 225 C 220 225 195 175 185 115 Z" fill="#ffffff" />
+    <path d="M 195 125 C 185 180 225 240 246 320 C 270 245 325 170 335 145 C 305 182 270 215 246 215 C 225 215 205 175 195 125 Z" fill="url(#mFigureGrad)" />
+
+    <!-- Feather Quill Pen at Bottom Right -->
+    <g transform="translate(260, 230)">
+      <path d="M 18 45 C 35 25 65 30 75 55 C 65 85 45 110 5 135 C 25 105 32 80 18 45 Z" fill="url(#mPenGrad)" />
+      <path d="M 5 135 L 20 120 L 30 128 Z" fill="#451a03" />
+      <path d="M 12 128 L 45 80" stroke="#fef3c7" stroke-width="2" stroke-linecap="round" />
+    </g>
+  </g>
+
+  <!-- Typography: DESI PRIVAT -->
+  <text x="300" y="460" text-anchor="middle" font-family="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="54" font-weight="900" letter-spacing="4">
+    <tspan fill="#0284c7">DESI </tspan>
+    <tspan fill="#8d4b26">PRIVAT</tspan>
+  </text>
+
+  <!-- Slogan and Decorative Waves -->
+  <!-- Left Waves -->
+  <g transform="translate(50, 500)" stroke="#0284c7" stroke-width="3.5" fill="none" stroke-linecap="round">
+    <path d="M 0 0 Q 15 -6 30 0 T 60 0 T 90 0" />
+    <path d="M 0 8 Q 15 2 30 8 T 60 8 T 90 8" />
+    <path d="M 0 16 Q 15 10 30 16 T 60 16 T 90 16" />
+  </g>
+
+  <!-- Slogan Text -->
+  <text x="300" y="510" text-anchor="middle" font-family="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="20" font-weight="700" fill="#4b729f" letter-spacing="3">
+    DO THE BEST BE THE BEST
+  </text>
+
+  <!-- Right Waves -->
+  <g transform="translate(460, 500)" stroke="#0284c7" stroke-width="3.5" fill="none" stroke-linecap="round">
+    <path d="M 0 0 Q 15 -6 30 0 T 60 0 T 90 0" />
+    <path d="M 0 8 Q 15 2 30 8 T 60 8 T 90 8" />
+    <path d="M 0 16 Q 15 10 30 16 T 60 16 T 90 16" />
+  </g>
+</svg>
+

@@ -1,0 +1,924 @@
+{% extends "base.html" %}
+{% block title %}Detail Siswa - {{ student.full_name }}{% endblock %}
+{% block page_title %}{{ student.full_name }}{% endblock %}
+{% block page_subtitle %}Profil lengkap, riwayat program, jadwal, dan perkembangan belajar{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+  <a href="{{ url_for('admin.students') }}" class="btn btn-secondary btn-sm">
+    &larr; Kembali ke Daftar Siswa
+  </a>
+  <div>
+    {{ student.status|status_badge|safe }}
+  </div>
+</div>
+
+<div class="grid-profile-layout">
+  <!-- KOLOM KIRI: PROFIL & EDIT DATA SISWA -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span>👤</span> Informasi Profil Siswa</div>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('admin.edit_student', student_id=student.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="form-group">
+            <label class="form-label">Orang Tua / Wali Murid</label>
+            <select class="form-select" name="parent_id" required>
+              {% for p in parents %}
+                <option value="{{ p.id }}" {% if student.parent_id == p.id %}selected{% endif %}>{{ p.full_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Nama Lengkap</label>
+            <input type="text" class="form-control" name="full_name" value="{{ student.full_name }}" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Asal Sekolah</label>
+            <input type="text" class="form-control" name="school" value="{{ student.school or '' }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tingkat / Kelas</label>
+            <input type="text" class="form-control" name="grade" value="{{ student.grade or '' }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tanggal Lahir</label>
+            <input type="date" class="form-control" name="birth_date" value="{{ student.birth_date or '' }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Alamat Pelaksanaan Les</label>
+            <textarea class="form-control" name="address">{{ student.address or '' }}</textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Status Siswa</label>
+            <select class="form-select" name="status">
+              <option value="aktif" {% if student.status == 'aktif' %}selected{% endif %}>Aktif</option>
+              <option value="nonaktif" {% if student.status == 'nonaktif' %}selected{% endif %}>Nonaktif</option>
+              <option value="berhenti" {% if student.status == 'berhenti' %}selected{% endif %}>Berhenti (Arsip)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Catatan Kebutuhan Belajar</label>
+            <textarea class="form-control" name="notes">{{ student.notes or '' }}</textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%;">
+            💾 Perbarui Data Siswa
+          </button>
+        </form>
+
+        <div style="display: flex; gap: 8px; margin-top: 12px;">
+          <form method="POST" action="{{ url_for('admin.archive_student', student_id=student.id) }}" style="flex: 1;" onsubmit="return confirm('Ubah status arsip siswa ini?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% if student.status == 'aktif' %}
+              <input type="hidden" name="action" value="berhenti">
+              <button type="submit" class="btn btn-warning btn-sm" style="width: 100%;" title="Arsipkan / Set Berhenti">
+                📦 Arsipkan
+              </button>
+            {% else %}
+              <input type="hidden" name="action" value="aktif">
+              <button type="submit" class="btn btn-success btn-sm" style="width: 100%;" title="Aktifkan Kembali">
+                ✅ Aktifkan
+              </button>
+            {% endif %}
+          </form>
+          <button type="button" class="btn btn-danger btn-sm" style="flex: 1;" onclick="openModal('deleteStudentModal')" title="Kelola / Hapus Siswa">
+            🗑️ Hapus...
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- KARTU SIKLUS PERIODE & RIWAYAT PERTEMUAN (OTOMATIS 8 PERTEMUAN = 1 PERIODE) -->
+    <div class="card" style="border: 1px solid var(--border-lavender); background: var(--white-glass-strong); margin-bottom: 20px;">
+      <div class="card-header" style="background: linear-gradient(135deg, var(--blue-ultra-soft) 0%, var(--lavender-soft) 100%);">
+        <div class="card-title" style="color: var(--text-heading); font-size: 14.5px;">
+          <span class="card-icon">⚙️</span> Siklus Pertemuan & Periode
+        </div>
+      </div>
+      <div class="card-body">
+        <div style="margin-bottom: 12px;">
+          <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Status Sesi Berikutnya</div>
+          <div style="margin-top: 4px;">
+            <span class="badge badge-period" style="font-size: 14px; padding: 6px 14px;">
+              👉 {{ meeting_stats.next_meeting_str }}
+            </span>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12.5px; border-top: 1px dashed var(--border-subtle); padding-top: 10px; margin-bottom: 14px;">
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-muted);">Pertemuan Terakhir:</span>
+            <strong>{{ meeting_stats.last_meeting_str }}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-muted);">Total Pertemuan Selesai:</span>
+            <strong>{{ meeting_stats.total_completed }} pertemuan</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-muted);">Baseline Awal (Siswa Lama):</span>
+            <span class="badge badge-secondary">{{ meeting_stats.initial_offset }} manual</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-muted);">Absensi Hadir di Website:</span>
+            <span class="badge badge-success">{{ meeting_stats.valid_attendance_count }} sesi valid</span>
+          </div>
+          {% if meeting_stats.offset_notes %}
+            <div style="font-size: 11px; color: var(--text-muted); background: var(--blue-ultra-soft); padding: 6px 10px; border-radius: var(--radius-xs);">
+              Catatan Baseline: {{ meeting_stats.offset_notes }}
+            </div>
+          {% endif %}
+        </div>
+
+        <button type="button" class="btn btn-secondary btn-sm" style="width: 100%; border-color: var(--lavender);" onclick="openInitialMeetingModal()">
+          ⚙️ Atur Riwayat Awal Pertemuan
+        </button>
+      </div>
+    </div>
+
+    <!-- KARTU DATA WALI -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span>👨‍👩‍👦</span> Data Orang Tua / Wali</div>
+      </div>
+      <div class="card-body">
+        <div style="font-weight: 700; font-size: 15px; color: var(--text-main);">{{ student.parent_name }}</div>
+        <div style="font-size: 13px; color: var(--text-body); margin-top: 6px;">📞 Telepon: <strong>{{ student.parent_phone }}</strong></div>
+        <div style="font-size: 13px; color: var(--text-body); margin-top: 4px;">✉️ Email: {{ student.parent_email or '-' }}</div>
+        <div style="font-size: 13px; color: var(--text-body); margin-top: 4px;">📍 Alamat: {{ student.parent_address or '-' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KOLOM KANAN: PROGRAM, JADWAL, DAN PERKEMBANGAN BELAJAR -->
+  <div>
+    <!-- PROGRAM LES YANG DIIKUTI -->
+    <div class="card">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <div class="card-title"><span>📖</span> Program Les Diikuti</div>
+        <button type="button" class="btn btn-primary btn-sm" onclick="openModal('addStudentProgramModal')">
+          ➕ Tambah / Daftarkan Program
+        </button>
+      </div>
+      <div class="card-body" style="padding: 0;">
+        <div class="table-responsive">
+          <table class="table-desi">
+            <thead>
+              <tr>
+                <th>Program Les</th>
+                <th>Mentor Pengampu</th>
+                <th>Mulai / Selesai</th>
+                <th>Catatan</th>
+                <th>Status</th>
+                <th style="text-align: right;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for pr in programs %}
+              <tr>
+                <td><strong>{{ pr.program_name }}</strong></td>
+                <td>{{ pr.mentor_name or 'Belum ditentukan' }}</td>
+                <td>
+                  <div>{{ pr.start_date|date_indo }}</div>
+                  {% if pr.end_date %}
+                  <div style="font-size: 11px; color: var(--gray-500);">s/d {{ pr.end_date|date_indo }}</div>
+                  {% endif %}
+                </td>
+                <td>
+                  <span style="font-size: 12px; color: var(--gray-600);">{{ pr.notes or '-' }}</span>
+                </td>
+                <td>{{ pr.status|status_badge|safe }}</td>
+                <td style="text-align: right; white-space: nowrap;">
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-sm"
+                    style="padding: 4px 8px; font-size: 12px;"
+                    onclick="openEditStudentProgramModal({{ pr.id }}, {{ pr.program_id }}, '{{ pr.mentor_id or '' }}', '{{ pr.status }}', '{{ pr.start_date or '' }}', '{{ pr.end_date or '' }}', {{ (pr.notes or '')|tojson }})"
+                  >
+                    ✏️ Ganti / Edit
+                  </button>
+                  <form
+                    method="POST"
+                    action="{{ url_for('admin.delete_student_program', student_id=student.id, sp_id=pr.id) }}"
+                    style="display: inline-block; margin-left: 4px;"
+                    onsubmit="return confirm('Apakah Anda yakin ingin menghapus program {{ pr.program_name }} dari siswa ini? Riwayat jadwal lama tidak akan terhapus.');"
+                  >
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger btn-sm" style="padding: 4px 8px; font-size: 12px;" title="Hapus Program">
+                      🗑️
+                    </button>
+                  </form>
+                </td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="6" style="text-align: center; color: var(--gray-500); padding: 16px;">
+                  Belum ada program yang terdaftar untuk siswa ini. Silakan klik tombol <strong>➕ Tambah / Daftarkan Program</strong>.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIWAYAT PERKEMBANGAN BELAJAR -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span>📈</span> Riwayat Laporan Perkembangan Siswa</div>
+      </div>
+      <div class="card-body">
+        {% for prog in progress_list %}
+        <div class="progress-card">
+          <div class="progress-header">
+            <div>
+              <strong style="color: var(--navy-primary); font-size: 15px;">{{ prog.program_name }}</strong>
+              <div style="font-size: 12px; color: var(--gray-500);">Mentor: {{ prog.mentor_name }} &bull; Tanggal Sesi: {{ prog.session_date|date_indo }}</div>
+            </div>
+          </div>
+          <div class="progress-grid">
+            <div class="progress-item-box">
+              <div class="progress-item-label">Materi yang Dipelajari</div>
+              <div class="progress-item-text">{{ prog.topics_covered }}</div>
+            </div>
+            <div class="progress-item-box success">
+              <div class="progress-item-label">Kemampuan Telah Dikuasai</div>
+              <div class="progress-item-text">{{ prog.skills_mastered or '-' }}</div>
+            </div>
+            <div class="progress-item-box warning">
+              <div class="progress-item-label">Kesulitan yang Dialami</div>
+              <div class="progress-item-text">{{ prog.difficulties or '-' }}</div>
+            </div>
+            <div class="progress-item-box info">
+              <div class="progress-item-label">Rekomendasi Sesi Berikutnya</div>
+              <div class="progress-item-text">{{ prog.recommendations or '-' }}</div>
+            </div>
+          </div>
+          {% if prog.additional_notes %}
+          <div style="margin-top: 10px; font-size: 12px; color: var(--gray-500); font-style: italic;">
+            Catatan Tambahan: {{ prog.additional_notes }}
+          </div>
+          {% endif %}
+        </div>
+        {% else %}
+        <div style="text-align: center; color: var(--gray-500); padding: 24px;">
+          Belum ada laporan perkembangan belajar yang tercatat.
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- JADWAL LES RUTIN MINGGUAN SISWA -->
+    <div class="card" style="margin-bottom: 24px;">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <div>
+          <div class="card-title"><span>🗓️</span> Jadwal Les Rutin Mingguan</div>
+          <div style="font-size: 11.5px; color: var(--text-muted);">Jadwal berulang setiap minggu untuk siswa ini.</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openModal('addStudentRoutineModal')">
+          ➕ Tambah Hari / Jam Les
+        </button>
+      </div>
+      <div class="card-body" style="padding: 0;">
+        <div class="table-responsive">
+          <table class="table-desi">
+            <thead>
+              <tr>
+                <th>Hari & Jam</th>
+                <th>Program & Fokus Materi</th>
+                <th>Mentor Pengampu</th>
+                <th>Catatan</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for rs in routine_schedules %}
+              <tr>
+                <td>
+                  <strong style="color: var(--navy-dark); font-size: 13px;">🗓️ {{ rs.day_name }}</strong>
+                  <div style="font-size: 12px; color: var(--blue-brand); font-weight: 600;">
+                    ⏰ {{ rs.start_time }} - {{ rs.end_time }} WIB
+                  </div>
+                </td>
+                <td>
+                  <div style="font-weight: 600;">{{ rs.program_name }}</div>
+                  {% if rs.subject_info %}
+                    <div style="font-size: 11px; color: var(--blue-brand);">🎯 {{ rs.subject_info }}</div>
+                  {% endif %}
+                </td>
+                <td>
+                  <div style="font-weight: 600;">🧑‍🏫 {{ rs.mentor_name }}</div>
+                  {% if rs.mentor_phone %}
+                    <div style="font-size: 11px; color: var(--text-muted);">📞 {{ rs.mentor_phone }}</div>
+                  {% endif %}
+                </td>
+                <td>
+                  <div style="font-size: 11.5px; color: var(--text-muted);">{{ rs.notes or '-' }}</div>
+                </td>
+                <td>
+                  <div style="display: flex; gap: 6px;">
+                    <button
+                      type="button"
+                      class="btn btn-secondary btn-sm"
+                      onclick="openEditStudentRoutineModal({{ rs.id }}, {{ rs.day_of_week }}, '{{ rs.start_time }}', '{{ rs.end_time }}', {{ rs.mentor_id }}, '{{ rs.subject_info|default('', true) }}', '{{ rs.notes|default('', true) }}')"
+                      title="Edit Jadwal"
+                    >
+                      ✏️ Edit
+                    </button>
+                    <form method="POST" action="{{ url_for('admin.admin_delete_routine_schedule', routine_id=rs.id) }}" onsubmit="return confirm('Hapus slot jadwal rutin hari {{ rs.day_name }} ini?');" style="display:inline;">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button type="submit" class="btn btn-danger btn-sm" title="Hapus">🗑️</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 22px;">
+                  Belum ada jadwal les rutin mingguan untuk siswa ini. Klik tombol <strong>➕ Tambah Hari / Jam Les</strong> di atas untuk menetapkan jadwal.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIWAYAT SESI JADWAL & ABSENSI -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span>🗓️</span> Riwayat Sesi Jadwal, Pertemuan & Kehadiran</div>
+      </div>
+      <div class="card-body" style="padding: 0;">
+        <div class="table-responsive">
+          <table class="table-desi">
+            <thead>
+              <tr>
+                <th>Tanggal & Waktu</th>
+                <th>Program & Mentor</th>
+                <th>Nomor Pertemuan (Periode)</th>
+                <th>Kehadiran & Materi</th>
+                <th>Status Jadwal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for sc in schedules %}
+              <tr>
+                <td>
+                  <strong>{{ sc.schedule_date|date_indo }}</strong>
+                  <div style="font-size: 11px; color: var(--text-muted);">{{ sc.start_time }} - {{ sc.end_time }} WIB</div>
+                </td>
+                <td>
+                  <div style="font-weight: 600;">{{ sc.program_name }}</div>
+                  <div style="font-size: 11px; color: var(--blue-brand);">Mentor: {{ sc.mentor_name }}</div>
+                </td>
+                <td>
+                  {% if sc.attendance_status == 'hadir' and sc.meeting_number and sc.period_number %}
+                    <span class="badge badge-period" style="font-size: 12px;">
+                      Pertemuan {{ sc.meeting_number }} ({{ sc.period_number }})
+                    </span>
+                    <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Kumulatif ke-{{ sc.cumulative_meeting }}</div>
+                  {% elif sc.attendance_status in ('izin', 'tidak_hadir') %}
+                    <span class="badge badge-warning">Tidak Dihitung</span>
+                  {% else %}
+                    <span class="badge badge-secondary">Belum Terlaksana</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if sc.attendance_status %}
+                    <div>{{ sc.attendance_status|status_badge|safe }}</div>
+                    {% if sc.att_topics %}
+                      <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px; max-width: 220px;">
+                        📖 {{ sc.att_topics }}
+                      </div>
+                    {% endif %}
+                  {% else %}
+                    <span class="badge badge-secondary">Belum Absen</span>
+                  {% endif %}
+                </td>
+                <td>{{ sc.status|status_badge|safe }}</td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                  Belum ada sesi jadwal yang tercatat untuk siswa ini.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TAMBAH PROGRAM SISWA -->
+<div class="modal-overlay" id="addStudentProgramModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">Daftarkan Program Les untuk Siswa</div>
+      <button class="modal-close-btn" onclick="closeModal('addStudentProgramModal')">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('admin.add_student_program', student_id=student.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Pilih Program Les <span style="color:red">*</span></label>
+          <select name="program_id" class="form-control" required>
+            <option value="">-- Pilih Program Les --</option>
+            {% for p in all_programs %}
+              <option value="{{ p.id }}">{{ p.name }} ({{ p.code }}) - {{ p.level }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Mentor Pengampu (Opsional)</label>
+          <select name="mentor_id" class="form-control">
+            <option value="">-- Belum Ditentukan / Pilih Nanti --</option>
+            {% for m in all_mentors %}
+              <option value="{{ m.id }}">{{ m.full_name }} ({{ m.expertise or 'Umum' }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tanggal Mulai Les</label>
+          <input type="date" name="start_date" class="form-control">
+          <small style="color: var(--gray-500);">Kosongkan jika ingin menggunakan tanggal hari ini.</small>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Catatan Program (Opsional)</label>
+          <textarea name="notes" class="form-control" rows="2" placeholder="Contoh: Fokus persiapan ujian sekolah atau target capaian"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('addStudentProgramModal')">Batal</button>
+        <button type="submit" class="btn btn-primary">💾 Daftarkan Program</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL GANTI / EDIT PROGRAM SISWA -->
+<div class="modal-overlay" id="editStudentProgramModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">Ganti / Ubah Program Les Siswa</div>
+      <button class="modal-close-btn" onclick="closeModal('editStudentProgramModal')">&times;</button>
+    </div>
+    <form id="editStudentProgramForm" method="POST" action="">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Program Les <span style="color:red">*</span></label>
+          <select name="program_id" id="editSpProgramId" class="form-control" required>
+            {% for p in all_programs %}
+              <option value="{{ p.id }}">{{ p.name }} ({{ p.code }}) - {{ p.level }}</option>
+            {% endfor %}
+          </select>
+          <small style="color: var(--gray-500);">Pilih program lain jika siswa ingin beralih / berganti program les.</small>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Mentor Pengampu</label>
+          <select name="mentor_id" id="editSpMentorId" class="form-control">
+            <option value="">-- Belum Ditentukan / Pilih Mentor --</option>
+            {% for m in all_mentors %}
+              <option value="{{ m.id }}">{{ m.full_name }} ({{ m.expertise or 'Umum' }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Status Les</label>
+          <select name="status" id="editSpStatus" class="form-control" required>
+            <option value="aktif">Aktif (Sedang Berjalan)</option>
+            <option value="selesai">Selesai (Tuntas / Lulus Program)</option>
+            <option value="dibatalkan">Dibatalkan (Berhenti dari Program)</option>
+          </select>
+        </div>
+
+        <div class="grid-form-2">
+          <div class="form-group">
+            <label class="form-label">Tanggal Mulai</label>
+            <input type="date" name="start_date" id="editSpStartDate" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tanggal Selesai</label>
+            <input type="date" name="end_date" id="editSpEndDate" class="form-control">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Catatan Tambahan</label>
+          <textarea name="notes" id="editSpNotes" class="form-control" rows="2" placeholder="Catatan atau keterangan perubahan program"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('editStudentProgramModal')">Batal</button>
+        <button type="submit" class="btn btn-primary">💾 Simpan Perubahan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL PILIHAN HAPUS / ARSIP SISWA -->
+<div class="modal-overlay" id="deleteStudentModal">
+  <div class="modal-content" style="max-width: 520px;">
+    <div class="modal-header">
+      <div class="modal-title">🗑️ Kelola / Hapus Siswa</div>
+      <button class="modal-close-btn" onclick="closeModal('deleteStudentModal')">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('admin.delete_student', student_id=student.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <p style="margin-bottom: 16px; font-size: 14px; color: var(--gray-700);">
+          Pilih tindakan untuk data siswa <strong style="color: var(--navy-dark);">{{ student.full_name }}</strong>:
+        </p>
+
+        <!-- OPSI 1: HANYA ARSIP / NONAKTIFKAN -->
+        <div style="background: #FFFBEB; border: 1.5px solid #FCD34D; border-radius: 8px; padding: 14px; margin-bottom: 14px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <strong style="color: #92400E; font-size: 14px;">📦 Opsi 1: Hanya Arsip / Nonaktifkan</strong>
+            <span class="badge badge-warning">Disarankan</span>
+          </div>
+          <p style="font-size: 12.5px; color: #78350F; margin: 0 0 12px 0; line-height: 1.45;">
+            Menyimpan seluruh data dan riwayat belajar (jadwal les, absensi, perkembangan), mengubah status menjadi Nonaktif/Arsip. Siswa tidak aktif pada kalender namun rekam jejak akademik tetap utuh.
+          </p>
+          <button type="submit" name="action_type" value="archive" class="btn btn-warning btn-sm" style="font-weight: 600;">
+            📦 Hanya Arsip / Nonaktifkan
+          </button>
+        </div>
+
+        <!-- OPSI 2: HAPUS OTOMATIS (PERMANEN) -->
+        <div style="background: #FEF2F2; border: 1.5px solid #FCA5A5; border-radius: 8px; padding: 14px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <strong style="color: #991B1B; font-size: 14px;">🗑️ Opsi 2: Hapus Otomatis (Permanen)</strong>
+            <span class="badge badge-danger">Hapus Total</span>
+          </div>
+          <p style="font-size: 12.5px; color: #7F1D1D; margin: 0 0 12px 0; line-height: 1.45;">
+            Menghapus data siswa dan membersihkan seluruh riwayat jadwal, absensi, laporan perkembangan, serta ketersediaan secara otomatis dan permanen dari sistem.
+          </p>
+          <button type="submit" name="action_type" value="auto_delete" class="btn btn-danger btn-sm" style="font-weight: 600;" onclick="return confirm('Peringatan: Seluruh jadwal, absensi, dan data siswa ini akan dihapus permanen secara otomatis. Lanjutkan?');">
+            🗑️ Hapus Otomatis
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('deleteStudentModal')">Batal</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL PENGATURAN RIWAYAT AWAL PERTEMUAN -->
+<div class="modal-overlay" id="initialMeetingModal">
+  <div class="modal-dialog" style="max-width: 540px;">
+    <div class="modal-header">
+      <div class="modal-title">⚙️ Pengaturan Riwayat Awal Pertemuan</div>
+      <button class="modal-close-btn" onclick="closeModal('initialMeetingModal')">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('admin.set_student_initial_meetings', student_id=student.id) }}" onsubmit="return confirm('Simpan penyesuaian riwayat awal pertemuan siswa ini? Seluruh absensi hadir pada sistem akan otomatis disinkronkan.');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <div class="alert-box alert-info" style="font-size: 12px; margin-bottom: 14px;">
+          <div>
+            Atur total pertemuan yang telah diselesaikan <strong>{{ student.full_name }}</strong> sebelum sistem ini digunakan agar sistem melanjutkan nomor pertemuan dan siklus periodenya secara tepat (8 pertemuan = 1 periode).
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Metode Input Baseline</label>
+          <div style="display: flex; gap: 14px; margin-bottom: 10px;">
+            <label style="font-size: 12.5px; display: flex; align-items: center; gap: 6px;">
+              <input type="radio" name="input_mode" value="total" checked onchange="toggleDetailInputMode('total')">
+              Input Total Pertemuan Langsung
+            </label>
+            <label style="font-size: 12.5px; display: flex; align-items: center; gap: 6px;">
+              <input type="radio" name="input_mode" value="period_meeting" onchange="toggleDetailInputMode('period_meeting')">
+              Berdasarkan Periode & Pertemuan Terakhir
+            </label>
+          </div>
+        </div>
+
+        <!-- MODE 1 -->
+        <div id="modeDetailTotal" class="form-group">
+          <label class="form-label" for="detailInputOffset">Total Pertemuan Diselesaikan Sebelum Sistem</label>
+          <input
+            type="number"
+            class="form-control"
+            id="detailInputOffset"
+            name="initial_offset"
+            value="{{ meeting_stats.initial_offset }}"
+            min="0"
+            oninput="recalculateDetailPreview()"
+          >
+          <small style="color: var(--text-muted); font-size: 11px;">Contoh: 40 pertemuan (maka sesi berikutnya adalah Pertemuan 1 (6)).</small>
+        </div>
+
+        <!-- MODE 2 -->
+        <div id="modeDetailPeriodMeeting" style="display: none; margin-bottom: 16px;">
+          <div class="grid-form-2">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="detailSelectPeriod">Periode Terakhir</label>
+              <input
+                type="number"
+                class="form-control"
+                id="detailSelectPeriod"
+                name="last_period"
+                value="{{ meeting_stats.last_period if meeting_stats.last_period > 0 else 1 }}"
+                min="1"
+                oninput="recalculateDetailPreview()"
+              >
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="detailSelectMeeting">Pertemuan Terakhir (1-8)</label>
+              <input
+                type="number"
+                class="form-control"
+                id="detailSelectMeeting"
+                name="last_meeting"
+                value="{{ meeting_stats.last_meeting if meeting_stats.last_meeting > 0 else 0 }}"
+                min="0"
+                max="8"
+                oninput="recalculateDetailPreview()"
+              >
+            </div>
+          </div>
+          <small style="color: var(--text-muted); font-size: 11px; display: block; margin-top: 4px;">
+            Contoh: Menyelesaikan 3 pertemuan di Periode 4 &rarr; Masukkan Periode 4, Pertemuan 3 (maka sesi berikutnya adalah Pertemuan 4 (4)).
+          </small>
+        </div>
+
+        <!-- LIVE PREVIEW -->
+        <div style="background: var(--blue-ultra-soft); border: 1px solid var(--border-blue); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
+          <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--blue-brand); letter-spacing: 0.5px; margin-bottom: 6px;">
+            Hasil Perhitungan Otomatis:
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 13px;">
+            <span>Total Pertemuan Baseline:</span>
+            <strong id="detailPreviewTotal" style="color: var(--text-main);">{{ meeting_stats.initial_offset }} pertemuan</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 13px;">
+            <span>Status Pertemuan Terakhir:</span>
+            <span class="badge badge-secondary" id="detailPreviewLast">{{ meeting_stats.last_meeting_str }}</span>
+          </div>
+          <div style="border-top: 1px dashed var(--border-subtle); padding-top: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <strong style="font-size: 13.5px; color: var(--text-heading);">Pertemuan Selanjutnya di Sistem:</strong>
+            <span class="badge badge-period" id="detailPreviewNext" style="font-size: 13px;">{{ meeting_stats.next_meeting_str }}</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="detailOffsetNotes">Catatan / Keterangan Penyesuaian</label>
+          <input
+            type="text"
+            class="form-control"
+            id="detailOffsetNotes"
+            name="notes"
+            value="{{ meeting_stats.offset_notes or '' }}"
+            placeholder="Contoh: Migrasi buku besar les 2025/2026"
+          >
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('initialMeetingModal')">Batal</button>
+        <button type="submit" class="btn btn-primary">Simpan Riwayat Awal</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- MODAL TAMBAH JADWAL RUTIN SISWA -->
+<div class="modal-overlay" id="addStudentRoutineModal">
+  <div class="modal-dialog" style="max-width: 560px;">
+    <div class="modal-header">
+      <div class="modal-title">🗓️ Tambah Jadwal Rutin untuk {{ student.full_name }}</div>
+      <button class="modal-close-btn" onclick="closeModal('addStudentRoutineModal')">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('admin.admin_create_routine_schedule') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="student_id" value="{{ student.id }}">
+      <div class="modal-body">
+        <div class="grid-form-2">
+          <div class="form-group">
+            <label class="form-label">Program Les <span style="color: var(--danger);">*</span></label>
+            <select class="form-select" name="program_id" required>
+              <option value="">-- Pilih Program --</option>
+              {% for pr in all_programs %}
+                <option value="{{ pr.id }}">{{ pr.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Mentor Pengampu <span style="color: var(--danger);">*</span></label>
+            <select class="form-select" name="mentor_id" required>
+              <option value="">-- Pilih Mentor --</option>
+              {% for m in all_mentors %}
+                <option value="{{ m.id }}">{{ m.full_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="grid-form-3">
+          <div class="form-group">
+            <label class="form-label">Hari Les <span style="color: var(--danger);">*</span></label>
+            <select class="form-select" name="day_of_week" required>
+              <option value="0">Senin</option>
+              <option value="1">Selasa</option>
+              <option value="2">Rabu</option>
+              <option value="3">Kamis</option>
+              <option value="4">Jumat</option>
+              <option value="5" selected>Sabtu</option>
+              <option value="6">Minggu</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Jam Mulai <span style="color: var(--danger);">*</span></label>
+            <input type="time" class="form-control" name="start_time" value="09:00" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Jam Selesai <span style="color: var(--danger);">*</span></label>
+            <input type="time" class="form-control" name="end_time" value="10:30" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Informasi Mata Pelajaran / Materi Fokus</label>
+          <input type="text" class="form-control" name="subject_info" placeholder="Contoh: Matematika Aljabar">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Catatan Tambahan</label>
+          <input type="text" class="form-control" name="notes" placeholder="Lokasi les, dsb...">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('addStudentRoutineModal')">Batal</button>
+        <button type="submit" class="btn btn-primary">Simpan Jadwal Rutin</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL EDIT JADWAL RUTIN SISWA -->
+<div class="modal-overlay" id="editStudentRoutineModal">
+  <div class="modal-dialog" style="max-width: 560px;">
+    <div class="modal-header">
+      <div class="modal-title">✏️ Perbarui Jadwal Rutin Siswa</div>
+      <button class="modal-close-btn" onclick="closeModal('editStudentRoutineModal')">&times;</button>
+    </div>
+    <form method="POST" id="editStudentRoutineForm" action="">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <div class="grid-form-3">
+          <div class="form-group">
+            <label class="form-label">Hari Les <span style="color: var(--danger);">*</span></label>
+            <select class="form-select" name="day_of_week" id="stDetailRoutineDay" required>
+              <option value="0">Senin</option>
+              <option value="1">Selasa</option>
+              <option value="2">Rabu</option>
+              <option value="3">Kamis</option>
+              <option value="4">Jumat</option>
+              <option value="5">Sabtu</option>
+              <option value="6">Minggu</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Jam Mulai <span style="color: var(--danger);">*</span></label>
+            <input type="time" class="form-control" name="start_time" id="stDetailRoutineStart" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Jam Selesai <span style="color: var(--danger);">*</span></label>
+            <input type="time" class="form-control" name="end_time" id="stDetailRoutineEnd" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Mentor Pengampu <span style="color: var(--danger);">*</span></label>
+          <select class="form-select" name="mentor_id" id="stDetailRoutineMentor" required>
+            {% for m in all_mentors %}
+              <option value="{{ m.id }}">{{ m.full_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Informasi Mata Pelajaran / Fokus</label>
+          <input type="text" class="form-control" name="subject_info" id="stDetailRoutineSubject">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Catatan Tambahan</label>
+          <input type="text" class="form-control" name="notes" id="stDetailRoutineNotes">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('editStudentRoutineModal')">Batal</button>
+        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openEditStudentRoutineModal(id, day, start, end, mentorId, subject, notes) {
+  document.getElementById("editStudentRoutineForm").action = "/admin/schedules/routine/" + id + "/edit";
+  document.getElementById("stDetailRoutineDay").value = day;
+  document.getElementById("stDetailRoutineStart").value = start;
+  document.getElementById("stDetailRoutineEnd").value = end;
+  document.getElementById("stDetailRoutineMentor").value = mentorId;
+  document.getElementById("stDetailRoutineSubject").value = subject || "";
+  document.getElementById("stDetailRoutineNotes").value = notes || "";
+  openModal("editStudentRoutineModal");
+}
+function openInitialMeetingModal() {
+  openModal("initialMeetingModal");
+  recalculateDetailPreview();
+}
+
+function toggleDetailInputMode(mode) {
+  const totalBox = document.getElementById("modeDetailTotal");
+  const pmBox = document.getElementById("modeDetailPeriodMeeting");
+  if (mode === "total") {
+    totalBox.style.display = "block";
+    pmBox.style.display = "none";
+  } else {
+    totalBox.style.display = "none";
+    pmBox.style.display = "block";
+  }
+  recalculateDetailPreview();
+}
+
+function recalculateDetailPreview() {
+  const mode = document.querySelector("input[name='input_mode']:checked") ? document.querySelector("input[name='input_mode']:checked").value : "total";
+  let total = 0;
+  if (mode === "period_meeting") {
+    const p = parseInt(document.getElementById("detailSelectPeriod").value) || 1;
+    const m = parseInt(document.getElementById("detailSelectMeeting").value) || 0;
+    total = Math.max(0, (p - 1) * 8 + m);
+    document.getElementById("detailInputOffset").value = total;
+  } else {
+    total = parseInt(document.getElementById("detailInputOffset").value) || 0;
+    if (total > 0) {
+      document.getElementById("detailSelectPeriod").value = Math.floor((total - 1) / 8) + 1;
+      document.getElementById("detailSelectMeeting").value = ((total - 1) % 8) + 1;
+    } else {
+      document.getElementById("detailSelectPeriod").value = 1;
+      document.getElementById("detailSelectMeeting").value = 0;
+    }
+  }
+
+  // Tambahkan valid attendance yang sudah ada di sistem
+  const systemValidCount = {{ meeting_stats.valid_attendance_count }};
+  const grandTotal = total + systemValidCount;
+
+  document.getElementById("detailPreviewTotal").innerText = total + " manual (" + grandTotal + " total kumulatif)";
+
+  if (grandTotal > 0) {
+    const lastP = Math.floor((grandTotal - 1) / 8) + 1;
+    const lastM = ((grandTotal - 1) % 8) + 1;
+    document.getElementById("detailPreviewLast").innerText = "Pertemuan " + lastM + " (" + lastP + ")";
+    document.getElementById("detailPreviewLast").className = "badge badge-period";
+  } else {
+    document.getElementById("detailPreviewLast").innerText = "Belum ada";
+    document.getElementById("detailPreviewLast").className = "badge badge-secondary";
+  }
+
+  const nextTotal = grandTotal + 1;
+  const nextP = Math.floor((nextTotal - 1) / 8) + 1;
+  const nextM = ((nextTotal - 1) % 8) + 1;
+  document.getElementById("detailPreviewNext").innerText = "Pertemuan " + nextM + " (" + nextP + ")";
+}
+
+function openEditStudentProgramModal(spId, programId, mentorId, status, startDate, endDate, notes) {
+  const form = document.getElementById("editStudentProgramForm");
+  form.action = "{{ url_for('admin.student_detail', student_id=student.id) }}/programs/" + spId + "/edit";
+  document.getElementById("editSpProgramId").value = programId;
+  document.getElementById("editSpMentorId").value = mentorId || "";
+  document.getElementById("editSpStatus").value = status || "aktif";
+  document.getElementById("editSpStartDate").value = startDate || "";
+  document.getElementById("editSpEndDate").value = endDate || "";
+  document.getElementById("editSpNotes").value = notes || "";
+  openModal("editStudentProgramModal");
+}
+</script>
+{% endblock %}
