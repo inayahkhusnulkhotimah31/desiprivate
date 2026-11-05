@@ -73,6 +73,12 @@ class Config:
     # Mode Uji WhatsApp
     WHATSAPP_TEST_MODE = True
 
+    # Supabase Cloud Configuration
+    SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+    SUPABASE_PUBLISHABLE_KEY = os.getenv("SUPABASE_PUBLISHABLE_KEY", "")
+    SUPABASE_SECRET_KEY = os.getenv("SUPABASE_SECRET_KEY", "")
+    SUPABASE_JWKS_URL = os.getenv("SUPABASE_JWKS_URL", "")
+
 
 class DevelopmentConfig(Config):
     """Konfigurasi mode pengembangan lokal."""
