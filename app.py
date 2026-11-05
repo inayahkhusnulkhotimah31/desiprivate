@@ -54,6 +54,26 @@ def create_app(config_class=None):
         from flask import redirect, url_for
         return redirect(url_for('auth.login'))
 
+    # Sinkronisasi Database Otomatis Antar Perangkat via Supabase Cloud
+    @app.before_request
+    def before_request_cloud_sync():
+        if getattr(Config, "IS_VERCEL", False) and not getattr(Config, "TESTING", False):
+            try:
+                from services.cloud_sync_service import sync_from_cloud
+                sync_from_cloud()
+            except Exception:
+                pass
+
+    @app.after_request
+    def after_request_cloud_sync(response):
+        if getattr(Config, "IS_VERCEL", False) and not getattr(Config, "TESTING", False):
+            try:
+                from services.cloud_sync_service import sync_to_cloud
+                sync_to_cloud()
+            except Exception:
+                pass
+        return response
+
     # Daftarkan Blueprint Routes
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)

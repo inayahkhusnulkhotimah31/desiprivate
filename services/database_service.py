@@ -56,9 +56,19 @@ def _prepare_postgres_sql(query):
     return sql
 
 def _ensure_vercel_db(path):
-    """Menjamin database di temp directory selalu tersedia saat runtime Vercel jika memakai SQLite."""
+    """Menjamin database di temp directory selalu tersedia dan tersinkronisasi dari Cloud."""
     if getattr(Config, "IS_VERCEL", False) and not getattr(Config, "TESTING", False) and not is_postgres():
         p = Path(path)
+        # 1. Coba sinkronisasi dari Supabase Cloud terlebih dahulu
+        try:
+            from services.cloud_sync_service import sync_from_cloud
+            synced = sync_from_cloud(force=not p.exists())
+            if synced:
+                return
+        except Exception:
+            pass
+
+        # 2. Fallback jika belum ada di cloud
         if not p.exists():
             seed = Path(__file__).resolve().parent.parent / "database" / "desi_privat.db"
             if seed.exists():
@@ -228,6 +238,13 @@ def execute_db(query, args=(), commit=True, db_path=None):
     row_count = cur.rowcount
     if commit:
         db.commit()
+        if getattr(Config, "IS_VERCEL", False) and not getattr(Config, "TESTING", False):
+            try:
+                from services.cloud_sync_service import mark_db_dirty, sync_to_cloud
+                mark_db_dirty()
+                sync_to_cloud()
+            except Exception:
+                pass
     cur.close()
     if is_direct:
         db.close()
@@ -246,6 +263,13 @@ def execute_db(query, args=(), commit=True, db_path=None):
     row_count = cur.rowcount
     if commit:
         db.commit()
+        if getattr(Config, "IS_VERCEL", False) and not getattr(Config, "TESTING", False):
+            try:
+                from services.cloud_sync_service import mark_db_dirty, sync_to_cloud
+                mark_db_dirty()
+                sync_to_cloud()
+            except Exception:
+                pass
     cur.close()
     if is_direct:
         db.close()

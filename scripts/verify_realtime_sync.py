@@ -25,3 +25,4 @@ def test_sync(password="DesiPrivat2026"):
 if __name__ == "__main__":
     pwd = sys.argv[1] if len(sys.argv) > 1 else "DesiPrivat2026"
     test_sync(pwd)
+
