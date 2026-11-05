@@ -24,94 +24,94 @@
             <div class="sidebar-brand-sub">Sistem Manajemen Les</div>
           </div>
         </div>
-        <button type="button" class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Tutup Menu">&times;</button>
+        <button type="button" class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Tutup Menu">{{ icon('close') }}</button>
       </div>
 
       <nav class="sidebar-nav">
         {% if current_user.role == 'admin' %}
           <div class="nav-section-title">Operasional Utama</div>
           <a href="{{ url_for('admin.dashboard') }}" class="nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
-            <span class="nav-icon">📊</span> Dashboard Admin
+            <span class="nav-icon">{{ icon('dashboard') }}</span> Dashboard Admin
           </a>
           <a href="{{ url_for('admin.schedules') }}" class="nav-link {% if 'admin.schedules' in request.endpoint %}active{% endif %}">
-            <span class="nav-icon">🗓️</span> Penjadwalan & Sesi
+            <span class="nav-icon">{{ icon('calendar') }}</span> Penjadwalan & Sesi
           </a>
           <a href="{{ url_for('admin.students') }}" class="nav-link {% if 'admin.student' in request.endpoint %}active{% endif %}">
-            <span class="nav-icon">🎓</span> Data Siswa & Periode
+            <span class="nav-icon">{{ icon('student') }}</span> Data Siswa & Periode
           </a>
           <a href="{{ url_for('admin.parents') }}" class="nav-link {% if 'admin.parents' in request.endpoint %}active{% endif %}">
-            <span class="nav-icon">👨‍👩‍👦</span> Data Orang Tua / Wali
+            <span class="nav-icon">{{ icon('family') }}</span> Data Orang Tua / Wali
           </a>
           <a href="{{ url_for('admin.mentors') }}" class="nav-link {% if 'admin.mentors' in request.endpoint %}active{% endif %}">
-            <span class="nav-icon">🧑‍🏫</span> Data Mentor
+            <span class="nav-icon">{{ icon('mentor') }}</span> Data Mentor
           </a>
           <a href="{{ url_for('admin.programs') }}" class="nav-link {% if 'admin.programs' in request.endpoint %}active{% endif %}">
-            <span class="nav-icon">📖</span> Program Les
+            <span class="nav-icon">{{ icon('book') }}</span> Program Les
           </a>
 
           <div class="nav-section-title">Sistem & Keamanan</div>
           <a href="{{ url_for('admin.accounts') }}" class="nav-link {% if 'admin.accounts' in request.endpoint %}active{% endif %}">
-            <span class="nav-icon">🔑</span> Manajemen Akun
+            <span class="nav-icon">{{ icon('key') }}</span> Manajemen Akun
           </a>
           <a href="{{ url_for('admin.notifications_center') }}" class="nav-link {% if 'admin.notifications' in request.endpoint %}active{% endif %}">
-            <span class="nav-icon">🔔</span> Pemberitahuan Sistem
+            <span class="nav-icon">{{ icon('bell') }}</span> Pemberitahuan Sistem
           </a>
           <a href="{{ url_for('admin.reports') }}" class="nav-link {% if 'admin.reports' in request.endpoint %}active{% endif %}">
-            <span class="nav-icon">📑</span> Laporan & Ekspor
+            <span class="nav-icon">{{ icon('report') }}</span> Laporan & Ekspor
           </a>
           <a href="{{ url_for('admin.audit_logs') }}" class="nav-link {% if 'admin.audit_logs' in request.endpoint %}active{% endif %}">
-            <span class="nav-icon">📜</span> Riwayat Audit Log
+            <span class="nav-icon">{{ icon('history') }}</span> Riwayat Audit Log
           </a>
           <a href="{{ url_for('admin.backups') }}" class="nav-link {% if 'admin.backups' in request.endpoint %}active{% endif %}">
-            <span class="nav-icon">💾</span> Backup & Restore
+            <span class="nav-icon">{{ icon('backup') }}</span> Backup & Restore
           </a>
 
         {% elif current_user.role == 'owner' %}
           <div class="nav-section-title">Pengawasan Pemilik</div>
           <a href="{{ url_for('owner.dashboard') }}" class="nav-link {% if request.endpoint == 'owner.dashboard' %}active{% endif %}">
-            <span class="nav-icon">📈</span> Pengawasan Eksekutif
+            <span class="nav-icon">{{ icon('trending-up') }}</span> Pengawasan Eksekutif
           </a>
           <a href="{{ url_for('owner.schedules') }}" class="nav-link {% if request.endpoint == 'owner.schedules' %}active{% endif %}">
-            <span class="nav-icon">🗓️</span> Rekap Jadwal & Kalender
+            <span class="nav-icon">{{ icon('calendar') }}</span> Rekap Jadwal & Kalender
           </a>
           <a href="{{ url_for('owner.students') }}" class="nav-link {% if request.endpoint == 'owner.students' %}active{% endif %}">
-            <span class="nav-icon">🎓</span> Siswa & Perkembangan
+            <span class="nav-icon">{{ icon('student') }}</span> Siswa & Perkembangan
           </a>
           <a href="{{ url_for('owner.mentors') }}" class="nav-link {% if request.endpoint == 'owner.mentors' %}active{% endif %}">
-            <span class="nav-icon">🧑‍🏫</span> Daftar Mentor
+            <span class="nav-icon">{{ icon('mentor') }}</span> Daftar Mentor
           </a>
           <a href="{{ url_for('owner.progress') }}" class="nav-link {% if request.endpoint == 'owner.progress' %}active{% endif %}">
-            <span class="nav-icon">📝</span> Perkembangan Siswa
+            <span class="nav-icon">{{ icon('pencil') }}</span> Perkembangan Siswa
           </a>
           <a href="{{ url_for('owner.replacements') }}" class="nav-link {% if request.endpoint == 'owner.replacements' %}active{% endif %}">
-            <span class="nav-icon">🔄</span> Riwayat Ganti Mentor
+            <span class="nav-icon">{{ icon('refresh') }}</span> Riwayat Ganti Mentor
           </a>
           <a href="{{ url_for('owner.reports') }}" class="nav-link {% if request.endpoint == 'owner.reports' %}active{% endif %}">
-            <span class="nav-icon">📑</span> Rekap Laporan
+            <span class="nav-icon">{{ icon('report') }}</span> Rekap Laporan
           </a>
           <a href="{{ url_for('owner.audit_logs') }}" class="nav-link {% if request.endpoint == 'owner.audit_logs' %}active{% endif %}">
-            <span class="nav-icon">📜</span> Riwayat Aktivitas
+            <span class="nav-icon">{{ icon('history') }}</span> Riwayat Aktivitas
           </a>
 
         {% elif current_user.role == 'mentor' %}
           <div class="nav-section-title">Menu Pengajaran</div>
           <a href="{{ url_for('mentor.dashboard') }}" class="nav-link {% if request.endpoint == 'mentor.dashboard' %}active{% endif %}">
-            <span class="nav-icon">🏠</span> Beranda Mentor
+            <span class="nav-icon">{{ icon('home') }}</span> Beranda Mentor
           </a>
           <a href="{{ url_for('mentor.schedules') }}" class="nav-link {% if request.endpoint == 'mentor.schedules' %}active{% endif %}">
-            <span class="nav-icon">🗓️</span> Jadwal Mengajar
+            <span class="nav-icon">{{ icon('calendar') }}</span> Jadwal Mengajar
           </a>
           <a href="{{ url_for('mentor.availability') }}" class="nav-link {% if request.endpoint == 'mentor.availability' %}active{% endif %}">
-            <span class="nav-icon">⏰</span> Ketersediaan Waktu
+            <span class="nav-icon">{{ icon('clock') }}</span> Ketersediaan Waktu
           </a>
           <a href="{{ url_for('mentor.students') }}" class="nav-link {% if request.endpoint == 'mentor.students' %}active{% endif %}">
-            <span class="nav-icon">👥</span> Siswa Bimbingan
+            <span class="nav-icon">{{ icon('users') }}</span> Siswa Bimbingan
           </a>
           <a href="{{ url_for('mentor.attendance') }}" class="nav-link {% if request.endpoint == 'mentor.attendance' %}active{% endif %}">
-            <span class="nav-icon">✅</span> Absensi Kehadiran & Sesi
+            <span class="nav-icon">{{ icon('check-circle') }}</span> Absensi Kehadiran & Sesi
           </a>
           <a href="{{ url_for('mentor.progress') }}" class="nav-link {% if request.endpoint == 'mentor.progress' %}active{% endif %}">
-            <span class="nav-icon">📝</span> Laporan Perkembangan
+            <span class="nav-icon">{{ icon('pencil') }}</span> Laporan Perkembangan
           </a>
         {% endif %}
       </nav>
@@ -140,7 +140,7 @@
     <div class="main-wrapper">
       <header class="top-navbar">
         <div class="top-navbar-left">
-          <button class="mobile-toggle-btn" id="mobileToggleBtn" aria-label="Buka Navigasi">☰</button>
+          <button class="mobile-toggle-btn" id="mobileToggleBtn" aria-label="Buka Navigasi">{{ icon('menu') }}</button>
           <div class="page-title-box">
             <h1>{% block page_title %}DESI PRIVAT{% endblock %}</h1>
             <p>{% block page_subtitle %}Sistem Informasi Manajemen Tempat Les Privat{% endblock %}</p>
@@ -151,14 +151,14 @@
           {% if current_user %}
             {% if current_user.role == 'admin' %}
               <a href="{{ url_for('admin.notifications_center') }}" class="notif-bell-btn" title="Pusat Notifikasi">
-                🔔
+                {{ icon('bell') }}
                 {% if unread_count > 0 %}
                   <span class="notif-badge-count">{{ unread_count }}</span>
                 {% endif %}
               </a>
             {% endif %}
             <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-sm navbar-logout-btn" title="Keluar dari sistem">
-              🚪 <span class="logout-text">Keluar</span>
+              {{ icon('logout') }} <span class="logout-text">Keluar</span>
             </a>
           {% endif %}
         </div>

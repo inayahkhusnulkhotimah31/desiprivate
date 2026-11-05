@@ -11,14 +11,14 @@
   <div class="card-header">
     <div>
       <div class="card-title">
-        <span class="card-icon">🗓️</span> Jadwal Les Rutin Mingguan Siswa
+        <span class="card-icon">{{ icon('calendar') }}</span> Jadwal Les Rutin Mingguan Siswa
       </div>
       <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
         Jadwal tetap berulang setiap minggu yang ditetapkan Admin. Periode dan nomor pertemuan dihitung otomatis dari absensi kehadiran mentor.
       </div>
     </div>
     <button class="btn btn-primary btn-sm" onclick="openModal('addRoutineModal')">
-      ➕ Tambah Jadwal Rutin
+      {{ icon('plus') }} Tambah Jadwal Rutin
     </button>
   </div>
   <div class="card-body">
@@ -67,10 +67,10 @@
           <tr>
             <td>
               <div style="font-weight: 700; color: var(--navy-dark); font-size: 13.5px;">
-                🗓️ {{ rs.day_name }}
+                {{ icon('calendar') }} {{ rs.day_name }}
               </div>
               <div style="font-size: 12px; color: var(--blue-brand); font-weight: 600;">
-                ⏰ {{ rs.start_time }} - {{ rs.end_time }} WIB
+                {{ icon('clock') }} {{ rs.start_time }} - {{ rs.end_time }} WIB
               </div>
             </td>
             <td>
@@ -87,24 +87,24 @@
               </div>
               {% if rs.subject_info %}
                 <div style="font-size: 11px; color: var(--blue-brand);">
-                  🎯 {{ rs.subject_info }}
+                  {{ icon('target') }} {{ rs.subject_info }}
                 </div>
               {% endif %}
             </td>
             <td>
               <div style="font-weight: 600; color: var(--navy-dark);">
-                🧑‍🏫 {{ rs.mentor_name }}
+                {{ icon('mentor') }} {{ rs.mentor_name }}
               </div>
               {% if rs.mentor_phone %}
                 <div style="font-size: 11px; color: var(--text-muted);">
-                  📞 {{ rs.mentor_phone }}
+                  {{ icon('phone') }} {{ rs.mentor_phone }}
                 </div>
               {% endif %}
             </td>
             <td>
               <div>{{ rs.parent_name or '-' }}</div>
               {% if rs.parent_phone %}
-                <div style="font-size: 11px; color: var(--text-muted);">📞 {{ rs.parent_phone }}</div>
+                <div style="font-size: 11px; color: var(--text-muted);">{{ icon('phone') }} {{ rs.parent_phone }}</div>
               {% endif %}
             </td>
             <td>
@@ -118,12 +118,12 @@
                   onclick="openEditRoutineModal({{ rs.id }}, {{ rs.day_of_week }}, '{{ rs.start_time }}', '{{ rs.end_time }}', {{ rs.mentor_id }}, '{{ rs.subject_info|default('', true) }}', '{{ rs.notes|default('', true) }}')"
                   title="Ubah Jadwal Rutin"
                 >
-                  ✏️ Edit
+                  {{ icon('edit') }} Edit
                 </button>
                 <form method="POST" action="{{ url_for('admin.admin_delete_routine_schedule', routine_id=rs.id) }}" onsubmit="return confirm('Hapus slot jadwal rutin hari {{ rs.day_name }} ini? Riwayat absensi sebelumnya tetap tersimpan aman.');" style="display: inline;">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button type="submit" class="btn btn-danger btn-sm" title="Hapus Slot">
-                    🗑️
+                    {{ icon('trash') }}
                   </button>
                 </form>
               </div>
@@ -132,7 +132,7 @@
           {% else %}
           <tr>
             <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 28px;">
-              Belum ada jadwal rutin mingguan. Klik tombol <strong>➕ Tambah Jadwal Rutin</strong> di atas atau tetapkan saat pendaftaran siswa baru.
+              Belum ada jadwal rutin mingguan. Klik tombol <strong>{{ icon('plus') }} Tambah Jadwal Rutin</strong> di atas atau tetapkan saat pendaftaran siswa baru.
             </td>
           </tr>
           {% endfor %}
@@ -149,7 +149,7 @@
   <div class="card-header">
     <div>
       <div class="card-title">
-        <span class="card-icon">📋</span> Riwayat Pelaksanaan Sesi &amp; Absensi
+        <span class="card-icon">{{ icon('clipboard') }}</span> Riwayat Pelaksanaan Sesi &amp; Absensi
       </div>
       <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
         Dokumentasi sesi bimbingan yang telah dicatat atau dijadwalkan secara spesifik.
@@ -231,7 +231,7 @@
                     onclick="prepareMentorReplacementModal({{ sc.id }}, '{{ sc.mentor_name }}')"
                     title="Ganti Mentor Pengganti"
                   >
-                    🔄 Ganti Mentor
+                    {{ icon('refresh') }} Ganti Mentor
                   </button>
                   <form method="POST" action="{{ url_for('admin.admin_reject_schedule', schedule_id=sc.id) }}" onsubmit="return confirm('Batalkan sesi jadwal les ini?');" style="display:inline;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -262,7 +262,7 @@
 <div class="modal-overlay" id="addRoutineModal">
   <div class="modal-dialog" style="max-width: 600px;">
     <div class="modal-header">
-      <div class="modal-title">🗓️ Tambah Jadwal Les Rutin Siswa</div>
+      <div class="modal-title">{{ icon('calendar') }} Tambah Jadwal Les Rutin Siswa</div>
       <button class="modal-close-btn" onclick="closeModal('addRoutineModal')">&times;</button>
     </div>
     <form method="POST" action="{{ url_for('admin.admin_create_routine_schedule') }}">
@@ -350,7 +350,7 @@
 <div class="modal-overlay" id="editRoutineModal">
   <div class="modal-dialog" style="max-width: 580px;">
     <div class="modal-header">
-      <div class="modal-title">✏️ Perbarui Jadwal Rutin Siswa</div>
+      <div class="modal-title">{{ icon('edit') }} Perbarui Jadwal Rutin Siswa</div>
       <button class="modal-close-btn" onclick="closeModal('editRoutineModal')">&times;</button>
     </div>
     <form method="POST" id="editRoutineForm" action="">
@@ -412,7 +412,7 @@
 <div class="modal-overlay" id="replacementModal">
   <div class="modal-dialog" style="max-width: 520px;">
     <div class="modal-header">
-      <div class="modal-title">🔄 Ganti Mentor Pengganti Sesi</div>
+      <div class="modal-title">{{ icon('refresh') }} Ganti Mentor Pengganti Sesi</div>
       <button class="modal-close-btn" onclick="closeModal('replacementModal')">&times;</button>
     </div>
     <form method="POST" id="replaceMentorForm" action="">

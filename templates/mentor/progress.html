@@ -8,11 +8,11 @@
   <!-- FORM LAPORAN PERKEMBANGAN -->
   <div class="card">
     <div class="card-header">
-      <div class="card-title"><span>📝</span> Formulir Perkembangan Belajar Siswa</div>
+      <div class="card-title"><span>{{ icon('pencil') }}</span> Formulir Perkembangan Belajar Siswa</div>
     </div>
     <div class="card-body">
       <div class="alert-box alert-info" style="margin-bottom: 16px;">
-        💡 <strong>Keterhubungan Langsung:</strong> Setelah Anda menyimpan laporan ini, data perkembangan akan langsung tampil di dashboard akun orang tua/wali siswa yang bersangkutan.
+        {{ icon('lightbulb') }} <strong>Keterhubungan Langsung:</strong> Setelah Anda menyimpan laporan ini, data perkembangan akan langsung tampil di dashboard akun orang tua/wali siswa yang bersangkutan.
       </div>
 
       <form method="POST" action="{{ url_for('mentor.progress') }}">
@@ -65,7 +65,7 @@
         </div>
 
         <button type="submit" class="btn btn-primary" style="width: 100%;">
-          💾 Simpan & Publikasikan Laporan
+          {{ icon('backup') }} Simpan & Publikasikan Laporan
         </button>
       </form>
     </div>
@@ -74,7 +74,7 @@
   <!-- RIWAYAT LAPORAN YANG TELAH DIBUAT MENTOR -->
   <div class="card">
     <div class="card-header">
-      <div class="card-title"><span>📋</span> Riwayat Laporan yang Pernah Dibuat</div>
+      <div class="card-title"><span>{{ icon('clipboard') }}</span> Riwayat Laporan yang Pernah Dibuat</div>
     </div>
     <div class="card-body" style="max-height: 800px; overflow-y: auto;">
       {% for prog in history %}

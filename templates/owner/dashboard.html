@@ -9,7 +9,7 @@
   <div class="card-body" style="padding: 16px 20px;">
     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
       <div style="display: flex; align-items: center; gap: 14px;">
-        <div style="font-size: 28px;">👁️</div>
+        <div style="font-size: 28px;">{{ icon('eye') }}</div>
         <div>
           <h4 style="margin: 0; font-size: 15.5px; color: var(--navy-dark); font-weight: 700;">
             Mode Supervisi Eksekutif (Read-Only)
@@ -21,10 +21,10 @@
       </div>
       <div style="display: flex; gap: 8px;">
         <a href="{{ url_for('owner.reports', type='schedules') }}" class="btn btn-primary btn-sm">
-          📊 Laporan &amp; Rekapitulasi
+          {{ icon('dashboard') }} Laporan &amp; Rekapitulasi
         </a>
         <a href="{{ url_for('owner.schedules') }}" class="btn btn-secondary btn-sm">
-          📅 Jadwal Keseluruhan
+          {{ icon('calendar') }} Jadwal Keseluruhan
         </a>
       </div>
     </div>
@@ -34,7 +34,7 @@
 <!-- KARTU METRIK EKSEKUTIF -->
 <div class="stats-grid">
   <div class="stat-card">
-    <div class="stat-icon">🎓</div>
+    <div class="stat-icon">{{ icon('student') }}</div>
     <div>
       <div class="stat-value">{{ summary.active_students }}</div>
       <div class="stat-label">Total Siswa Aktif</div>
@@ -42,7 +42,7 @@
   </div>
 
   <div class="stat-card success">
-    <div class="stat-icon">🧑‍🏫</div>
+    <div class="stat-icon">{{ icon('mentor') }}</div>
     <div>
       <div class="stat-value">{{ summary.active_mentors }}</div>
       <div class="stat-label">Total Mentor Aktif</div>
@@ -50,7 +50,7 @@
   </div>
 
   <div class="stat-card info">
-    <div class="stat-icon">📖</div>
+    <div class="stat-icon">{{ icon('book') }}</div>
     <div>
       <div class="stat-value">{{ summary.active_programs }}</div>
       <div class="stat-label">Program Les Aktif</div>
@@ -58,7 +58,7 @@
   </div>
 
   <div class="stat-card">
-    <div class="stat-icon">📅</div>
+    <div class="stat-icon">{{ icon('calendar') }}</div>
     <div>
       <div class="stat-value">{{ summary.monthly_sessions or summary.today_schedules }}</div>
       <div class="stat-label">Sesi Bulan Ini</div>
@@ -66,7 +66,7 @@
   </div>
 
   <div class="stat-card success">
-    <div class="stat-icon">✅</div>
+    <div class="stat-icon">{{ icon('check-circle') }}</div>
     <div>
       <div class="stat-value">{{ summary.completed_sessions }}</div>
       <div class="stat-label">Pertemuan Valid Selesai</div>
@@ -74,7 +74,7 @@
   </div>
 
   <div class="stat-card danger">
-    <div class="stat-icon">🔄</div>
+    <div class="stat-icon">{{ icon('refresh') }}</div>
     <div>
       <div class="stat-value">{{ summary.total_replacements }}</div>
       <div class="stat-label">Pergantian Mentor</div>
@@ -86,7 +86,7 @@
   <!-- REKAP JADWAL TERBARU -->
   <div class="card">
     <div class="card-header">
-      <div class="card-title"><span>🗓️</span> Jadwal Sesi Terbaru</div>
+      <div class="card-title"><span>{{ icon('calendar') }}</span> Jadwal Sesi Terbaru</div>
       <a href="{{ url_for('owner.schedules') }}" class="btn btn-secondary btn-sm">Kalender Lengkap</a>
     </div>
     <div class="card-body" style="padding: 0;">
@@ -132,7 +132,7 @@
   <!-- REKAP KEHADIRAN / PERTEMUAN VALID TERBARU -->
   <div class="card">
     <div class="card-header">
-      <div class="card-title"><span>📋</span> Rekap Absensi &amp; Siklus Pertemuan</div>
+      <div class="card-title"><span>{{ icon('clipboard') }}</span> Rekap Absensi &amp; Siklus Pertemuan</div>
       <a href="{{ url_for('owner.reports', type='attendance') }}" class="btn btn-secondary btn-sm">Laporan Lengkap</a>
     </div>
     <div class="card-body" style="padding: 0;">
@@ -184,7 +184,7 @@
 <!-- PEMANTAUAN MATERI & PERKEMBANGAN BELAJAR SISWA -->
 <div class="card" style="margin-bottom: 24px;">
   <div class="card-header">
-    <div class="card-title"><span>📖</span> Pemantauan Materi &amp; Perkembangan Belajar Siswa</div>
+    <div class="card-title"><span>{{ icon('book') }}</span> Pemantauan Materi &amp; Perkembangan Belajar Siswa</div>
     <a href="{{ url_for('owner.reports', type='progress') }}" class="btn btn-secondary btn-sm">Semua Laporan Perkembangan</a>
   </div>
   <div class="card-body" style="padding: 0;">
@@ -238,7 +238,7 @@
 <!-- RIWAYAT PERGANTIAN MENTOR -->
 <div class="card">
   <div class="card-header">
-    <div class="card-title"><span>🔄</span> Riwayat Pergantian Mentor Terkini</div>
+    <div class="card-title"><span>{{ icon('refresh') }}</span> Riwayat Pergantian Mentor Terkini</div>
     <a href="{{ url_for('owner.replacements') }}" class="btn btn-secondary btn-sm">Lihat Semua</a>
   </div>
   <div class="card-body" style="padding: 0;">

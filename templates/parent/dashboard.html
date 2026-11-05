@@ -19,7 +19,7 @@
           class="btn btn-sm {% if ch.id == selected_child.id %}btn-primary{% else %}btn-secondary{% endif %}"
           style="border-radius: 20px; padding: 6px 14px;"
         >
-          🎓 {{ ch.full_name }} ({{ ch.grade or 'Siswa' }})
+          {{ icon('student') }} {{ ch.full_name }} ({{ ch.grade or 'Siswa' }})
         </a>
       {% endfor %}
     </div>
@@ -32,7 +32,7 @@
   <!-- PROFIL ANAK -->
   <div class="card">
     <div class="card-header">
-      <div class="card-title"><span>👤</span> Profil Ananda</div>
+      <div class="card-title"><span>{{ icon('user') }}</span> Profil Ananda</div>
     </div>
     <div class="card-body">
       <div style="text-align: center; margin-bottom: 16px;">
@@ -60,7 +60,7 @@
   <!-- PROGRAM LES & MENTOR PENDAMPING -->
   <div class="card">
     <div class="card-header">
-      <div class="card-title"><span>📖</span> Program Les & Mentor Pendamping</div>
+      <div class="card-title"><span>{{ icon('book') }}</span> Program Les & Mentor Pendamping</div>
     </div>
     <div class="card-body" style="padding: 0;">
       <div class="table-responsive">
@@ -85,7 +85,7 @@
               </td>
               <td>
                 {% if pr.mentor_phone %}
-                  <span style="font-size: 12px; color: var(--blue-brand);">📞 {{ pr.mentor_phone }}</span>
+                  <span style="font-size: 12px; color: var(--blue-brand);">{{ icon('phone') }} {{ pr.mentor_phone }}</span>
                 {% else %}
                   <span style="color: var(--gray-500);">-</span>
                 {% endif %}
@@ -113,7 +113,7 @@
   <!-- JADWAL LES MENDATANG -->
   <div class="card">
     <div class="card-header">
-      <div class="card-title"><span>🗓️</span> Jadwal Sesi Les Mendatang</div>
+      <div class="card-title"><span>{{ icon('calendar') }}</span> Jadwal Sesi Les Mendatang</div>
       <a href="{{ url_for('parent.schedules', student_id=selected_child.id) }}" class="btn btn-secondary btn-sm">Kalender Lengkap</a>
     </div>
     <div class="card-body" style="padding: 0;">
@@ -154,7 +154,7 @@
   <!-- LAPORAN PERKEMBANGAN TERAKHIR -->
   <div class="card">
     <div class="card-header">
-      <div class="card-title"><span>📈</span> Laporan Perkembangan Terakhir</div>
+      <div class="card-title"><span>{{ icon('trending-up') }}</span> Laporan Perkembangan Terakhir</div>
       <a href="{{ url_for('parent.progress', student_id=selected_child.id) }}" class="btn btn-secondary btn-sm">Lihat Semua Riwayat</a>
     </div>
     <div class="card-body">

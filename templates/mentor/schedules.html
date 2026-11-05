@@ -10,13 +10,13 @@
 <div class="card" style="margin-bottom: 24px;">
   <div class="card-header">
     <div>
-      <div class="card-title"><span>🗓️</span> Jadwal Rutin Mengajar Mingguan Anda</div>
+      <div class="card-title"><span>{{ icon('calendar') }}</span> Jadwal Rutin Mengajar Mingguan Anda</div>
       <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
         Jadwal tetap berulang setiap minggu yang ditetapkan oleh Admin. Siklus periode (8 pertemuan = 1 periode) dihitung otomatis saat Anda mencatat absensi kehadiran.
       </div>
     </div>
     <a href="{{ url_for('mentor.attendance') }}" class="btn btn-primary btn-sm">
-      📝 Buka Formulir Absensi
+      {{ icon('pencil') }} Buka Formulir Absensi
     </a>
   </div>
   <div class="card-body">
@@ -37,10 +37,10 @@
           <tr>
             <td>
               <div style="font-weight: 700; color: var(--navy-dark); font-size: 13.5px;">
-                🗓️ {{ rs.day_name }}
+                {{ icon('calendar') }} {{ rs.day_name }}
               </div>
               <div style="font-size: 12px; color: var(--blue-brand); font-weight: 600;">
-                ⏰ {{ rs.start_time }} - {{ rs.end_time }} WIB
+                {{ icon('clock') }} {{ rs.start_time }} - {{ rs.end_time }} WIB
               </div>
             </td>
             <td>
@@ -57,14 +57,14 @@
               </div>
               {% if rs.subject_info %}
                 <div style="font-size: 11px; color: var(--blue-brand);">
-                  🎯 {{ rs.subject_info }}
+                  {{ icon('target') }} {{ rs.subject_info }}
                 </div>
               {% endif %}
             </td>
             <td>
               <div>{{ rs.parent_name or '-' }}</div>
               {% if rs.parent_phone %}
-                <div style="font-size: 11px; color: var(--text-muted);">📞 {{ rs.parent_phone }}</div>
+                <div style="font-size: 11px; color: var(--text-muted);">{{ icon('phone') }} {{ rs.parent_phone }}</div>
               {% endif %}
             </td>
             <td>
@@ -72,7 +72,7 @@
             </td>
             <td>
               <a href="{{ url_for('mentor.attendance', student_id=rs.student_id) }}" class="btn btn-primary btn-sm" title="Catat absensi untuk siswa ini">
-                📝 Catat Absensi
+                {{ icon('pencil') }} Catat Absensi
               </a>
             </td>
           </tr>
@@ -95,7 +95,7 @@
 <div class="card">
   <div class="card-header">
     <div>
-      <div class="card-title"><span>📋</span> Riwayat Pelaksanaan Sesi &amp; Absensi</div>
+      <div class="card-title"><span>{{ icon('clipboard') }}</span> Riwayat Pelaksanaan Sesi &amp; Absensi</div>
       <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
         Dokumentasi tanggal pelaksanaan sesi yang telah selesai maupun terjadwal secara spesifik.
       </div>
@@ -148,7 +148,7 @@
             <td>
               <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                 <a href="{{ url_for('mentor.attendance', student_id=sc.student_id, schedule_date=sc.schedule_date) }}" class="btn btn-primary btn-sm">
-                  📝 Catat Absensi
+                  {{ icon('pencil') }} Catat Absensi
                 </a>
                 <a href="{{ url_for('mentor.progress', schedule_id=sc.id) }}" class="btn btn-secondary btn-sm">
                   {% if sc.progress_id %}Ubah Laporan{% else %}Tulis Laporan{% endif %}

@@ -10,7 +10,7 @@
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
       <div>
         <h4 style="margin: 0; font-size: 16px; color: var(--navy-dark); font-weight: 700;">
-          👋 Selamat Bertugas, Mentor!
+          {{ icon('user') }} Selamat Bertugas, Mentor!
         </h4>
         <p style="margin: 2px 0 0 0; font-size: 12.5px; color: var(--navy-muted);">
           Jadwal otomatis fix. Setiap 8 kehadiran valid otomatis terhitung 1 periode pembelajaran siswa.
@@ -18,13 +18,13 @@
       </div>
       <div style="display: flex; gap: 8px; flex-wrap: wrap;">
         <a href="{{ url_for('mentor.attendance') }}" class="btn btn-primary btn-sm">
-          📝 Catat Absensi &amp; Materi
+          {{ icon('pencil') }} Catat Absensi &amp; Materi
         </a>
         <a href="{{ url_for('mentor.schedules') }}" class="btn btn-secondary btn-sm">
-          🗓️ Jadwal Mengajar
+          {{ icon('calendar') }} Jadwal Mengajar
         </a>
         <a href="{{ url_for('mentor.availability') }}" class="btn btn-secondary btn-sm">
-          ⏰ Ketersediaan Waktu
+          {{ icon('clock') }} Ketersediaan Waktu
         </a>
       </div>
     </div>
@@ -34,7 +34,7 @@
 <!-- KARTU STATISTIK MENTOR -->
 <div class="stats-grid">
   <div class="stat-card">
-    <div class="stat-icon">👥</div>
+    <div class="stat-icon">{{ icon('users') }}</div>
     <div>
       <div class="stat-value">{{ total_students }}</div>
       <div class="stat-label">Siswa Bimbingan Aktif</div>
@@ -42,7 +42,7 @@
   </div>
 
   <div class="stat-card success">
-    <div class="stat-icon">✅</div>
+    <div class="stat-icon">{{ icon('check-circle') }}</div>
     <div>
       <div class="stat-value">{{ total_sessions }}</div>
       <div class="stat-label">Total Sesi Terlaksana</div>
@@ -50,7 +50,7 @@
   </div>
 
   <div class="stat-card info">
-    <div class="stat-icon">🗓️</div>
+    <div class="stat-icon">{{ icon('calendar') }}</div>
     <div>
       <div class="stat-value">{{ active_schedules_count or 0 }}</div>
       <div class="stat-label">Jadwal Mengajar Aktif</div>
@@ -58,7 +58,7 @@
   </div>
 
   <div class="stat-card info">
-    <div class="stat-icon">📅</div>
+    <div class="stat-icon">{{ icon('calendar') }}</div>
     <div>
       <div class="stat-value">{{ today_schedules|length }}</div>
       <div class="stat-label">Sesi Hari Ini</div>
@@ -70,7 +70,7 @@
   <!-- JADWAL MENGAJAR HARI INI -->
   <div class="card">
     <div class="card-header">
-      <div class="card-title"><span>📅</span> Sesi Mengajar Hari Ini</div>
+      <div class="card-title"><span>{{ icon('calendar') }}</span> Sesi Mengajar Hari Ini</div>
       <a href="{{ url_for('mentor.schedules') }}" class="btn btn-secondary btn-sm">Lihat Semua</a>
     </div>
     <div class="card-body" style="padding: 0;">
@@ -96,7 +96,7 @@
                   <div style="font-weight: 700; color: var(--navy-dark);">{{ tr.student_name }}</div>
                   <div style="font-size: 11px; color: var(--text-muted);">{{ tr.program_name }}</div>
                   {% if tr.subject_info %}
-                    <div style="font-size: 10.5px; color: var(--blue-brand);">🎯 {{ tr.subject_info }}</div>
+                    <div style="font-size: 10.5px; color: var(--blue-brand);">{{ icon('target') }} {{ tr.subject_info }}</div>
                   {% endif %}
                 </td>
                 <td>
@@ -104,7 +104,7 @@
                 </td>
                 <td>
                   <a href="{{ url_for('mentor.attendance', student_id=tr.student_id) }}" class="btn btn-primary btn-sm">
-                    📝 Catat Absensi
+                    {{ icon('pencil') }} Catat Absensi
                   </a>
                 </td>
               </tr>
@@ -150,7 +150,7 @@
   <!-- JADWAL MENGAJAR RUTIN MINGGUAN -->
   <div class="card">
     <div class="card-header">
-      <div class="card-title"><span>🗓️</span> Jadwal Rutin Mingguan Anda</div>
+      <div class="card-title"><span>{{ icon('calendar') }}</span> Jadwal Rutin Mingguan Anda</div>
       <a href="{{ url_for('mentor.schedules') }}" class="btn btn-secondary btn-sm">Kelola Jadwal</a>
     </div>
     <div class="card-body" style="padding: 0;">
@@ -202,7 +202,7 @@
   <!-- SISWA BIMBINGAN DENGAN SIKLUS PERTEMUAN -->
   <div class="card">
     <div class="card-header">
-      <div class="card-title"><span>🎓</span> Siswa Bimbingan Anda</div>
+      <div class="card-title"><span>{{ icon('student') }}</span> Siswa Bimbingan Anda</div>
       <a href="{{ url_for('mentor.students') }}" class="btn btn-secondary btn-sm">Daftar Lengkap</a>
     </div>
     <div class="card-body" style="padding: 0;">
@@ -259,7 +259,7 @@
   <!-- RIWAYAT PERTEMUAN TERAKHIR DIAJAR -->
   <div class="card">
     <div class="card-header">
-      <div class="card-title"><span>📖</span> Riwayat Pertemuan Terakhir</div>
+      <div class="card-title"><span>{{ icon('book') }}</span> Riwayat Pertemuan Terakhir</div>
       <a href="{{ url_for('mentor.attendance') }}" class="btn btn-secondary btn-sm">Semua Riwayat</a>
     </div>
     <div class="card-body" style="padding: 0;">
@@ -310,7 +310,7 @@
 <!-- NOTIFIKASI TERBARU -->
 <div class="card">
   <div class="card-header">
-    <div class="card-title"><span>🔔</span> Pemberitahuan Terbaru</div>
+    <div class="card-title"><span>{{ icon('bell') }}</span> Pemberitahuan Terbaru</div>
   </div>
   <div class="card-body">
     <div style="display: flex; flex-direction: column; gap: 10px;">

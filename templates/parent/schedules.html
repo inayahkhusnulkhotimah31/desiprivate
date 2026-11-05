@@ -12,7 +12,7 @@
     <div style="display: flex; gap: 8px;">
       {% for ch in children %}
         <a href="{{ url_for('parent.schedules', student_id=ch.id) }}" class="btn btn-sm {% if ch.id == selected_child.id %}btn-primary{% else %}btn-secondary{% endif %}">
-          🎓 {{ ch.full_name }}
+          {{ icon('student') }} {{ ch.full_name }}
         </a>
       {% endfor %}
     </div>
@@ -22,7 +22,7 @@
 
 <div class="card">
   <div class="card-header">
-    <div class="card-title"><span>🗓️</span> Jadwal Sesi Les untuk {{ selected_child.full_name }}</div>
+    <div class="card-title"><span>{{ icon('calendar') }}</span> Jadwal Sesi Les untuk {{ selected_child.full_name }}</div>
   </div>
   <div class="card-body" style="padding: 0;">
     <div class="table-responsive">
@@ -61,7 +61,7 @@
             <td>
               {% if sc.replacement_id %}
                 <div style="background: var(--warning-bg); padding: 8px; border-radius: var(--radius-sm); border-left: 3px solid var(--warning); font-size: 11.5px;">
-                  <strong style="color: #92400E;">🔄 Terjadi Pergantian Mentor</strong>
+                  <strong style="color: #92400E;">{{ icon('refresh') }} Terjadi Pergantian Mentor</strong>
                   <div style="color: var(--gray-700); margin-top: 2px;">
                     Alasan: {{ sc.replacement_reason }} (Mentor awal: {{ sc.old_mentor_name }})
                   </div>

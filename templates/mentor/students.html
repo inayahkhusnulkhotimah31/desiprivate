@@ -6,9 +6,9 @@
 {% block content %}
 <div class="card">
   <div class="card-header">
-    <div class="card-title"><span>👥</span> Siswa Aktif yang Anda Bimbing</div>
+    <div class="card-title"><span>{{ icon('users') }}</span> Siswa Aktif yang Anda Bimbing</div>
     <a href="{{ url_for('mentor.attendance') }}" class="btn btn-primary btn-sm">
-      📝 Catat Absensi Siswa
+      {{ icon('pencil') }} Catat Absensi Siswa
     </a>
   </div>
   <div class="card-body">
@@ -64,7 +64,7 @@
             <td>
               <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                 <a href="{{ url_for('mentor.schedules') }}" class="btn btn-secondary btn-sm" title="Lihat Jadwal Siswa Ini">
-                  📅 Jadwal
+                  {{ icon('calendar') }} Jadwal
                 </a>
                 <a href="{{ url_for('mentor.attendance') }}" class="btn btn-primary btn-sm" title="Absensi Pertemuan">
                   Absen

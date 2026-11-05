@@ -6,16 +6,16 @@
 {% block content %}
 <div class="card">
   <div class="card-header">
-    <div class="card-title"><span>📑</span> Konfigurasi & Filter Laporan</div>
+    <div class="card-title"><span>{{ icon('report') }}</span> Konfigurasi & Filter Laporan</div>
     <div style="display: flex; gap: 8px;">
       <a
         href="{{ url_for('admin.export_report_csv', type=report_type, start_date=start_date, end_date=end_date, student_id=student_id, mentor_id=mentor_id, program_id=program_id, status=status) }}"
         class="btn btn-success btn-sm"
       >
-        📥 Ekspor Data ke CSV
+        {{ icon('download') }} Ekspor Data ke CSV
       </a>
       <button type="button" class="btn btn-secondary btn-sm" onclick="window.print()">
-        🖨️ Cetak Laporan
+        {{ icon('printer') }} Cetak Laporan
       </button>
     </div>
   </div>

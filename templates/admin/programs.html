@@ -6,9 +6,9 @@
 {% block content %}
 <div class="card">
   <div class="card-header">
-    <div class="card-title"><span>📖</span> Daftar Program Les Privat</div>
+    <div class="card-title"><span>{{ icon('book') }}</span> Daftar Program Les Privat</div>
     <button class="btn btn-primary btn-sm" onclick="openModal('addProgramModal')">
-      ➕ Tambah Program Baru
+      {{ icon('plus') }} Tambah Program Baru
     </button>
   </div>
   <div class="card-body">
@@ -55,7 +55,7 @@
                   class="btn btn-secondary btn-sm"
                   onclick="openEditProgramModal({{ p.id }}, '{{ p.name }}', '{{ p.code }}', '{{ p.level or '' }}', '{{ p.description or '' }}', '{{ p.status }}')"
                 >
-                  ✏️ Ubah
+                  {{ icon('edit') }} Ubah
                 </button>
                 <form method="POST" action="{{ url_for('admin.archive_program', program_id=p.id) }}" onsubmit="return confirm('Ubah status aktif/arsip program ini?');">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

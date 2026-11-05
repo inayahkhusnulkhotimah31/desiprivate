@@ -327,3 +327,4 @@ SELECT setval(pg_get_serial_sequence('student_programs', 'id'), COALESCE((SELECT
 SELECT setval(pg_get_serial_sequence('routine_schedules', 'id'), COALESCE((SELECT MAX(id) FROM routine_schedules), 9));
 SELECT setval(pg_get_serial_sequence('schedules', 'id'), COALESCE((SELECT MAX(id) FROM schedules), 103));
 SELECT setval(pg_get_serial_sequence('attendance', 'id'), COALESCE((SELECT MAX(id) FROM attendance), 22));
+

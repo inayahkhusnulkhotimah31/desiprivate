@@ -6,7 +6,7 @@
 {% block content %}
 <div class="card">
   <div class="card-header">
-    <div class="card-title"><span>🗓️</span> Rekapitulasi Kalender Jadwal Les</div>
+    <div class="card-title"><span>{{ icon('calendar') }}</span> Rekapitulasi Kalender Jadwal Les</div>
   </div>
   <div class="card-body">
     <form method="GET" action="{{ url_for('owner.schedules') }}" class="filter-bar">

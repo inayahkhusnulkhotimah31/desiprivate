@@ -8,14 +8,14 @@
   <!-- FORM INPUT ABSENSI & DOKUMENTASI KEGIATAN -->
   <div class="card">
     <div class="card-header">
-      <div class="card-title"><span class="card-icon">📝</span> Formulir Absensi &amp; Dokumentasi Sesi</div>
+      <div class="card-title"><span class="card-icon">{{ icon('pencil') }}</span> Formulir Absensi &amp; Dokumentasi Sesi</div>
       <button
         type="button"
         id="btnToggleMode"
         class="btn btn-secondary btn-sm"
         onclick="toggleEntryMode()"
       >
-        📅 Pilih Dari Jadwal Terdaftar
+        {{ icon('calendar') }} Pilih Dari Jadwal Terdaftar
       </button>
     </div>
     <div class="card-body">
@@ -25,7 +25,7 @@
         <!-- MODE 1: INPUT LANGSUNG (PILIH SISWA, HARI, TANGGAL, JAM) - DEFAULT -->
         <div id="directEntrySection">
           <div class="alert-box alert-info" style="margin-bottom: 16px; padding: 10px 14px; font-size: 12px;">
-            <span>💡</span> <strong>Mode Catat Langsung:</strong>
+            <span>{{ icon('lightbulb') }}</span> <strong>Mode Catat Langsung:</strong>
             Pilih siswa bimbingan Anda, masukkan hari dan tanggal pelaksanaan les. Sistem akan otomatis menghitung nomor pertemuan dan periode resmi siswa.
           </div>
 
@@ -111,7 +111,7 @@
         <!-- MODE 2: PILIH DARI JADWAL TERDAFTAR (TERSEMBUNYI SECARA DEFAULT) -->
         <div id="scheduleSelectSection" style="display: none;">
           <div class="alert-box alert-info" style="margin-bottom: 16px; padding: 10px 14px; font-size: 12px;">
-            <span>📅</span> <strong>Mode Pilih Jadwal:</strong>
+            <span>{{ icon('calendar') }}</span> <strong>Mode Pilih Jadwal:</strong>
             Pilih dari jadwal sesi yang sebelumnya telah disetujui Admin.
           </div>
 
@@ -177,7 +177,7 @@
             </label>
           </div>
           <small id="statusHintText" style="color: var(--blue-brand); font-size: 11.5px; display: block; margin-top: 6px;">
-            💡 Status Hadir akan otomatis dihitung ke dalam siklus periode belajar (8 pertemuan = 1 periode).
+            {{ icon('lightbulb') }} Status Hadir akan otomatis dihitung ke dalam siklus periode belajar (8 pertemuan = 1 periode).
           </small>
         </div>
 
@@ -223,7 +223,7 @@
         </div>
 
         <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 14.5px; font-weight: 700;">
-          💾 Simpan Dokumentasi Absensi
+          {{ icon('backup') }} Simpan Dokumentasi Absensi
         </button>
       </form>
     </div>
@@ -232,7 +232,7 @@
   <!-- RIWAYAT PERTEMUAN & ABSENSI YANG DIAMPU -->
   <div class="card">
     <div class="card-header">
-      <div class="card-title"><span class="card-icon">📋</span> Riwayat Pertemuan Siswa Bimbingan Anda</div>
+      <div class="card-title"><span class="card-icon">{{ icon('clipboard') }}</span> Riwayat Pertemuan Siswa Bimbingan Anda</div>
     </div>
     <div class="card-body" style="padding: 0;">
       <div class="table-responsive">
@@ -372,14 +372,14 @@
     if (isDirectMode) {
       directSec.style.display = "block";
       schedSec.style.display = "none";
-      btn.innerText = "📅 Pilih Dari Jadwal Terdaftar";
+      btn.innerText = "{{ icon('calendar') }} Pilih Dari Jadwal Terdaftar";
       schedSelect.value = "";
       schedSelect.required = false;
       stSelect.required = true;
     } else {
       directSec.style.display = "none";
       schedSec.style.display = "block";
-      btn.innerText = "✍️ Input Siswa & Tanggal Langsung";
+      btn.innerText = "{{ icon('edit') }} Input Siswa & Tanggal Langsung";
       schedSelect.required = true;
       stSelect.required = false;
     }
@@ -393,11 +393,11 @@
     if (status === "hadir") {
       docContainer.style.display = "block";
       topicsInput.required = true;
-      hint.innerHTML = "💡 Status <strong>Hadir</strong> akan otomatis dihitung ke dalam siklus periode belajar (8 pertemuan = 1 periode).";
+      hint.innerHTML = "{{ icon('lightbulb') }} Status <strong>Hadir</strong> akan otomatis dihitung ke dalam siklus periode belajar (8 pertemuan = 1 periode).";
     } else {
       docContainer.style.display = "none";
       topicsInput.required = false;
-      hint.innerHTML = "⚠️ Siswa tidak hadir/izin: Tidak ada kegiatan belajar, sesi ini <strong>tidak akan dihitung</strong> ke penambahan nomor pertemuan atau periode.";
+      hint.innerHTML = "{{ icon('alert') }} Siswa tidak hadir/izin: Tidak ada kegiatan belajar, sesi ini <strong>tidak akan dihitung</strong> ke penambahan nomor pertemuan atau periode.";
     }
   }
 

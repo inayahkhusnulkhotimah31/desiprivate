@@ -16,7 +16,7 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="notes" value="Pencadangan manual oleh administrator">
       <button type="submit" class="btn btn-primary">
-        💾 Cadangkan Database Sekarang
+        {{ icon('backup') }} Cadangkan Database Sekarang
       </button>
     </form>
   </div>
@@ -24,7 +24,7 @@
 
 <div class="card">
   <div class="card-header">
-    <div class="card-title"><span>📂</span> Riwayat Berkas Cadangan (Backup Files)</div>
+    <div class="card-title"><span>{{ icon('package') }}</span> Riwayat Berkas Cadangan (Backup Files)</div>
   </div>
   <div class="card-body">
     <div class="table-responsive">
@@ -72,7 +72,7 @@
                   class="btn btn-danger btn-sm"
                   onclick="openRestoreModal({{ b.id }}, '{{ b.filename }}')"
                 >
-                  🔄 Pulihkan
+                  {{ icon('refresh') }} Pulihkan
                 </button>
               {% else %}
                 <span style="font-size: 11px; color: var(--gray-500);">-</span>
@@ -96,7 +96,7 @@
 <div class="modal-overlay" id="restoreModal">
   <div class="modal-content">
     <div class="modal-header" style="background: var(--danger-bg);">
-      <div class="modal-title" style="color: #991B1B;">⚠️ Konfirmasi Pemulihan Database (Restore)</div>
+      <div class="modal-title" style="color: #991B1B;">{{ icon('alert') }} Konfirmasi Pemulihan Database (Restore)</div>
       <button class="modal-close-btn" onclick="closeModal('restoreModal')">&times;</button>
     </div>
     <form method="POST" id="restoreForm" action="">
@@ -109,7 +109,7 @@
           Target Berkas: <strong id="restoreTargetFilename" style="color: var(--navy-dark); font-family: monospace;">desi_backup.db</strong>
         </p>
         <p style="font-size: 13px; color: var(--success); font-weight: 600; margin-bottom: 14px;">
-          ✅ Sistem pengamanan aktif: Sebelum restore berjalan, sistem akan secara otomatis membuat cadangan darurat (pre-restore snapshot) dari kondisi database saat ini.
+          {{ icon('check-circle') }} Sistem pengamanan aktif: Sebelum restore berjalan, sistem akan secara otomatis membuat cadangan darurat (pre-restore snapshot) dari kondisi database saat ini.
         </p>
         <div class="form-group">
           <label class="form-label" style="font-weight: 700;">Ketik <code>PULIHKAN</code> untuk mengonfirmasi:</label>

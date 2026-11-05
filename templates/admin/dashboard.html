@@ -7,7 +7,7 @@
 <!-- KARTU RINGKASAN UTAMA (MODERN SOFT BLUE STATS) -->
 <div class="stats-grid">
   <div class="stat-card">
-    <div class="stat-icon blue">🎓</div>
+    <div class="stat-icon blue">{{ icon('student') }}</div>
     <div class="stat-details">
       <div class="stat-value">{{ summary.active_students }}</div>
       <div class="stat-label">Siswa Aktif</div>
@@ -16,7 +16,7 @@
   </div>
 
   <div class="stat-card">
-    <div class="stat-icon purple">🧑‍🏫</div>
+    <div class="stat-icon purple">{{ icon('mentor') }}</div>
     <div class="stat-details">
       <div class="stat-value">{{ summary.active_mentors }}</div>
       <div class="stat-label">Mentor Aktif</div>
@@ -25,7 +25,7 @@
   </div>
 
   <div class="stat-card">
-    <div class="stat-icon green">📖</div>
+    <div class="stat-icon green">{{ icon('book') }}</div>
     <div class="stat-details">
       <div class="stat-value">{{ summary.active_programs }}</div>
       <div class="stat-label">Program Les</div>
@@ -34,7 +34,7 @@
   </div>
 
   <div class="stat-card">
-    <div class="stat-icon amber">🗓️</div>
+    <div class="stat-icon amber">{{ icon('calendar') }}</div>
     <div class="stat-details">
       <div class="stat-value">{{ summary.active_schedules }}</div>
       <div class="stat-label">Jadwal Aktif</div>
@@ -43,7 +43,7 @@
   </div>
 
   <div class="stat-card">
-    <div class="stat-icon purple">✨</div>
+    <div class="stat-icon purple">{{ icon('sparkles') }}</div>
     <div class="stat-details">
       <div class="stat-value">{{ summary.monthly_sessions }}</div>
       <div class="stat-label">Pertemuan Bulan Ini</div>
@@ -52,7 +52,7 @@
   </div>
 
   <div class="stat-card">
-    <div class="stat-icon blue">📅</div>
+    <div class="stat-icon blue">{{ icon('calendar-check') }}</div>
     <div class="stat-details">
       <div class="stat-value">{{ summary.today_schedules }}</div>
       <div class="stat-label">Sesi Hari Ini</div>
@@ -61,7 +61,7 @@
   </div>
 
   <div class="stat-card">
-    <div class="stat-icon amber">⚡</div>
+    <div class="stat-icon amber">{{ icon('zap') }}</div>
     <div class="stat-details">
       <div class="stat-value">{{ action_schedules|length }}</div>
       <div class="stat-label">Perlu Perhatian</div>
@@ -70,7 +70,7 @@
   </div>
 
   <div class="stat-card">
-    <div class="stat-icon green">✅</div>
+    <div class="stat-icon green">{{ icon('check-circle') }}</div>
     <div class="stat-details">
       <div class="stat-value">{{ summary.completed_sessions }}</div>
       <div class="stat-label">Total Sesi Terabsen</div>
@@ -84,7 +84,7 @@
 <div class="card" style="border-left: 4px solid var(--danger); margin-top: 10px;">
   <div class="card-header" style="background: var(--danger-bg);">
     <div class="card-title" style="color: var(--danger);">
-      <span>🚨</span> Peringatan: Mentor Belum Merespons Jadwal Melewati Batas Waktu
+      <span class="card-icon">{{ icon('alert') }}</span> Peringatan: Mentor Belum Merespons Jadwal Melewati Batas Waktu
     </div>
   </div>
   <div class="card-body" style="padding: 16px;">
@@ -128,7 +128,7 @@
   <!-- JADWAL MEMERLUKAN TINDAKAN -->
   <div class="card">
     <div class="card-header">
-      <div class="card-title"><span class="card-icon">⚡</span> Jadwal Memerlukan Perhatian</div>
+      <div class="card-title"><span class="card-icon">{{ icon('zap') }}</span> Jadwal Memerlukan Perhatian</div>
       <a href="{{ url_for('admin.schedules') }}" class="btn btn-secondary btn-sm">Lihat Semua</a>
     </div>
     <div class="card-body" style="padding: 0;">
@@ -178,7 +178,7 @@
             {% else %}
             <tr>
               <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 28px;">
-                🎉 Semua jadwal les aktif dan tertata dengan baik!
+                {{ icon('check-circle') }} Semua jadwal les aktif dan tertata dengan baik!
               </td>
             </tr>
             {% endfor %}
@@ -191,7 +191,7 @@
   <!-- JADWAL HARI INI -->
   <div class="card">
     <div class="card-header">
-      <div class="card-title"><span class="card-icon">📅</span> Jadwal Sesi Les Hari Ini</div>
+      <div class="card-title"><span class="card-icon">{{ icon('calendar') }}</span> Jadwal Sesi Les Hari Ini</div>
       <a href="{{ url_for('admin.schedules') }}" class="btn btn-secondary btn-sm">Kalender Lengkap</a>
     </div>
     <div class="card-body" style="padding: 0;">
@@ -221,7 +221,7 @@
             {% else %}
             <tr>
               <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 28px;">
-                ☕ Tidak ada agenda sesi les yang dijadwalkan untuk hari ini.
+                {{ icon('calendar') }} Tidak ada agenda sesi les yang dijadwalkan untuk hari ini.
               </td>
             </tr>
             {% endfor %}
@@ -237,7 +237,7 @@
   <!-- AUDIT LOG TERBARU -->
   <div class="card">
     <div class="card-header">
-      <div class="card-title"><span class="card-icon">📜</span> Aktivitas Sistem & Operasional Terbaru</div>
+      <div class="card-title"><span class="card-icon">{{ icon('history') }}</span> Aktivitas Sistem & Operasional Terbaru</div>
       <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-secondary btn-sm">Lihat Log</a>
     </div>
     <div class="card-body" style="padding: 16px;">
@@ -262,7 +262,7 @@
   <!-- NOTIFIKASI & WHATSAPP STATUS -->
   <div class="card">
     <div class="card-header">
-      <div class="card-title"><span class="card-icon">💬</span> Notifikasi & WhatsApp Gateway</div>
+      <div class="card-title"><span class="card-icon">{{ icon('chat') }}</span> Notifikasi & WhatsApp Gateway</div>
       <a href="{{ url_for('admin.notifications_center') }}" class="btn btn-secondary btn-sm">Pusat Notifikasi</a>
     </div>
     <div class="card-body" style="padding: 16px;">

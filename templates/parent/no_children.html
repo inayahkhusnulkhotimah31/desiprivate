@@ -5,14 +5,14 @@
 
 {% block content %}
 <div class="card" style="max-width: 600px; margin: 40px auto; text-align: center; padding: 40px 20px;">
-  <div style="font-size: 56px; margin-bottom: 16px;">👨‍👩‍👦</div>
+  <div style="font-size: 56px; margin-bottom: 16px;">{{ icon('family') }}</div>
   <h2 style="font-size: 20px; color: var(--navy-dark); margin-bottom: 10px;">Belum Ada Siswa Terhubung</h2>
   <p style="font-size: 14px; color: var(--gray-700); margin-bottom: 20px;">
     Akun Anda ({{ parent.full_name }}) saat ini belum ditautkan dengan data ananda oleh Administrator DESI PRIVAT.
     Silakan hubungi admin pengelola kami agar profil ananda segera diaktifkan ke akun Anda.
   </p>
   <a href="https://wa.me/6281234567801" target="_blank" class="btn btn-primary">
-    💬 Hubungi Admin via WhatsApp
+    {{ icon('chat') }} Hubungi Admin via WhatsApp
   </a>
 </div>
 {% endblock %}

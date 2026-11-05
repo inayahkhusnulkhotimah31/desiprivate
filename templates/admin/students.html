@@ -6,9 +6,9 @@
 {% block content %}
 <div class="card">
   <div class="card-header">
-    <div class="card-title"><span class="card-icon">🎓</span> Daftar Seluruh Siswa & Status Periode</div>
+    <div class="card-title"><span class="card-icon">{{ icon('student') }}</span> Daftar Seluruh Siswa & Status Periode</div>
     <button class="btn btn-primary btn-sm" onclick="openModal('addStudentModal')">
-      ➕ Tambah Siswa Baru
+      {{ icon('plus') }} Tambah Siswa Baru
     </button>
   </div>
   <div class="card-body">
@@ -73,7 +73,7 @@
             </td>
             <td>
               <div>{{ st.parent_name }}</div>
-              <div style="font-size: 11px; color: var(--blue-brand);">📞 {{ st.parent_phone }}</div>
+              <div style="font-size: 11px; color: var(--blue-brand);">{{ icon('phone') }} {{ st.parent_phone }}</div>
             </td>
             <td>
               <span style="font-size: 12px; font-weight: 600; color: var(--text-main);">{{ st.enrolled_programs or 'Belum ada program' }}</span>
@@ -87,7 +87,7 @@
                     </span>
                   </div>
                   <div style="font-size: 11px; color: var(--blue-brand); font-weight: 600;">
-                    👉 Berikutnya: {{ st.meeting_stats.next_meeting_str }}
+                    {{ icon('arrow-right') }} Berikutnya: {{ st.meeting_stats.next_meeting_str }}
                   </div>
                   <div style="font-size: 10.5px; color: var(--text-muted);">
                     Total: {{ st.meeting_stats.total_completed }} pertemuan
@@ -100,7 +100,7 @@
                 <div style="display: flex; flex-direction: column; gap: 2px;">
                   <span class="badge badge-secondary">Belum ada pertemuan</span>
                   <div style="font-size: 11px; color: var(--blue-brand); font-weight: 600;">
-                    👉 Berikutnya: Pertemuan 1 (1)
+                    {{ icon('arrow-right') }} Berikutnya: Pertemuan 1 (1)
                   </div>
                 </div>
               {% endif %}
@@ -111,7 +111,7 @@
             <td>
               <div style="display: flex; gap: 5px; flex-wrap: wrap;">
                 <a href="{{ url_for('admin.student_detail', student_id=st.id) }}" class="btn btn-secondary btn-sm" title="Lihat Profil & Riwayat">
-                  🔍 Detail
+                  {{ icon('search') }} Detail
                 </a>
                 <button
                   type="button"
@@ -120,7 +120,7 @@
                   title="Atur Baseline Riwayat Siswa Lama"
                   style="border-color: var(--lavender);"
                 >
-                  ⚙️ Riwayat
+                  {{ icon('settings') }} Riwayat
                 </button>
                 <form method="POST" action="{{ url_for('admin.archive_student', student_id=st.id) }}" onsubmit="return confirm('Apakah Anda yakin ingin mengubah status aktif/arsip siswa ini?');" style="display:inline;">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -138,7 +138,7 @@
                   onclick="confirmDeleteStudent({{ st.id }}, '{{ st.full_name }}')"
                   title="Hapus Siswa"
                 >
-                  🗑️
+                  {{ icon('trash') }}
                 </button>
               </div>
             </td>
@@ -172,7 +172,7 @@
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
             <label class="form-label" style="margin-bottom: 0;">Data Orang Tua / Wali Murid (Wajib)</label>
             <button type="button" class="btn btn-secondary btn-sm" id="btnToggleNewParent" onclick="toggleNewParentInput()" style="font-size: 11px; padding: 3px 8px;">
-              ➕ Wali Baru
+              {{ icon('plus') }} Wali Baru
             </button>
           </div>
           <!-- PILIH WALI YANG SUDAH ADA -->
@@ -257,7 +257,7 @@
         <div style="background: var(--blue-ultra-soft); border: 1.5px solid var(--blue-brand); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
             <label class="form-label" style="font-weight: 700; color: var(--navy-dark); margin-bottom: 0;">
-              🗓️ Jadwal Les Rutin Mingguan
+              {{ icon('calendar') }} Jadwal Les Rutin Mingguan
             </label>
             <span class="badge badge-success">Langsung Aktif</span>
           </div>
@@ -289,13 +289,13 @@
                 <input type="time" class="form-control form-control-sm" name="routine_end[]" value="10:30">
               </div>
               <div>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="removeRoutineSlotRow(this)" title="Hapus slot hari ini" style="padding: 6px 10px;">❌</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="removeRoutineSlotRow(this)" title="Hapus slot hari ini" style="padding: 6px 10px;">{{ icon('close') }}</button>
               </div>
             </div>
           </div>
 
           <button type="button" class="btn btn-secondary btn-sm" onclick="addRoutineSlotRow()" style="margin-top: 4px;">
-            ➕ Tambah Hari Les Lainnya
+            {{ icon('plus') }} Tambah Hari Les Lainnya
           </button>
         </div>
 
@@ -303,7 +303,7 @@
         <div style="background: var(--purple-badge-bg); border: 1px solid var(--purple-badge-border); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
             <label class="form-label" style="font-weight: 700; color: var(--purple-badge); margin-bottom: 0;">
-              ⚙️ Riwayat Pertemuan Awal (Khusus Siswa Lama)
+              {{ icon('settings') }} Riwayat Pertemuan Awal (Khusus Siswa Lama)
             </label>
             <span class="badge badge-purple">Opsional</span>
           </div>
@@ -332,7 +332,7 @@
 <div class="modal-overlay" id="initialMeetingModal">
   <div class="modal-dialog" style="max-width: 540px;">
     <div class="modal-header">
-      <div class="modal-title">⚙️ Pengaturan Riwayat Awal Pertemuan</div>
+      <div class="modal-title">{{ icon('settings') }} Pengaturan Riwayat Awal Pertemuan</div>
       <button class="modal-close-btn" onclick="closeModal('initialMeetingModal')">&times;</button>
     </div>
     <form method="POST" id="initialMeetingForm" action="" onsubmit="return confirm('Apakah Anda yakin ingin memperbarui riwayat awal pertemuan siswa ini? Penomoran sesi akan disinkronkan secara otomatis.');">
@@ -456,7 +456,7 @@
 <div class="modal-overlay" id="deleteStudentModal">
   <div class="modal-dialog" style="max-width: 500px;">
     <div class="modal-header">
-      <div class="modal-title">🗑️ Hapus atau Arsipkan Siswa</div>
+      <div class="modal-title">{{ icon('trash') }} Hapus atau Arsipkan Siswa</div>
       <button class="modal-close-btn" onclick="closeModal('deleteStudentModal')">&times;</button>
     </div>
     <form method="POST" id="deleteStudentForm" action="">
@@ -508,14 +508,14 @@
     if (isNewParent) {
       existingDiv.style.display = "none";
       newDiv.style.display = "block";
-      btn.innerText = "📋 Pilih Wali Terdaftar";
+      btn.innerText = "{{ icon('clipboard') }} Pilih Wali Terdaftar";
       if (parentSelect) parentSelect.value = "";
       if (newName) newName.setAttribute("required", "required");
       if (newPhone) newPhone.setAttribute("required", "required");
     } else {
       existingDiv.style.display = "block";
       newDiv.style.display = "none";
-      btn.innerText = "➕ Wali Baru";
+      btn.innerText = "{{ icon('plus') }} Wali Baru";
       if (newName) newName.removeAttribute("required");
       if (newPhone) newPhone.removeAttribute("required");
     }
@@ -547,7 +547,7 @@
         <input type="time" class="form-control form-control-sm" name="routine_end[]" value="14:30">
       </div>
       <div>
-        <button type="button" class="btn btn-secondary btn-sm" onclick="removeRoutineSlotRow(this)" title="Hapus slot hari ini" style="padding: 6px 10px;">❌</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="removeRoutineSlotRow(this)" title="Hapus slot hari ini" style="padding: 6px 10px;">{{ icon('close') }}</button>
       </div>
     `;
     container.appendChild(row);

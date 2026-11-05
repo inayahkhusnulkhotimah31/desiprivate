@@ -12,7 +12,7 @@
     <div style="display: flex; gap: 8px;">
       {% for ch in children %}
         <a href="{{ url_for('parent.progress', student_id=ch.id) }}" class="btn btn-sm {% if ch.id == selected_child.id %}btn-primary{% else %}btn-secondary{% endif %}">
-          🎓 {{ ch.full_name }}
+          {{ icon('student') }} {{ ch.full_name }}
         </a>
       {% endfor %}
     </div>
@@ -22,7 +22,7 @@
 
 <div class="card">
   <div class="card-header">
-    <div class="card-title"><span>📈</span> Riwayat Perkembangan Belajar {{ selected_child.full_name }}</div>
+    <div class="card-title"><span>{{ icon('trending-up') }}</span> Riwayat Perkembangan Belajar {{ selected_child.full_name }}</div>
   </div>
   <div class="card-body">
     {% for prog in progress_list %}

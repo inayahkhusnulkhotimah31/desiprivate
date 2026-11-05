@@ -6,9 +6,9 @@
 {% block content %}
 <div class="card">
   <div class="card-header">
-    <div class="card-title"><span>🧑‍🏫</span> Daftar Seluruh Mentor Pengajar</div>
+    <div class="card-title"><span>{{ icon('mentor') }}</span> Daftar Seluruh Mentor Pengajar</div>
     <button class="btn btn-primary btn-sm" onclick="openModal('addMentorModal')">
-      ➕ Tambah Mentor Baru
+      {{ icon('plus') }} Tambah Mentor Baru
     </button>
   </div>
   <div class="card-body">
@@ -58,8 +58,8 @@
               {% endif %}
             </td>
             <td>
-              <div>📞 {{ m.phone }}</div>
-              <div style="font-size: 11px; color: var(--gray-500);">✉️ {{ m.email or '-' }}</div>
+              <div>{{ icon('phone') }} {{ m.phone }}</div>
+              <div style="font-size: 11px; color: var(--gray-500);">{{ icon('mail') }} {{ m.email or '-' }}</div>
             </td>
             <td>
               <span style="font-weight: 600; color: var(--navy-primary); font-size: 12.5px;">{{ m.expertise }}</span>
@@ -87,7 +87,7 @@
                   class="btn btn-secondary btn-sm"
                   onclick="openEditMentorModal({{ m.id }}, '{{ m.full_name }}', '{{ m.phone }}', '{{ m.email or '' }}', '{{ m.expertise }}', '{{ m.bio or '' }}', '{{ m.status }}')"
                 >
-                  ✏️ Ubah
+                  {{ icon('edit') }} Ubah
                 </button>
                 <form method="POST" action="{{ url_for('admin.toggle_mentor_status', mentor_id=m.id) }}" onsubmit="return confirm('Ubah status keaktifan mentor ini?');">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -103,7 +103,7 @@
                   onclick="confirmDeleteMentor({{ m.id }}, '{{ m.full_name }}')"
                   title="Hapus atau Nonaktifkan Mentor"
                 >
-                  🗑️ Hapus
+                  {{ icon('trash') }} Hapus
                 </button>
               </div>
             </td>
@@ -257,7 +257,7 @@
 <div class="modal-overlay" id="deleteMentorModal">
   <div class="modal-content" style="max-width: 520px;">
     <div class="modal-header">
-      <div class="modal-title">🗑️ Kelola / Hapus Mentor</div>
+      <div class="modal-title">{{ icon('trash') }} Kelola / Hapus Mentor</div>
       <button class="modal-close-btn" onclick="closeModal('deleteMentorModal')">&times;</button>
     </div>
     <form method="POST" id="deleteMentorForm" action="">
@@ -270,28 +270,28 @@
         <!-- OPSI 1: HANYA ARSIP / NONAKTIFKAN -->
         <div style="background: #FFFBEB; border: 1.5px solid #FCD34D; border-radius: 8px; padding: 14px; margin-bottom: 14px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-            <strong style="color: #92400E; font-size: 14px;">📦 Opsi 1: Hanya Arsip / Nonaktifkan</strong>
+            <strong style="color: #92400E; font-size: 14px;">{{ icon('package') }} Opsi 1: Hanya Arsip / Nonaktifkan</strong>
             <span class="badge badge-warning">Disarankan</span>
           </div>
           <p style="font-size: 12.5px; color: #78350F; margin: 0 0 12px 0; line-height: 1.45;">
             Menonaktifkan status mentor dan akses akun login. Mentor tidak dapat dipilih untuk sesi jadwal baru, namun seluruh riwayat mengajar dan absensi terdahulu tetap aman tersimpan.
           </p>
           <button type="submit" name="action_type" value="archive" class="btn btn-warning btn-sm" style="font-weight: 600;">
-            📦 Hanya Arsip / Nonaktifkan
+            {{ icon('package') }} Hanya Arsip / Nonaktifkan
           </button>
         </div>
 
         <!-- OPSI 2: HAPUS OTOMATIS (PERMANEN) -->
         <div style="background: #FEF2F2; border: 1.5px solid #FCA5A5; border-radius: 8px; padding: 14px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-            <strong style="color: #991B1B; font-size: 14px;">🗑️ Opsi 2: Hapus Otomatis (Permanen)</strong>
+            <strong style="color: #991B1B; font-size: 14px;">{{ icon('trash') }} Opsi 2: Hapus Otomatis (Permanen)</strong>
             <span class="badge badge-danger">Hapus Total</span>
           </div>
           <p style="font-size: 12.5px; color: #7F1D1D; margin: 0 0 12px 0; line-height: 1.45;">
             Menghapus data mentor secara permanen beserta ketersediaan waktu, aturan jadwal berulang, sesi jadwal yang dipegang, dan akun login terkait secara otomatis.
           </p>
           <button type="submit" name="action_type" value="auto_delete" class="btn btn-danger btn-sm" style="font-weight: 600;" onclick="return confirm('Peringatan: Seluruh data mentor, jadwal, dan akun ini akan dihapus permanen secara otomatis. Lanjutkan?');">
-            🗑️ Hapus Otomatis
+            {{ icon('trash') }} Hapus Otomatis
           </button>
         </div>
       </div>

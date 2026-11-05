@@ -6,7 +6,7 @@
 {% block content %}
 <div class="card">
   <div class="card-header">
-    <div class="card-title"><span>🎓</span> Daftar Siswa Terdaftar</div>
+    <div class="card-title"><span>{{ icon('student') }}</span> Daftar Siswa Terdaftar</div>
   </div>
   <div class="card-body">
     <form method="GET" action="{{ url_for('owner.students') }}" class="filter-bar">

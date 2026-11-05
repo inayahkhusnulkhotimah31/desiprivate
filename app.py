@@ -25,6 +25,7 @@ from routes.auth import auth_bp, generate_csrf_token
 from routes.admin import admin_bp
 from routes.owner import owner_bp
 from routes.mentor import mentor_bp
+from services.icon_service import render_icon
 
 def create_app(config_class=None):
     """Application factory untuk DESI PRIVAT."""
@@ -49,6 +50,11 @@ def create_app(config_class=None):
     app.register_blueprint(owner_bp)
     app.register_blueprint(mentor_bp)
 
+    # Registrasi Sistem SVG Icon Helper
+    app.jinja_env.globals["icon"] = render_icon
+    app.jinja_env.globals["svg_icon"] = render_icon
+    app.template_filter("svg_icon")(render_icon)
+
     # Context Processor untuk Template Jinja2
     @app.context_processor
     def inject_global_data():
@@ -71,7 +77,9 @@ def create_app(config_class=None):
             "unread_count": unread_count,
             "csrf_token": generate_csrf_token,
             "app_name": "DESI PRIVAT",
-            "current_year": datetime.now().year
+            "current_year": datetime.now().year,
+            "icon": render_icon,
+            "svg_icon": render_icon
         }
 
     # Filter Jinja kustom dalam Bahasa Indonesia

@@ -251,6 +251,111 @@ a:hover {
   box-shadow: 0 4px 12px rgba(2, 132, 199, 0.08);
 }
 
+/* ==========================================================================
+   DESI PRIVAT - Vector SVG Icon System
+   Inactive / Active / Hover States (Smooth Fill on Hover)
+   ========================================================================== */
+.svg-icon {
+  display: inline-block;
+  width: 1.15em;
+  height: 1.15em;
+  vertical-align: -0.16em;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: transparent;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  color: inherit;
+  flex-shrink: 0;
+}
+
+/* Inactive State: Subtle outline, transparent fill */
+.nav-link .svg-icon,
+.nav-icon .svg-icon {
+  color: var(--text-muted);
+  fill: transparent;
+  opacity: 0.85;
+}
+
+/* Hover State: Fill saat kursor hover di icon atau tombol / link pembungkusnya */
+.svg-icon:hover,
+.nav-link:hover .svg-icon,
+.btn:hover .svg-icon,
+.btn-secondary:hover .svg-icon,
+.btn-primary:hover .svg-icon,
+.stat-card:hover .svg-icon,
+.card-header:hover .svg-icon,
+.card-title:hover .svg-icon,
+.notif-bell-btn:hover .svg-icon,
+.table-desi tr:hover .svg-icon {
+  fill: currentColor;
+  opacity: 1;
+  transform: translateY(-1.5px) scale(1.14);
+  filter: drop-shadow(0 2px 6px rgba(2, 132, 199, 0.25));
+}
+
+/* Active State: Tampilan aktif dengan aksen brand blue dan tinted fill */
+.nav-link.active .svg-icon,
+.nav-link.active .nav-icon .svg-icon,
+.svg-icon.active {
+  color: var(--blue-brand-dark);
+  fill: rgba(2, 132, 199, 0.22);
+  stroke: var(--blue-brand);
+  stroke-width: 2.2;
+  opacity: 1;
+  transform: scale(1.08);
+}
+
+.nav-link.active:hover .svg-icon {
+  fill: var(--blue-brand);
+  color: var(--blue-brand-dark);
+  filter: drop-shadow(0 3px 8px rgba(2, 132, 199, 0.35));
+}
+
+/* Penyesuaian Ukuran di Berbagai Komponen */
+.nav-icon .svg-icon {
+  width: 19px;
+  height: 19px;
+  display: block;
+  margin: 0 auto;
+}
+
+.stat-icon .svg-icon {
+  width: 26px;
+  height: 26px;
+  stroke-width: 2.2;
+}
+
+.card-title .svg-icon,
+.card-icon .svg-icon {
+  width: 1.2em;
+  height: 1.2em;
+  margin-right: 6px;
+  vertical-align: -0.16em;
+}
+
+.btn .svg-icon {
+  width: 1.05em;
+  height: 1.05em;
+  margin-right: 5px;
+  vertical-align: -0.14em;
+}
+
+.btn-icon .svg-icon,
+.btn-sm .svg-icon {
+  margin-right: 4px;
+}
+
+.mobile-toggle-btn .svg-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.navbar-logout-btn .svg-icon {
+  margin-right: 4px;
+}
+
 /* SIDEBAR FOOTER & USER BADGE */
 .sidebar-footer {
   padding: 16px;

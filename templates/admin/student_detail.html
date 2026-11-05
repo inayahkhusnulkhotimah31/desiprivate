@@ -18,7 +18,7 @@
   <div>
     <div class="card">
       <div class="card-header">
-        <div class="card-title"><span>👤</span> Informasi Profil Siswa</div>
+        <div class="card-title"><span>{{ icon('user') }}</span> Informasi Profil Siswa</div>
       </div>
       <div class="card-body">
         <form method="POST" action="{{ url_for('admin.edit_student', student_id=student.id) }}">
@@ -73,7 +73,7 @@
           </div>
 
           <button type="submit" class="btn btn-primary" style="width: 100%;">
-            💾 Perbarui Data Siswa
+            {{ icon('backup') }} Perbarui Data Siswa
           </button>
         </form>
 
@@ -83,17 +83,17 @@
             {% if student.status == 'aktif' %}
               <input type="hidden" name="action" value="berhenti">
               <button type="submit" class="btn btn-warning btn-sm" style="width: 100%;" title="Arsipkan / Set Berhenti">
-                📦 Arsipkan
+                {{ icon('package') }} Arsipkan
               </button>
             {% else %}
               <input type="hidden" name="action" value="aktif">
               <button type="submit" class="btn btn-success btn-sm" style="width: 100%;" title="Aktifkan Kembali">
-                ✅ Aktifkan
+                {{ icon('check-circle') }} Aktifkan
               </button>
             {% endif %}
           </form>
           <button type="button" class="btn btn-danger btn-sm" style="flex: 1;" onclick="openModal('deleteStudentModal')" title="Kelola / Hapus Siswa">
-            🗑️ Hapus...
+            {{ icon('trash') }} Hapus...
           </button>
         </div>
       </div>
@@ -103,7 +103,7 @@
     <div class="card" style="border: 1px solid var(--border-lavender); background: var(--white-glass-strong); margin-bottom: 20px;">
       <div class="card-header" style="background: linear-gradient(135deg, var(--blue-ultra-soft) 0%, var(--lavender-soft) 100%);">
         <div class="card-title" style="color: var(--text-heading); font-size: 14.5px;">
-          <span class="card-icon">⚙️</span> Siklus Pertemuan & Periode
+          <span class="card-icon">{{ icon('settings') }}</span> Siklus Pertemuan & Periode
         </div>
       </div>
       <div class="card-body">
@@ -111,7 +111,7 @@
           <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Status Sesi Berikutnya</div>
           <div style="margin-top: 4px;">
             <span class="badge badge-period" style="font-size: 14px; padding: 6px 14px;">
-              👉 {{ meeting_stats.next_meeting_str }}
+              {{ icon('arrow-right') }} {{ meeting_stats.next_meeting_str }}
             </span>
           </div>
         </div>
@@ -141,7 +141,7 @@
         </div>
 
         <button type="button" class="btn btn-secondary btn-sm" style="width: 100%; border-color: var(--lavender);" onclick="openInitialMeetingModal()">
-          ⚙️ Atur Riwayat Awal Pertemuan
+          {{ icon('settings') }} Atur Riwayat Awal Pertemuan
         </button>
       </div>
     </div>
@@ -149,13 +149,13 @@
     <!-- KARTU DATA WALI -->
     <div class="card">
       <div class="card-header">
-        <div class="card-title"><span>👨‍👩‍👦</span> Data Orang Tua / Wali</div>
+        <div class="card-title"><span>{{ icon('family') }}</span> Data Orang Tua / Wali</div>
       </div>
       <div class="card-body">
         <div style="font-weight: 700; font-size: 15px; color: var(--text-main);">{{ student.parent_name }}</div>
-        <div style="font-size: 13px; color: var(--text-body); margin-top: 6px;">📞 Telepon: <strong>{{ student.parent_phone }}</strong></div>
-        <div style="font-size: 13px; color: var(--text-body); margin-top: 4px;">✉️ Email: {{ student.parent_email or '-' }}</div>
-        <div style="font-size: 13px; color: var(--text-body); margin-top: 4px;">📍 Alamat: {{ student.parent_address or '-' }}</div>
+        <div style="font-size: 13px; color: var(--text-body); margin-top: 6px;">{{ icon('phone') }} Telepon: <strong>{{ student.parent_phone }}</strong></div>
+        <div style="font-size: 13px; color: var(--text-body); margin-top: 4px;">{{ icon('mail') }} Email: {{ student.parent_email or '-' }}</div>
+        <div style="font-size: 13px; color: var(--text-body); margin-top: 4px;">{{ icon('school') }} Alamat: {{ student.parent_address or '-' }}</div>
       </div>
     </div>
   </div>
@@ -165,9 +165,9 @@
     <!-- PROGRAM LES YANG DIIKUTI -->
     <div class="card">
       <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-        <div class="card-title"><span>📖</span> Program Les Diikuti</div>
+        <div class="card-title"><span>{{ icon('book') }}</span> Program Les Diikuti</div>
         <button type="button" class="btn btn-primary btn-sm" onclick="openModal('addStudentProgramModal')">
-          ➕ Tambah / Daftarkan Program
+          {{ icon('plus') }} Tambah / Daftarkan Program
         </button>
       </div>
       <div class="card-body" style="padding: 0;">
@@ -205,7 +205,7 @@
                     style="padding: 4px 8px; font-size: 12px;"
                     onclick="openEditStudentProgramModal({{ pr.id }}, {{ pr.program_id }}, '{{ pr.mentor_id or '' }}', '{{ pr.status }}', '{{ pr.start_date or '' }}', '{{ pr.end_date or '' }}', {{ (pr.notes or '')|tojson }})"
                   >
-                    ✏️ Ganti / Edit
+                    {{ icon('edit') }} Ganti / Edit
                   </button>
                   <form
                     method="POST"
@@ -215,7 +215,7 @@
                   >
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn-danger btn-sm" style="padding: 4px 8px; font-size: 12px;" title="Hapus Program">
-                      🗑️
+                      {{ icon('trash') }}
                     </button>
                   </form>
                 </td>
@@ -223,7 +223,7 @@
               {% else %}
               <tr>
                 <td colspan="6" style="text-align: center; color: var(--gray-500); padding: 16px;">
-                  Belum ada program yang terdaftar untuk siswa ini. Silakan klik tombol <strong>➕ Tambah / Daftarkan Program</strong>.
+                  Belum ada program yang terdaftar untuk siswa ini. Silakan klik tombol <strong>{{ icon('plus') }} Tambah / Daftarkan Program</strong>.
                 </td>
               </tr>
               {% endfor %}
@@ -236,7 +236,7 @@
     <!-- RIWAYAT PERKEMBANGAN BELAJAR -->
     <div class="card">
       <div class="card-header">
-        <div class="card-title"><span>📈</span> Riwayat Laporan Perkembangan Siswa</div>
+        <div class="card-title"><span>{{ icon('trending-up') }}</span> Riwayat Laporan Perkembangan Siswa</div>
       </div>
       <div class="card-body">
         {% for prog in progress_list %}
@@ -283,11 +283,11 @@
     <div class="card" style="margin-bottom: 24px;">
       <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
         <div>
-          <div class="card-title"><span>🗓️</span> Jadwal Les Rutin Mingguan</div>
+          <div class="card-title"><span>{{ icon('calendar') }}</span> Jadwal Les Rutin Mingguan</div>
           <div style="font-size: 11.5px; color: var(--text-muted);">Jadwal berulang setiap minggu untuk siswa ini.</div>
         </div>
         <button class="btn btn-primary btn-sm" onclick="openModal('addStudentRoutineModal')">
-          ➕ Tambah Hari / Jam Les
+          {{ icon('plus') }} Tambah Hari / Jam Les
         </button>
       </div>
       <div class="card-body" style="padding: 0;">
@@ -306,21 +306,21 @@
               {% for rs in routine_schedules %}
               <tr>
                 <td>
-                  <strong style="color: var(--navy-dark); font-size: 13px;">🗓️ {{ rs.day_name }}</strong>
+                  <strong style="color: var(--navy-dark); font-size: 13px;">{{ icon('calendar') }} {{ rs.day_name }}</strong>
                   <div style="font-size: 12px; color: var(--blue-brand); font-weight: 600;">
-                    ⏰ {{ rs.start_time }} - {{ rs.end_time }} WIB
+                    {{ icon('clock') }} {{ rs.start_time }} - {{ rs.end_time }} WIB
                   </div>
                 </td>
                 <td>
                   <div style="font-weight: 600;">{{ rs.program_name }}</div>
                   {% if rs.subject_info %}
-                    <div style="font-size: 11px; color: var(--blue-brand);">🎯 {{ rs.subject_info }}</div>
+                    <div style="font-size: 11px; color: var(--blue-brand);">{{ icon('target') }} {{ rs.subject_info }}</div>
                   {% endif %}
                 </td>
                 <td>
-                  <div style="font-weight: 600;">🧑‍🏫 {{ rs.mentor_name }}</div>
+                  <div style="font-weight: 600;">{{ icon('mentor') }} {{ rs.mentor_name }}</div>
                   {% if rs.mentor_phone %}
-                    <div style="font-size: 11px; color: var(--text-muted);">📞 {{ rs.mentor_phone }}</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">{{ icon('phone') }} {{ rs.mentor_phone }}</div>
                   {% endif %}
                 </td>
                 <td>
@@ -334,11 +334,11 @@
                       onclick="openEditStudentRoutineModal({{ rs.id }}, {{ rs.day_of_week }}, '{{ rs.start_time }}', '{{ rs.end_time }}', {{ rs.mentor_id }}, '{{ rs.subject_info|default('', true) }}', '{{ rs.notes|default('', true) }}')"
                       title="Edit Jadwal"
                     >
-                      ✏️ Edit
+                      {{ icon('edit') }} Edit
                     </button>
                     <form method="POST" action="{{ url_for('admin.admin_delete_routine_schedule', routine_id=rs.id) }}" onsubmit="return confirm('Hapus slot jadwal rutin hari {{ rs.day_name }} ini?');" style="display:inline;">
                       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                      <button type="submit" class="btn btn-danger btn-sm" title="Hapus">🗑️</button>
+                      <button type="submit" class="btn btn-danger btn-sm" title="Hapus">{{ icon('trash') }}</button>
                     </form>
                   </div>
                 </td>
@@ -346,7 +346,7 @@
               {% else %}
               <tr>
                 <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 22px;">
-                  Belum ada jadwal les rutin mingguan untuk siswa ini. Klik tombol <strong>➕ Tambah Hari / Jam Les</strong> di atas untuk menetapkan jadwal.
+                  Belum ada jadwal les rutin mingguan untuk siswa ini. Klik tombol <strong>{{ icon('plus') }} Tambah Hari / Jam Les</strong> di atas untuk menetapkan jadwal.
                 </td>
               </tr>
               {% endfor %}
@@ -359,7 +359,7 @@
     <!-- RIWAYAT SESI JADWAL & ABSENSI -->
     <div class="card">
       <div class="card-header">
-        <div class="card-title"><span>🗓️</span> Riwayat Sesi Jadwal, Pertemuan & Kehadiran</div>
+        <div class="card-title"><span>{{ icon('calendar') }}</span> Riwayat Sesi Jadwal, Pertemuan & Kehadiran</div>
       </div>
       <div class="card-body" style="padding: 0;">
         <div class="table-responsive">
@@ -401,7 +401,7 @@
                     <div>{{ sc.attendance_status|status_badge|safe }}</div>
                     {% if sc.att_topics %}
                       <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px; max-width: 220px;">
-                        📖 {{ sc.att_topics }}
+                        {{ icon('book') }} {{ sc.att_topics }}
                       </div>
                     {% endif %}
                   {% else %}
@@ -468,7 +468,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" onclick="closeModal('addStudentProgramModal')">Batal</button>
-        <button type="submit" class="btn btn-primary">💾 Daftarkan Program</button>
+        <button type="submit" class="btn btn-primary">{{ icon('backup') }} Daftarkan Program</button>
       </div>
     </form>
   </div>
@@ -531,7 +531,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" onclick="closeModal('editStudentProgramModal')">Batal</button>
-        <button type="submit" class="btn btn-primary">💾 Simpan Perubahan</button>
+        <button type="submit" class="btn btn-primary">{{ icon('backup') }} Simpan Perubahan</button>
       </div>
     </form>
   </div>
@@ -541,7 +541,7 @@
 <div class="modal-overlay" id="deleteStudentModal">
   <div class="modal-content" style="max-width: 520px;">
     <div class="modal-header">
-      <div class="modal-title">🗑️ Kelola / Hapus Siswa</div>
+      <div class="modal-title">{{ icon('trash') }} Kelola / Hapus Siswa</div>
       <button class="modal-close-btn" onclick="closeModal('deleteStudentModal')">&times;</button>
     </div>
     <form method="POST" action="{{ url_for('admin.delete_student', student_id=student.id) }}">
@@ -554,28 +554,28 @@
         <!-- OPSI 1: HANYA ARSIP / NONAKTIFKAN -->
         <div style="background: #FFFBEB; border: 1.5px solid #FCD34D; border-radius: 8px; padding: 14px; margin-bottom: 14px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-            <strong style="color: #92400E; font-size: 14px;">📦 Opsi 1: Hanya Arsip / Nonaktifkan</strong>
+            <strong style="color: #92400E; font-size: 14px;">{{ icon('package') }} Opsi 1: Hanya Arsip / Nonaktifkan</strong>
             <span class="badge badge-warning">Disarankan</span>
           </div>
           <p style="font-size: 12.5px; color: #78350F; margin: 0 0 12px 0; line-height: 1.45;">
             Menyimpan seluruh data dan riwayat belajar (jadwal les, absensi, perkembangan), mengubah status menjadi Nonaktif/Arsip. Siswa tidak aktif pada kalender namun rekam jejak akademik tetap utuh.
           </p>
           <button type="submit" name="action_type" value="archive" class="btn btn-warning btn-sm" style="font-weight: 600;">
-            📦 Hanya Arsip / Nonaktifkan
+            {{ icon('package') }} Hanya Arsip / Nonaktifkan
           </button>
         </div>
 
         <!-- OPSI 2: HAPUS OTOMATIS (PERMANEN) -->
         <div style="background: #FEF2F2; border: 1.5px solid #FCA5A5; border-radius: 8px; padding: 14px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-            <strong style="color: #991B1B; font-size: 14px;">🗑️ Opsi 2: Hapus Otomatis (Permanen)</strong>
+            <strong style="color: #991B1B; font-size: 14px;">{{ icon('trash') }} Opsi 2: Hapus Otomatis (Permanen)</strong>
             <span class="badge badge-danger">Hapus Total</span>
           </div>
           <p style="font-size: 12.5px; color: #7F1D1D; margin: 0 0 12px 0; line-height: 1.45;">
             Menghapus data siswa dan membersihkan seluruh riwayat jadwal, absensi, laporan perkembangan, serta ketersediaan secara otomatis dan permanen dari sistem.
           </p>
           <button type="submit" name="action_type" value="auto_delete" class="btn btn-danger btn-sm" style="font-weight: 600;" onclick="return confirm('Peringatan: Seluruh jadwal, absensi, dan data siswa ini akan dihapus permanen secara otomatis. Lanjutkan?');">
-            🗑️ Hapus Otomatis
+            {{ icon('trash') }} Hapus Otomatis
           </button>
         </div>
       </div>
@@ -590,7 +590,7 @@
 <div class="modal-overlay" id="initialMeetingModal">
   <div class="modal-dialog" style="max-width: 540px;">
     <div class="modal-header">
-      <div class="modal-title">⚙️ Pengaturan Riwayat Awal Pertemuan</div>
+      <div class="modal-title">{{ icon('settings') }} Pengaturan Riwayat Awal Pertemuan</div>
       <button class="modal-close-btn" onclick="closeModal('initialMeetingModal')">&times;</button>
     </div>
     <form method="POST" action="{{ url_for('admin.set_student_initial_meetings', student_id=student.id) }}" onsubmit="return confirm('Simpan penyesuaian riwayat awal pertemuan siswa ini? Seluruh absensi hadir pada sistem akan otomatis disinkronkan.');">
@@ -710,7 +710,7 @@
 <div class="modal-overlay" id="addStudentRoutineModal">
   <div class="modal-dialog" style="max-width: 560px;">
     <div class="modal-header">
-      <div class="modal-title">🗓️ Tambah Jadwal Rutin untuk {{ student.full_name }}</div>
+      <div class="modal-title">{{ icon('calendar') }} Tambah Jadwal Rutin untuk {{ student.full_name }}</div>
       <button class="modal-close-btn" onclick="closeModal('addStudentRoutineModal')">&times;</button>
     </div>
     <form method="POST" action="{{ url_for('admin.admin_create_routine_schedule') }}">
@@ -783,7 +783,7 @@
 <div class="modal-overlay" id="editStudentRoutineModal">
   <div class="modal-dialog" style="max-width: 560px;">
     <div class="modal-header">
-      <div class="modal-title">✏️ Perbarui Jadwal Rutin Siswa</div>
+      <div class="modal-title">{{ icon('edit') }} Perbarui Jadwal Rutin Siswa</div>
       <button class="modal-close-btn" onclick="closeModal('editStudentRoutineModal')">&times;</button>
     </div>
     <form method="POST" id="editStudentRoutineForm" action="">
