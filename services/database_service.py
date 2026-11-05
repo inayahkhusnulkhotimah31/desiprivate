@@ -18,10 +18,28 @@ class RowDict(dict):
             return list(self.values())[key]
         return super().__getitem__(key)
 
-def is_postgres():
+_pg_connection_failed = False
+
+def is_postgres(db_path=None):
     """Mengecek apakah database yang aktif adalah PostgreSQL (Supabase)."""
+    global _pg_connection_failed
+    if db_path is not None:
+        return False
+    if getattr(Config, "TESTING", False):
+        return False
     db_url = getattr(Config, "DATABASE_URL", None)
-    return bool(db_url and str(db_url).strip().startswith("postgres"))
+    if not (db_url and str(db_url).strip().startswith("postgres")):
+        return False
+    if _pg_connection_failed:
+        return False
+    return True
+
+def _handle_pg_error(e):
+    """Menangani kegagalan PostgreSQL Supabase secara anggun dan otomatis fallback ke database lokal."""
+    global _pg_connection_failed
+    _pg_connection_failed = True
+    import sys
+    print(f"[DATABASE AUTO-FALLBACK] Supabase PostgreSQL tidak dapat diakses ({e}). Beralih otomatis ke database lokal agar sistem tetap online 100%.", file=sys.stderr)
 
 def _prepare_postgres_sql(query):
     """Menyesuaikan sintaks query SQLite agar kompatibel dengan PostgreSQL / psycopg."""
@@ -38,29 +56,34 @@ def _prepare_postgres_sql(query):
     return sql
 
 def _ensure_vercel_db(path):
-    """Menjamin database di temp directory tersedia saat runtime cold-start Vercel jika memakai SQLite."""
-    if getattr(Config, "IS_VERCEL", False) and not is_postgres():
+    """Menjamin database di temp directory selalu tersedia saat runtime Vercel jika memakai SQLite."""
+    if getattr(Config, "IS_VERCEL", False) and not getattr(Config, "TESTING", False) and not is_postgres():
         p = Path(path)
         if not p.exists():
             seed = Path(__file__).resolve().parent.parent / "database" / "desi_privat.db"
             if seed.exists():
                 import shutil
                 try:
+                    os.makedirs(p.parent, exist_ok=True)
                     shutil.copyfile(seed, p)
                     os.chmod(p, 0o666)
                 except Exception:
                     pass
 
 def get_db(db_path=None):
-    """Membuka koneksi ke database (PostgreSQL jika DATABASE_URL tersedia, fallback SQLite)."""
-    if is_postgres():
+    """Membuka koneksi ke database (PostgreSQL jika DATABASE_URL tersedia, fallback otomatis SQLite jika gagal)."""
+    if is_postgres(db_path):
         if 'db' not in g or g.get('is_pg') is not True or getattr(g.get('db'), 'closed', True):
-            import psycopg
-            from psycopg.rows import dict_row
-            conn = psycopg.connect(Config.DATABASE_URL, row_factory=dict_row)
-            g.db = conn
-            g.is_pg = True
-        return g.db
+            try:
+                import psycopg
+                from psycopg.rows import dict_row
+                conn = psycopg.connect(Config.DATABASE_URL, row_factory=dict_row, connect_timeout=4)
+                g.db = conn
+                g.is_pg = True
+                return g.db
+            except Exception as e:
+                _handle_pg_error(e)
+                # Lanjut fallback ke SQLite di bawah
 
     path = db_path or Config.DATABASE_PATH
     _ensure_vercel_db(path)
@@ -78,10 +101,14 @@ def get_db(db_path=None):
 
 def get_direct_connection(db_path=None):
     """Membuka koneksi langsung di luar konteks request Flask (misalnya untuk CLI/script)."""
-    if is_postgres():
-        import psycopg
-        from psycopg.rows import dict_row
-        return psycopg.connect(Config.DATABASE_URL, row_factory=dict_row)
+    if is_postgres(db_path):
+        try:
+            import psycopg
+            from psycopg.rows import dict_row
+            return psycopg.connect(Config.DATABASE_URL, row_factory=dict_row, connect_timeout=4)
+        except Exception as e:
+            _handle_pg_error(e)
+            # Lanjut fallback ke SQLite di bawah
 
     path = db_path or Config.DATABASE_PATH
     _ensure_vercel_db(path)
@@ -104,25 +131,33 @@ def close_db(e=None):
 
 def query_db(query, args=(), one=False, db_path=None):
     """Menjalankan query SELECT dan mengembalikan hasil (kompatibel SQLite & PostgreSQL)."""
-    if is_postgres():
-        pg_query = _prepare_postgres_sql(query)
-        is_direct = False
+    if is_postgres(db_path):
         try:
-            db = get_db(db_path)
-            cur = db.cursor()
-            cur.execute(pg_query, args)
-            raw_rows = cur.fetchall()
-            cur.close()
-        except RuntimeError:
-            db = get_direct_connection(db_path)
-            cur = db.cursor()
-            cur.execute(pg_query, args)
-            raw_rows = cur.fetchall()
-            cur.close()
-            db.close()
+            pg_query = _prepare_postgres_sql(query)
+            is_direct = False
+            try:
+                db = get_db(db_path)
+                if not g.get('is_pg'):
+                    raise RuntimeError("Beralih ke SQLite")
+                cur = db.cursor()
+                cur.execute(pg_query, args)
+                raw_rows = cur.fetchall()
+                cur.close()
+            except RuntimeError:
+                db = get_direct_connection(db_path)
+                if not is_postgres():
+                    raise RuntimeError("Beralih ke SQLite")
+                cur = db.cursor()
+                cur.execute(pg_query, args)
+                raw_rows = cur.fetchall()
+                cur.close()
+                db.close()
 
-        rows = [RowDict(r) for r in raw_rows]
-        return (rows[0] if rows else None) if one else rows
+            rows = [RowDict(r) for r in raw_rows]
+            return (rows[0] if rows else None) if one else rows
+        except Exception as e:
+            _handle_pg_error(e)
+            # Lanjut eksekusi SQLite di bawah
 
     # Fallback SQLite
     try:
@@ -141,36 +176,62 @@ def query_db(query, args=(), one=False, db_path=None):
 
 def execute_db(query, args=(), commit=True, db_path=None):
     """Menjalankan query INSERT/UPDATE/DELETE dan mengembalikan lastrowid atau affected rows."""
-    if is_postgres():
-        pg_query = _prepare_postgres_sql(query)
-        is_insert = pg_query.strip().upper().startswith("INSERT INTO")
-        if is_insert and "RETURNING" not in pg_query.upper():
-            pg_query = pg_query.rstrip("; ") + " RETURNING id"
-
-        is_direct = False
+    if is_postgres(db_path):
         try:
-            db = get_db(db_path)
-        except RuntimeError:
-            db = get_direct_connection(db_path)
-            is_direct = True
+            pg_query = _prepare_postgres_sql(query)
+            is_insert = pg_query.strip().upper().startswith("INSERT INTO")
+            if is_insert and "RETURNING" not in pg_query.upper():
+                pg_query = pg_query.rstrip("; ") + " RETURNING id"
 
-        cur = db.cursor()
-        cur.execute(pg_query, args)
-        last_id = None
-        if is_insert:
+            is_direct = False
             try:
-                ret = cur.fetchone()
-                if ret:
-                    last_id = ret.get("id") if isinstance(ret, dict) else ret[0]
-            except Exception:
-                pass
-        row_count = cur.rowcount
-        if commit:
-            db.commit()
-        cur.close()
-        if is_direct:
-            db.close()
-        return last_id if last_id is not None else row_count
+                db = get_db(db_path)
+                if not g.get('is_pg'):
+                    raise RuntimeError("Beralih ke SQLite")
+            except RuntimeError:
+                db = get_direct_connection(db_path)
+                if not is_postgres():
+                    raise RuntimeError("Beralih ke SQLite")
+                is_direct = True
+
+            cur = db.cursor()
+            cur.execute(pg_query, args)
+            last_id = None
+            if is_insert:
+                try:
+                    ret = cur.fetchone()
+                    if ret:
+                        last_id = ret.get("id") if isinstance(ret, dict) else ret[0]
+                except Exception:
+                    pass
+            row_count = cur.rowcount
+            if commit:
+                db.commit()
+            cur.close()
+            if is_direct:
+                db.close()
+            return last_id if last_id is not None else row_count
+        except Exception as e:
+            _handle_pg_error(e)
+            # Lanjut eksekusi SQLite di bawah
+
+    # Fallback SQLite
+    is_direct = False
+    try:
+        db = get_db(db_path)
+    except RuntimeError:
+        db = get_direct_connection(db_path)
+        is_direct = True
+
+    cur = db.execute(query, args)
+    last_id = cur.lastrowid
+    row_count = cur.rowcount
+    if commit:
+        db.commit()
+    cur.close()
+    if is_direct:
+        db.close()
+    return last_id if last_id else row_count
 
     # Fallback SQLite
     is_direct = False
@@ -192,7 +253,7 @@ def execute_db(query, args=(), commit=True, db_path=None):
 
 def init_db(db_path=None, schema_path=None):
     """Menginisialisasi tabel-tabel database."""
-    if is_postgres():
+    if is_postgres(db_path):
         # Pada PostgreSQL Supabase, skema dikelola melalui supabase_schema.sql
         return True
 
@@ -245,7 +306,7 @@ def init_db(db_path=None, schema_path=None):
 
 def seed_initial_data(db_path=None):
     """Menginisialisasi data dasar sistem (akun admin & owner, program) tanpa data fiktif."""
-    if is_postgres():
+    if is_postgres(db_path):
         # Cek apakah akun admin sudah ada di Supabase
         admin = query_db("SELECT id FROM users WHERE username = ?", ("admin",), one=True)
         if not admin:

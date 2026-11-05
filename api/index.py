@@ -36,11 +36,12 @@ class SafeWSGIHandler:
         except Exception as e:
             import traceback
             err_trace = traceback.format_exc()
-            print("WSGI Serverless Exception:", err_trace, file=sys.stderr)
-            status = '500 Internal Server Error'
-            headers = [('Content-Type', 'text/html; charset=utf-8')]
+            print("WSGI Serverless Exception (Handled):", err_trace, file=sys.stderr)
+            # Alihkan ke halaman login secara aman daripada menampilkan layar crash
+            status = '302 Found'
+            headers = [('Location', '/login')]
             start_response(status, headers)
-            return [f"<h3>DESI PRIVAT - Serverless Error</h3><pre>{err_trace}</pre>".encode('utf-8')]
+            return []
 
 app = SafeWSGIHandler(_raw_app)
 handler = app
