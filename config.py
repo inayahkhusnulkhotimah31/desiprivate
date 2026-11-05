@@ -73,6 +73,11 @@ class Config:
     # Mode Uji WhatsApp
     WHATSAPP_TEST_MODE = True
 
+    # Database Configuration (PostgreSQL Supabase atau SQLite fallback)
+    DATABASE_URL = os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL") or os.getenv("SUPABASE_DB_URL")
+    if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
     # Supabase Cloud Configuration
     SUPABASE_URL = os.getenv("SUPABASE_URL", "")
     SUPABASE_PUBLISHABLE_KEY = os.getenv("SUPABASE_PUBLISHABLE_KEY", "")

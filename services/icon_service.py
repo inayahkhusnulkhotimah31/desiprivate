@@ -150,3 +150,4 @@ def render_icon(name_or_emoji, classes="", size=None):
         f'</svg>'
     )
     return Markup(svg_html)
+

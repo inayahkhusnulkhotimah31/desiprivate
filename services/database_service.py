@@ -1,17 +1,45 @@
 """
 DESI PRIVAT - Database Service
-Layanan koneksi SQLite, inisialisasi tabel, dan seeding data pengujian.
+Layanan koneksi Dual-Engine (Supabase PostgreSQL / Cloud & SQLite Lokal),
+inisialisasi tabel, dan seeding data pengujian.
 """
 import sqlite3
 import os
+import re
 from pathlib import Path
 from config import Config
 from flask import g
 from werkzeug.security import generate_password_hash
 
+class RowDict(dict):
+    """Dictionary hasil query yang juga mendukung akses indeks numerik seperti sqlite3.Row."""
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return list(self.values())[key]
+        return super().__getitem__(key)
+
+def is_postgres():
+    """Mengecek apakah database yang aktif adalah PostgreSQL (Supabase)."""
+    db_url = getattr(Config, "DATABASE_URL", None)
+    return bool(db_url and str(db_url).strip().startswith("postgres"))
+
+def _prepare_postgres_sql(query):
+    """Menyesuaikan sintaks query SQLite agar kompatibel dengan PostgreSQL / psycopg."""
+    sql = query
+    # Ganti placeholder parameter ? menjadi %s
+    sql = sql.replace("?", "%s")
+
+    # Normalisasi fungsi tanggal SQLite -> PostgreSQL
+    sql = re.sub(r"date\(\s*'now'\s*,\s*'\+1 day'\s*\)", "(CURRENT_DATE + INTERVAL '1 day')", sql, flags=re.IGNORECASE)
+    sql = re.sub(r"date\(\s*'now'\s*\)", "CURRENT_DATE", sql, flags=re.IGNORECASE)
+    sql = re.sub(r"strftime\(\s*'%Y-%m'\s*,\s*'now'\s*\)", "to_char(CURRENT_TIMESTAMP, 'YYYY-MM')", sql, flags=re.IGNORECASE)
+    sql = re.sub(r"strftime\(\s*'%Y-%m'\s*,\s*([a-zA-Z0-9_\.]+)\s*\)", r"to_char(\1, 'YYYY-MM')", sql, flags=re.IGNORECASE)
+    sql = re.sub(r"\bdate\(([a-zA-Z0-9_\.]+)\)", r"(\1)::date", sql, flags=re.IGNORECASE)
+    return sql
+
 def _ensure_vercel_db(path):
-    """Menjamin database di temp directory tersedia saat runtime cold-start Vercel."""
-    if getattr(Config, "IS_VERCEL", False):
+    """Menjamin database di temp directory tersedia saat runtime cold-start Vercel jika memakai SQLite."""
+    if getattr(Config, "IS_VERCEL", False) and not is_postgres():
         p = Path(path)
         if not p.exists():
             seed = Path(__file__).resolve().parent.parent / "database" / "desi_privat.db"
@@ -23,22 +51,37 @@ def _ensure_vercel_db(path):
                     pass
 
 def get_db(db_path=None):
-    """Membuka koneksi ke database SQLite dan mengembalikan objek koneksi."""
+    """Membuka koneksi ke database (PostgreSQL jika DATABASE_URL tersedia, fallback SQLite)."""
+    if is_postgres():
+        if 'db' not in g or g.get('is_pg') is not True or getattr(g.get('db'), 'closed', True):
+            import psycopg
+            from psycopg.rows import dict_row
+            conn = psycopg.connect(Config.DATABASE_URL, row_factory=dict_row)
+            g.db = conn
+            g.is_pg = True
+        return g.db
+
     path = db_path or Config.DATABASE_PATH
     _ensure_vercel_db(path)
     # Pastikan folder database ada
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
 
-    if 'db' not in g or g.get('db_path') != path:
+    if 'db' not in g or g.get('db_path') != path or g.get('is_pg') is True:
         conn = sqlite3.connect(path)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON;")
         g.db = conn
         g.db_path = path
+        g.is_pg = False
     return g.db
 
 def get_direct_connection(db_path=None):
     """Membuka koneksi langsung di luar konteks request Flask (misalnya untuk CLI/script)."""
+    if is_postgres():
+        import psycopg
+        from psycopg.rows import dict_row
+        return psycopg.connect(Config.DATABASE_URL, row_factory=dict_row)
+
     path = db_path or Config.DATABASE_PATH
     _ensure_vercel_db(path)
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
@@ -50,15 +93,40 @@ def get_direct_connection(db_path=None):
 def close_db(e=None):
     """Menutup koneksi database pada akhir request."""
     db = g.pop('db', None)
+    g.pop('is_pg', None)
+    g.pop('db_path', None)
     if db is not None:
-        db.close()
+        try:
+            db.close()
+        except Exception:
+            pass
 
 def query_db(query, args=(), one=False, db_path=None):
-    """Menjalankan query SELECT dan mengembalikan hasil."""
+    """Menjalankan query SELECT dan mengembalikan hasil (kompatibel SQLite & PostgreSQL)."""
+    if is_postgres():
+        pg_query = _prepare_postgres_sql(query)
+        is_direct = False
+        try:
+            db = get_db(db_path)
+            cur = db.cursor()
+            cur.execute(pg_query, args)
+            raw_rows = cur.fetchall()
+            cur.close()
+        except RuntimeError:
+            db = get_direct_connection(db_path)
+            cur = db.cursor()
+            cur.execute(pg_query, args)
+            raw_rows = cur.fetchall()
+            cur.close()
+            db.close()
+
+        rows = [RowDict(r) for r in raw_rows]
+        return (rows[0] if rows else None) if one else rows
+
+    # Fallback SQLite
     try:
         db = get_db(db_path)
     except RuntimeError:
-        # Jika di luar konteks Flask
         db = get_direct_connection(db_path)
         cur = db.execute(query, args)
         rv = cur.fetchall()
@@ -71,7 +139,39 @@ def query_db(query, args=(), one=False, db_path=None):
     return (rv[0] if rv else None) if one else rv
 
 def execute_db(query, args=(), commit=True, db_path=None):
-    """Menjalankan query INSERT/UPDATE/DELETE dan mengembalikan lastrowid."""
+    """Menjalankan query INSERT/UPDATE/DELETE dan mengembalikan lastrowid atau affected rows."""
+    if is_postgres():
+        pg_query = _prepare_postgres_sql(query)
+        is_insert = pg_query.strip().upper().startswith("INSERT INTO")
+        if is_insert and "RETURNING" not in pg_query.upper():
+            pg_query = pg_query.rstrip("; ") + " RETURNING id"
+
+        is_direct = False
+        try:
+            db = get_db(db_path)
+        except RuntimeError:
+            db = get_direct_connection(db_path)
+            is_direct = True
+
+        cur = db.cursor()
+        cur.execute(pg_query, args)
+        last_id = None
+        if is_insert:
+            try:
+                ret = cur.fetchone()
+                if ret:
+                    last_id = ret.get("id") if isinstance(ret, dict) else ret[0]
+            except Exception:
+                pass
+        row_count = cur.rowcount
+        if commit:
+            db.commit()
+        cur.close()
+        if is_direct:
+            db.close()
+        return last_id if last_id is not None else row_count
+
+    # Fallback SQLite
     is_direct = False
     try:
         db = get_db(db_path)
@@ -90,7 +190,11 @@ def execute_db(query, args=(), commit=True, db_path=None):
     return last_id if last_id else row_count
 
 def init_db(db_path=None, schema_path=None):
-    """Menginisialisasi tabel-tabel SQLite dari schema.sql."""
+    """Menginisialisasi tabel-tabel database."""
+    if is_postgres():
+        # Pada PostgreSQL Supabase, skema dikelola melalui supabase_schema.sql
+        return True
+
     target_db = db_path or Config.DATABASE_PATH
     s_path = schema_path or (Path(__file__).resolve().parent.parent / "database" / "schema.sql")
 
@@ -140,6 +244,39 @@ def init_db(db_path=None, schema_path=None):
 
 def seed_initial_data(db_path=None):
     """Menginisialisasi data dasar sistem (akun admin & owner, program) tanpa data fiktif."""
+    if is_postgres():
+        # Cek apakah akun admin sudah ada di Supabase
+        admin = query_db("SELECT id FROM users WHERE username = ?", ("admin",), one=True)
+        if not admin:
+            execute_db("""
+                INSERT INTO users (username, password_hash, role, full_name, email, phone, is_active)
+                VALUES (?, ?, 'admin', 'Admin Pengelola DESI', 'admin@desiprivat.id', '081234567801', 1)
+            """, ("admin", generate_password_hash("admin123")))
+
+        owner = query_db("SELECT id FROM users WHERE username = ?", ("owner",), one=True)
+        if not owner:
+            execute_db("""
+                INSERT INTO users (username, password_hash, role, full_name, email, phone, is_active)
+                VALUES (?, ?, 'owner', 'Ibu Desi (Pemilik)', 'owner@desiprivat.id', '081234567802', 1)
+            """, ("owner", generate_password_hash("owner123")))
+
+        programs = query_db("SELECT COUNT(*) as count FROM programs", one=True)
+        count = programs["count"] if programs else 0
+        if count == 0:
+            default_programs = [
+                ("Matematika", "MAT-01", "Bimbingan konsep matematika dan pemecahan soal", "Semua Jenjang", "aktif"),
+                ("Bahasa Inggris", "ENG-01", "Conversation, grammar, and vocabulary", "Semua Jenjang", "aktif"),
+                ("Sains & IPA", "IPA-01", "Pendalaman materi IPA fisika dan biologi", "SD & SMP", "aktif"),
+                ("Calistung", "CLS-01", "Membaca, menulis, dan berhitung dasar ramah anak", "TK B & SD 1-3", "aktif"),
+            ]
+            for p in default_programs:
+                execute_db("""
+                    INSERT INTO programs (name, code, description, level, status)
+                    VALUES (?, ?, ?, ?, ?)
+                """, p)
+        return True
+
+    # Fallback SQLite
     conn = get_direct_connection(db_path or Config.DATABASE_PATH)
     cur = conn.cursor()
 

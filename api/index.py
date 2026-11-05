@@ -18,7 +18,7 @@ from app import create_app
 
 # Instansiasi WSGI app untuk Vercel
 app = create_app()
+handler = app
 
 if __name__ == "__main__":
     app.run()
-
