@@ -9,9 +9,23 @@ from config import Config
 from flask import g
 from werkzeug.security import generate_password_hash
 
+def _ensure_vercel_db(path):
+    """Menjamin database di temp directory tersedia saat runtime cold-start Vercel."""
+    if getattr(Config, "IS_VERCEL", False):
+        p = Path(path)
+        if not p.exists():
+            seed = Path(__file__).resolve().parent.parent / "database" / "desi_privat.db"
+            if seed.exists():
+                import shutil
+                try:
+                    shutil.copy2(seed, p)
+                except Exception:
+                    pass
+
 def get_db(db_path=None):
     """Membuka koneksi ke database SQLite dan mengembalikan objek koneksi."""
     path = db_path or Config.DATABASE_PATH
+    _ensure_vercel_db(path)
     # Pastikan folder database ada
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
 
@@ -26,6 +40,7 @@ def get_db(db_path=None):
 def get_direct_connection(db_path=None):
     """Membuka koneksi langsung di luar konteks request Flask (misalnya untuk CLI/script)."""
     path = db_path or Config.DATABASE_PATH
+    _ensure_vercel_db(path)
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row

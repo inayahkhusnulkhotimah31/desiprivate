@@ -48,9 +48,24 @@ class Config:
     PERMANENT_SESSION_LIFETIME = timedelta(days=1)
 
     # Database dan Direktori Backup
-    DB_NAME = os.getenv("DATABASE_PATH", "database/desi_privat.db")
-    DATABASE_PATH = str(BASE_DIR / DB_NAME if not os.path.isabs(DB_NAME) else Path(DB_NAME))
-    BACKUP_DIR = str(BASE_DIR / os.getenv("BACKUP_DIR", "backups"))
+    IS_VERCEL = bool(os.getenv("VERCEL"))
+    if IS_VERCEL:
+        import tempfile
+        _temp_base = Path(tempfile.gettempdir())
+        _tmp_db = _temp_base / "desi_privat.db"
+        _seed_db = BASE_DIR / "database" / "desi_privat.db"
+        if not _tmp_db.exists() and _seed_db.exists():
+            import shutil
+            try:
+                shutil.copy2(_seed_db, _tmp_db)
+            except Exception:
+                pass
+        DATABASE_PATH = str(_tmp_db)
+        BACKUP_DIR = str(_temp_base / "backups")
+    else:
+        DB_NAME = os.getenv("DATABASE_PATH", "database/desi_privat.db")
+        DATABASE_PATH = str(BASE_DIR / DB_NAME if not os.path.isabs(DB_NAME) else Path(DB_NAME))
+        BACKUP_DIR = str(BASE_DIR / os.getenv("BACKUP_DIR", "backups"))
 
     # Batas Waktu Respons Mentor (dalam Jam)
     SCHEDULE_RESPONSE_TIMEOUT_HOURS = int(os.getenv("SCHEDULE_RESPONSE_TIMEOUT_HOURS", "24"))
