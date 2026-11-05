@@ -46,7 +46,8 @@ def _ensure_vercel_db(path):
             if seed.exists():
                 import shutil
                 try:
-                    shutil.copy2(seed, p)
+                    shutil.copyfile(seed, p)
+                    os.chmod(p, 0o666)
                 except Exception:
                     pass
 

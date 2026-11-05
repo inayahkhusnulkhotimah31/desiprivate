@@ -57,7 +57,8 @@ class Config:
         if not _tmp_db.exists() and _seed_db.exists():
             import shutil
             try:
-                shutil.copy2(_seed_db, _tmp_db)
+                shutil.copyfile(_seed_db, _tmp_db)
+                os.chmod(_tmp_db, 0o666)
             except Exception:
                 pass
         DATABASE_PATH = str(_tmp_db)

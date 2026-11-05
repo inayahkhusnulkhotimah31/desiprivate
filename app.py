@@ -38,11 +38,21 @@ def create_app(config_class=None):
 
     # Inisialisasi Database dan Data Utama secara otomatis jika belum ada
     with app.app_context():
-        init_db()
-        seed_initial_data()
+        try:
+            init_db()
+            seed_initial_data()
+        except Exception as e:
+            app.logger.warning(f"Database auto-init warning: {e}")
 
     # Daftarkan teardown database
     app.teardown_appcontext(close_db)
+
+    # Alias rute serverless Vercel /api/index
+    @app.route('/api/index')
+    @app.route('/api')
+    def vercel_entry_alias():
+        from flask import redirect, url_for
+        return redirect(url_for('auth.login'))
 
     # Daftarkan Blueprint Routes
     app.register_blueprint(auth_bp)

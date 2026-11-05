@@ -77,3 +77,4 @@ if __name__ == "__main__":
     print(f"- Supabase REST API : {'AKTIF & TERHUBUNG' if rest_ok else 'GAGAL'}")
     print(f"- PostgreSQL Pooler : {'TERHUBUNG' if pg_ok else ('BELUM DIKONFIGURASI' if pg_ok is None else 'GAGAL')}")
     print("=" * 60)
+

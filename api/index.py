@@ -17,8 +17,33 @@ os.environ["VERCEL"] = "1"
 from app import create_app
 
 # Instansiasi WSGI app untuk Vercel
-app = create_app()
+_raw_app = create_app()
+
+class SafeWSGIHandler:
+    """WSGI Middleware untuk menangani path rewriting Vercel dan error handling aman."""
+    def __init__(self, wsgi_app):
+        self.wsgi_app = wsgi_app
+
+    def __call__(self, environ, start_response):
+        try:
+            # Perbaiki PATH_INFO jika Vercel rewrite mengubahnya menjadi /api/index
+            original_path = environ.get("HTTP_X_FORWARDED_URI") or environ.get("HTTP_X_VERCEL_MATCHED_PATH")
+            if original_path:
+                environ["PATH_INFO"] = original_path.split("?")[0]
+            elif environ.get("PATH_INFO") in ("/api/index", "/api/index.py", "/api"):
+                environ["PATH_INFO"] = "/"
+            return self.wsgi_app(environ, start_response)
+        except Exception as e:
+            import traceback
+            err_trace = traceback.format_exc()
+            print("WSGI Serverless Exception:", err_trace, file=sys.stderr)
+            status = '500 Internal Server Error'
+            headers = [('Content-Type', 'text/html; charset=utf-8')]
+            start_response(status, headers)
+            return [f"<h3>DESI PRIVAT - Serverless Error</h3><pre>{err_trace}</pre>".encode('utf-8')]
+
+app = SafeWSGIHandler(_raw_app)
 handler = app
 
 if __name__ == "__main__":
-    app.run()
+    _raw_app.run()
