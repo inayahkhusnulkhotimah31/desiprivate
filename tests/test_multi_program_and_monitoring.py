@@ -15,7 +15,7 @@ os.environ["FLASK_ENV"] = "testing"
 
 from app import create_app
 from config import TestingConfig
-from services.database_service import get_direct_connection, init_db, query_db, execute_db
+from services.database_service import get_direct_connection, init_db, seed_initial_data, query_db, execute_db
 from services.meeting_service import (
     calculate_period_and_meeting, calculate_total_from_period_and_meeting,
     get_student_program_meeting_stats, get_student_meeting_stats,
@@ -32,8 +32,9 @@ class TestMultiProgramAndDeveloperMonitoring(unittest.TestCase):
         cls.db_path = TestingConfig.DATABASE_PATH
         # Pastikan direktori database ada
         os.makedirs(os.path.dirname(cls.db_path), exist_ok=True)
-        # Inisialisasi skema lengkap
+        # Inisialisasi skema lengkap dan data dasar
         init_db(cls.db_path)
+        seed_initial_data(cls.db_path)
         cls.app = create_app(TestingConfig)
         cls.client = cls.app.test_client()
 
@@ -105,7 +106,10 @@ class TestMultiProgramAndDeveloperMonitoring(unittest.TestCase):
 
         # Pastikan ada mentor uji
         mentor = query_db("SELECT id FROM mentors WHERE status = 'aktif' LIMIT 1", one=True)
-        mentor_id = mentor["id"] if mentor else None
+        if not mentor:
+            mentor_id = execute_db("INSERT INTO mentors (full_name, phone, status) VALUES ('Mentor Test', '081234567890', 'aktif')")
+        else:
+            mentor_id = mentor["id"]
 
         # 3. Daftarkan Program 1 (Math) dengan riwayat awal: Periode 3, Pertemuan 5 (Offset: 21)
         res_p1 = set_student_program_initial_history(
@@ -186,7 +190,7 @@ class TestMultiProgramAndDeveloperMonitoring(unittest.TestCase):
     # 3. DETEKSI DUPLIKASI SISWA
     # ========================================================
     def test_03_check_duplicate_student_api(self):
-        """Memverifikasi endpoint pencegahan duplikasi siswa saat pendaftaran."""
+        """Memverifikasi endpoint pencegahan duplikasi siswa saat pendaftaran dan penanganan duplikasi."""
         # Siswa "Andi Multi Program" sudah terdaftar di test_02
         with self.client.session_transaction() as sess:
             sess["user_id"] = 1
@@ -202,10 +206,51 @@ class TestMultiProgramAndDeveloperMonitoring(unittest.TestCase):
         found = any("Andi" in m["full_name"] for m in data["matches"])
         self.assertTrue(found)
 
+        # Cek nama pendek 2 karakter "An"
+        resp_short = self.client.get("/admin/api/check-duplicate-student?name=An")
+        self.assertEqual(resp_short.status_code, 200)
+        data_short = resp_short.get_json()
+        self.assertTrue(len(data_short["matches"]) > 0)
+
         # Cek nama yang tidak ada
         resp_none = self.client.get("/admin/api/check-duplicate-student?name=ZzzzXyyy999")
         data_none = resp_none.get_json()
         self.assertEqual(len(data_none["matches"]), 0)
+
+        # Verifikasi backend guard di create_student:
+        # Jika mendaftarkan siswa dengan nama yang sama persis tanpa confirm_duplicate=1,
+        # sistem tidak membuat duplikat, melainkan menghubungkan ke profil yang sudah ada.
+        andi_st = query_db("SELECT id, parent_id FROM students WHERE full_name LIKE '%Andi Multi Program%' LIMIT 1", one=True)
+        self.assertIsNotNone(andi_st)
+        total_students_before = query_db("SELECT COUNT(*) as c FROM students", one=True)["c"]
+
+        # Cari program yang belum diambil oleh Andi
+        all_progs = query_db("SELECT id FROM programs WHERE status = 'aktif'")
+        taken_progs = [p["program_id"] for p in query_db("SELECT program_id FROM student_programs WHERE student_id = ?", (andi_st["id"],))]
+        avail_prog = next((p["id"] for p in all_progs if p["id"] not in taken_progs), None)
+
+        if avail_prog:
+            # Kirim form pendaftaran tanpa confirm_duplicate
+            with self.client.session_transaction() as sess:
+                sess["user_id"] = 1
+                sess["username"] = "admin"
+                sess["role"] = "admin"
+                sess["_csrf_token"] = "test-csrf-token"
+
+            resp_dup = self.client.post("/admin/students/create", data={
+                "csrf_token": "test-csrf-token",
+                "parent_id": andi_st["parent_id"],
+                "full_name": "Andi Multi Program",
+                "program_id": avail_prog,
+                "confirm_duplicate": "0"
+            }, follow_redirects=False)
+
+            total_students_after = query_db("SELECT COUNT(*) as c FROM students", one=True)["c"]
+            # Jumlah siswa TIDAK BERTAMBAH (tidak ada duplikasi)
+            self.assertEqual(total_students_after, total_students_before)
+            # Program berhasil ditambahkan ke profil Andi yang sudah ada
+            sp_check = query_db("SELECT id FROM student_programs WHERE student_id = ? AND program_id = ?", (andi_st["id"], avail_prog), one=True)
+            self.assertIsNotNone(sp_check)
 
     # ========================================================
     # 4. FIELD-LEVEL DIFFS PADA AUDIT LOG
@@ -226,12 +271,15 @@ class TestMultiProgramAndDeveloperMonitoring(unittest.TestCase):
         self.assertEqual(new_diff["grade"], "Kelas 5")
 
         # Catat via log_audit
+        st = query_db("SELECT id FROM students LIMIT 1", one=True)
+        target_student_id = st["id"] if st else 1
+
         log_id = log_audit(
             user_id=1,
             user_name="admin",
             action_type="UBAH_SISWA",
             target_entity="students",
-            target_id=38,
+            target_id=target_student_id,
             details="Mengubah data sekolah dan kelas",
             module_name="Siswa",
             old_values=old_diff,
@@ -241,7 +289,7 @@ class TestMultiProgramAndDeveloperMonitoring(unittest.TestCase):
         self.assertIsNotNone(log_id)
 
         # Ambil kembali dari student change logs
-        diffs = get_student_change_logs(student_id=38, limit=5)
+        diffs = get_student_change_logs(student_id=target_student_id, limit=5)
         self.assertTrue(len(diffs) > 0)
         first_diff = dict(diffs[0])
         self.assertIn("school", first_diff["fields_changed"])

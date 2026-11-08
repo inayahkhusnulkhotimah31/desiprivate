@@ -166,6 +166,74 @@ def create_student():
         flash("Nama lengkap siswa dan data orang tua/wali murid wajib diisi.", "danger")
         return redirect(url_for("admin.students"))
 
+    # Backend Guard: Pencegahan Duplikasi Siswa (1 Siswa Multi-Program)
+    confirm_duplicate = request.form.get("confirm_duplicate", "0").strip()
+    existing_student = None
+    if parent_id:
+        existing_student = query_db(
+            "SELECT id, full_name, school, grade FROM students WHERE LOWER(TRIM(full_name)) = LOWER(TRIM(?)) AND parent_id = ?",
+            (full_name, parent_id),
+            one=True
+        )
+    if not existing_student:
+        existing_student = query_db(
+            "SELECT id, full_name, school, grade FROM students WHERE LOWER(TRIM(full_name)) = LOWER(TRIM(?))",
+            (full_name,),
+            one=True
+        )
+
+    if existing_student and confirm_duplicate != "1":
+        target_student_id = existing_student["id"]
+        if program_id:
+            already_enrolled = query_db(
+                "SELECT id FROM student_programs WHERE student_id = ? AND program_id = ?",
+                (target_student_id, program_id),
+                one=True
+            )
+            if already_enrolled:
+                flash(f"Pemberitahuan Sistem: Siswa '{existing_student['full_name']}' sudah terdaftar (ID #{target_student_id}) dan telah mengambil program ini.", "warning")
+                return redirect(url_for("admin.student_detail", student_id=target_student_id))
+
+            execute_db("""
+                INSERT INTO student_programs (student_id, program_id, mentor_id, start_date, notes, status)
+                VALUES (?, ?, ?, date('now'), ?, 'aktif')
+            """, (target_student_id, program_id, mentor_id if mentor_id else None, subject_info))
+
+            log_audit(session["user_id"], session["username"], "TAMBAH_PROGRAM_SISWA", "student_programs", target_student_id,
+                      f"Menambahkan program baru (ID {program_id}) ke profil siswa yang sudah ada ({existing_student['full_name']})")
+
+            # Daftarkan jadwal rutin mingguan jika ada
+            routine_days = request.form.getlist("routine_day[]")
+            routine_starts = request.form.getlist("routine_start[]")
+            routine_ends = request.form.getlist("routine_end[]")
+            slots_added = 0
+            if mentor_id and routine_days:
+                for idx_slot, r_day in enumerate(routine_days):
+                    try:
+                        dow = int(r_day)
+                    except (TypeError, ValueError):
+                        continue
+                    r_start = routine_starts[idx_slot].strip() if idx_slot < len(routine_starts) else "16:00"
+                    r_end = routine_ends[idx_slot].strip() if idx_slot < len(routine_ends) else calculate_end_time(r_start, 90)
+                    res_rs = create_routine_schedule(
+                        student_id=target_student_id,
+                        program_id=program_id,
+                        mentor_id=mentor_id,
+                        day_of_week=dow,
+                        start_time=r_start,
+                        end_time=r_end,
+                        subject_info=subject_info,
+                        notes=notes or "Jadwal rutin mingguan program tambahan"
+                    )
+                    if res_rs.get("success"):
+                        slots_added += 1
+
+            flash(f"Pemberitahuan Sistem: Siswa '{existing_student['full_name']}' sudah terdaftar (ID #{target_student_id}). Program les berhasil ditambahkan ke profil siswa tersebut tanpa membuat identitas ganda.", "success")
+            return redirect(url_for("admin.student_detail", student_id=target_student_id))
+        else:
+            flash(f"Pemberitahuan Sistem: Siswa '{existing_student['full_name']}' sudah terdaftar (ID #{target_student_id}).", "info")
+            return redirect(url_for("admin.student_detail", student_id=target_student_id))
+
     try:
         initial_offset = max(0, int(request.form.get("initial_meeting_offset", 0)))
     except (TypeError, ValueError):
@@ -490,51 +558,69 @@ def api_preview_meeting_calc():
 @admin_bp.route("/api/check-duplicate-student")
 def api_check_duplicate_student():
     """
-    Memeriksa potensi duplikasi siswa berdasarkan kemiripan nama siswa atau kontak wali.
+    Memeriksa potensi duplikasi siswa berdasarkan kemiripan nama siswa atau kontak wali / parent_id.
     Menghindari pembuatan profil ganda ketika siswa mendaftar program kedua.
     """
     name = request.args.get("name", "").strip()
     phone = request.args.get("phone", "").strip()
-    if not name and not phone:
+    parent_id = request.args.get("parent_id", "").strip()
+    
+    if not name and not phone and not parent_id:
         return jsonify({"matches": []})
 
     conditions = []
     args = []
-    if name and len(name) >= 3:
+    if name and len(name) >= 2:
         conditions.append("(LOWER(s.full_name) LIKE ? OR LOWER(?) LIKE '%' || LOWER(s.full_name) || '%')")
         args.extend([f"%{name.lower()}%", name.lower()])
     if phone and len(phone) >= 6:
         conditions.append("p.phone LIKE ?")
         args.append(f"%{phone}%")
+    if parent_id:
+        try:
+            pid_int = int(parent_id)
+            conditions.append("s.parent_id = ?")
+            args.append(pid_int)
+        except (TypeError, ValueError):
+            pass
 
     if not conditions:
         return jsonify({"matches": []})
 
     query = f"""
-        SELECT s.id, s.full_name, s.school, s.grade, s.status,
+        SELECT s.id, s.full_name, s.school, s.grade, s.status, s.parent_id,
                p.full_name as parent_name, p.phone as parent_phone
         FROM students s
         JOIN parents p ON s.parent_id = p.id
         WHERE {' OR '.join(conditions)}
-        LIMIT 6
+        LIMIT 10
     """
     rows = query_db(query, args)
     matches = []
+    seen_ids = set()
     for r in rows:
+        if r["id"] in seen_ids:
+            continue
+        seen_ids.add(r["id"])
         progs = query_db(
             "SELECT pr.name FROM student_programs sp JOIN programs pr ON sp.program_id = pr.id WHERE sp.student_id = ?",
             (r["id"],)
         )
         prog_names = [p["name"] for p in progs]
+        is_exact = bool(name and r["full_name"] and r["full_name"].strip().lower() == name.lower())
+        is_parent = bool(parent_id and str(r["parent_id"]) == str(parent_id))
         matches.append({
             "id": r["id"],
             "full_name": r["full_name"],
             "school": r["school"] or "-",
             "grade": r["grade"] or "-",
             "status": r["status"],
+            "parent_id": r["parent_id"],
             "parent_name": r["parent_name"],
             "parent_phone": r["parent_phone"] or "-",
-            "programs": prog_names
+            "programs": prog_names,
+            "is_exact_name": is_exact,
+            "is_same_parent": is_parent
         })
     return jsonify({"matches": matches})
 

@@ -8,7 +8,7 @@ import os
 import re
 from pathlib import Path
 from config import Config
-from flask import g
+from flask import g, current_app
 from werkzeug.security import generate_password_hash
 
 class RowDict(dict):
@@ -95,7 +95,15 @@ def get_db(db_path=None):
                 _handle_pg_error(e)
                 # Lanjut fallback ke SQLite di bawah
 
-    path = db_path or Config.DATABASE_PATH
+    path = db_path
+    if not path:
+        try:
+            if current_app and "DATABASE_PATH" in current_app.config:
+                path = current_app.config["DATABASE_PATH"]
+        except Exception:
+            pass
+    if not path:
+        path = Config.DATABASE_PATH
     _ensure_vercel_db(path)
     # Pastikan folder database ada
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
@@ -120,7 +128,15 @@ def get_direct_connection(db_path=None):
             _handle_pg_error(e)
             # Lanjut fallback ke SQLite di bawah
 
-    path = db_path or Config.DATABASE_PATH
+    path = db_path
+    if not path:
+        try:
+            if current_app and "DATABASE_PATH" in current_app.config:
+                path = current_app.config["DATABASE_PATH"]
+        except Exception:
+            pass
+    if not path:
+        path = Config.DATABASE_PATH
     _ensure_vercel_db(path)
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     conn = sqlite3.connect(path)

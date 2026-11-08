@@ -176,9 +176,41 @@
       <div class="modal-title">Pendaftaran Siswa Baru</div>
       <button class="modal-close-btn" onclick="closeModal('addStudentModal')">&times;</button>
     </div>
-    <form method="POST" action="{{ url_for('admin.create_student') }}">
+    <form method="POST" action="{{ url_for('admin.create_student') }}" id="createStudentForm" onsubmit="return handleCreateStudentSubmit(event);">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="confirm_duplicate" id="confirmDuplicateInput" value="0">
       <div class="modal-body">
+        
+        <!-- KOTAK PERINGATAN KUNING DETEKSI DUPLIKASI SISWA (MENCOLOK) -->
+        <div id="duplicateStudentAlert" style="display: none; background: #fff8e1; border: 2.5px solid #ffb300; border-radius: 10px; padding: 14px 16px; margin-bottom: 18px; box-shadow: 0 4px 16px rgba(255, 179, 0, 0.25);">
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <div style="font-size: 26px; line-height: 1;">⚠️</div>
+            <div style="flex: 1;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                <strong style="color: #b78103; font-size: 13.5px; text-transform: uppercase; letter-spacing: 0.5px;">Peringatan: Siswa Kemungkinan Sudah Terdaftar</strong>
+                <span class="badge" style="background: #ffb300; color: #212529; font-weight: 700; font-size: 11px;">1 Siswa Multi-Program</span>
+              </div>
+              <p style="font-size: 12.5px; color: #5d4037; margin: 0 0 10px 0; line-height: 1.45;">
+                Sistem mendeteksi siswa terdaftar yang cocok dengan nama atau data wali. Anda <strong>tidak perlu membuat identitas siswa baru</strong> hanya untuk menambah program les kedua.
+              </p>
+              
+              <div id="duplicateStudentList" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;"></div>
+              
+              <div style="background: #ffffff; border: 1px dashed #ffa000; border-radius: 8px; padding: 10px 12px; font-size: 11.5px; color: #6d4c41;">
+                <div style="font-weight: 700; margin-bottom: 6px; color: #b78103;">Pilihan Tindakan Admin:</div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                  <button type="button" class="btn btn-sm btn-primary" id="btnAssignProgramExisting" onclick="assignProgramToExistingStudent()" style="font-weight: 600; font-size: 12px;">
+                    {{ icon('check') }} Daftarkan Program ke Siswa yang Ada (Rekomendasi)
+                  </button>
+                  <button type="button" class="btn btn-sm btn-secondary" onclick="confirmProceedDuplicate()" style="font-size: 11.5px;">
+                    Tetap Buat Siswa Baru (Beda Orang)
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="form-group">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
             <label class="form-label" style="margin-bottom: 0;">Data Orang Tua / Wali Murid (Wajib)</label>
@@ -214,24 +246,6 @@
         <div class="form-group">
           <label class="form-label" for="stNameInput">Nama Lengkap Siswa <span style="color: var(--danger);">*</span></label>
           <input type="text" class="form-control" id="stNameInput" name="full_name" placeholder="Contoh: Muhammad Kevin" required autocomplete="off">
-          
-          <!-- KOTAK PERINGATAN DETEKSI DUPLIKASI SISWA -->
-          <div id="duplicateStudentAlert" style="display: none; background: #fff8e6; border: 1px solid #ffd166; border-radius: 8px; padding: 12px; margin-top: 8px;">
-            <div style="display: flex; gap: 8px; align-items: flex-start;">
-              <span style="font-size: 16px;">⚠️</span>
-              <div style="flex: 1;">
-                <strong style="color: #8c5b00; font-size: 12.5px;">Kemungkinan Siswa Sudah Terdaftar!</strong>
-                <div style="font-size: 11.5px; color: #555; margin-top: 2px;">
-                  Ditemukan siswa yang mirip dengan nama yang Anda masukkan:
-                </div>
-                <div id="duplicateStudentList" style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px;"></div>
-                <div style="margin-top: 10px; font-size: 11px; color: #777; border-top: 1px dashed #ffd166; padding-top: 6px;">
-                  &bull; Jika ini adalah siswa yang sama dan ingin menambah program les kedua, silakan klik tombol <strong>Buka Profil & Daftarkan Program</strong>.<br>
-                  &bull; Jika ini adalah siswa yang berbeda (orang lain), Anda dapat mengabaikan peringatan ini dan tetap melanjutkan pendaftaran siswa baru.
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         <div class="grid-form-2">
@@ -657,53 +671,147 @@
     openModal("deleteStudentModal");
   }
 
-  // Deteksi Duplikasi Siswa Real-Time saat Admin Mengetik Nama
+  // ========================================================
+  // SISTEM DETEKSI DUPLIKASI SISWA & PENCEGAHAN PROFIL GANDA
+  // ========================================================
   let dupTimeout = null;
+  let activeMatches = [];
   const nameInput = document.getElementById("stNameInput");
+  const parentSelect = document.getElementById("stParentSelect");
+  const newPhoneInput = document.getElementById("newParentPhone");
   const dupAlert = document.getElementById("duplicateStudentAlert");
   const dupList = document.getElementById("duplicateStudentList");
+  const confirmDuplicateInput = document.getElementById("confirmDuplicateInput");
+
+  function renderDuplicateAlert(matches) {
+    activeMatches = matches || [];
+    if (!dupAlert || !dupList) return;
+    if (activeMatches.length === 0) {
+      dupAlert.style.display = "none";
+      dupList.innerHTML = "";
+      return;
+    }
+
+    dupList.innerHTML = "";
+    activeMatches.forEach(st => {
+      const item = document.createElement("div");
+      item.style.cssText = "background: #ffffff; border: 1.5px solid #ffc107; border-radius: 8px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;";
+      const progsStr = st.programs && st.programs.length > 0 ? st.programs.join(", ") : "Belum ada program";
+      item.innerHTML = `
+        <div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <strong style="color: #111; font-size: 13.5px;">#${st.id} ${st.full_name}</strong>
+            <span class="badge" style="background: #e2e8f0; color: #334155; font-size: 10.5px;">${st.school} - Kelas ${st.grade}</span>
+          </div>
+          <div style="font-size: 11.5px; color: #475569; margin-top: 3px;">
+            Wali: <strong>${st.parent_name}</strong> (${st.parent_phone}) &bull; Program Aktif: <strong style="color: var(--blue-brand);">${progsStr}</strong>
+          </div>
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <a href="/admin/students/${st.id}" target="_blank" class="btn btn-sm btn-secondary" style="padding: 4px 10px; font-size: 11px; text-decoration: none;" title="Buka profil di tab baru">
+            Lihat Profil &rarr;
+          </a>
+        </div>
+      `;
+      dupList.appendChild(item);
+    });
+
+    dupAlert.style.display = "block";
+  }
+
+  async function performDuplicateCheck() {
+    if (!nameInput) return;
+    const nameVal = nameInput.value.trim();
+    const parentVal = parentSelect ? parentSelect.value : "";
+    const phoneVal = newPhoneInput ? newPhoneInput.value.trim() : "";
+
+    if (nameVal.length < 2 && !parentVal && phoneVal.length < 6) {
+      if (dupAlert) dupAlert.style.display = "none";
+      activeMatches = [];
+      return;
+    }
+
+    try {
+      const url = `/admin/api/check-duplicate-student?name=${encodeURIComponent(nameVal)}&parent_id=${encodeURIComponent(parentVal)}&phone=${encodeURIComponent(phoneVal)}`;
+      const resp = await fetch(url);
+      if (resp.ok) {
+        const data = await resp.json();
+        renderDuplicateAlert(data.matches);
+      }
+    } catch (e) {
+      console.error("Gagal memeriksa duplikasi siswa:", e);
+    }
+  }
+
+  function assignProgramToExistingStudent() {
+    if (activeMatches.length === 0) {
+      alert("Tidak ada siswa terdaftar yang dipilih.");
+      return;
+    }
+    if (confirm("Sistem akan secara otomatis menambahkan program les ini ke profil " + activeMatches[0].full_name + " (ID #" + activeMatches[0].id + ") tanpa membuat ID siswa ganda.\n\nLanjutkan?")) {
+      document.getElementById("confirmDuplicateInput").value = "0";
+      document.getElementById("createStudentForm").submit();
+    }
+  }
+
+  function confirmProceedDuplicate() {
+    if (confirm("Apakah Anda yakin ingin TETAP MEMBUAT SISWA BARU dengan ID terpisah (karena benar-benar orang yang berbeda)?")) {
+      document.getElementById("confirmDuplicateInput").value = "1";
+      if (dupAlert) dupAlert.style.display = "none";
+      alert("Pilihan disimpan: Pendaftaran akan membuat siswa baru. Silakan klik 'Simpan Siswa'.");
+    }
+  }
+
+  function handleCreateStudentSubmit(e) {
+    const isConfirmed = document.getElementById("confirmDuplicateInput").value === "1";
+    if (isConfirmed) {
+      return true;
+    }
+    if (activeMatches && activeMatches.length > 0) {
+      e.preventDefault();
+      dupAlert.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const match = activeMatches[0];
+      const proceed = confirm(
+        "⚠️ PERINGATAN KUNING - DUPLIKASI SISWA:\n" +
+        "Siswa bernama '" + match.full_name + "' (Wali: " + match.parent_name + ") sudah terdaftar di sistem dengan program: " + (match.programs.join(', ') || 'Belum ada') + ".\n\n" +
+        "• Klik [OK] untuk MENAMBAHKAN PROGRAM KE SISWA INI (1 Siswa Multi-Program, Rekomendasi).\n" +
+        "• Klik [BATAL] jika ini memang orang yang berbeda dan Anda ingin membuat siswa baru."
+      );
+      if (proceed) {
+        document.getElementById("confirmDuplicateInput").value = "0";
+        document.getElementById("createStudentForm").submit();
+      } else {
+        const reallyNew = confirm("Konfirmasi: Buat profil siswa baru yang berbeda untuk '" + document.getElementById("stNameInput").value.trim() + "'?");
+        if (reallyNew) {
+          document.getElementById("confirmDuplicateInput").value = "1";
+          document.getElementById("createStudentForm").submit();
+        }
+      }
+      return false;
+    }
+    return true;
+  }
 
   if (nameInput) {
     nameInput.addEventListener("input", function() {
       clearTimeout(dupTimeout);
-      const val = this.value.trim();
-      if (val.length < 3) {
-        dupAlert.style.display = "none";
-        dupList.innerHTML = "";
-        return;
-      }
-      dupTimeout = setTimeout(async () => {
-        try {
-          const resp = await fetch(`/admin/api/check-duplicate-student?name=${encodeURIComponent(val)}`);
-          if (resp.ok) {
-            const data = await resp.json();
-            if (data.matches && data.matches.length > 0) {
-              dupList.innerHTML = "";
-              data.matches.forEach(st => {
-                const item = document.createElement("div");
-                item.style.cssText = "background: #fff; border: 1px solid #ffeeba; border-radius: 6px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;";
-                const progsStr = st.programs && st.programs.length > 0 ? st.programs.join(", ") : "Belum ada program";
-                item.innerHTML = `
-                  <div>
-                    <strong style="color: #212529;">${st.full_name}</strong>
-                    <span style="font-size: 11px; color: #6c757d;">(${st.school}, Kelas ${st.grade})</span>
-                    <div style="font-size: 11px; color: #495057;">Wali: ${st.parent_name} (${st.parent_phone}) &bull; Program: <em>${progsStr}</em></div>
-                  </div>
-                  <a href="/admin/students/${st.id}" target="_blank" class="btn btn-sm btn-primary" style="padding: 3px 8px; font-size: 11px; text-decoration: none;">
-                    Buka Profil & Tambah Program &rarr;
-                  </a>
-                `;
-                dupList.appendChild(item);
-              });
-              dupAlert.style.display = "block";
-            } else {
-              dupAlert.style.display = "none";
-            }
-          }
-        } catch (e) {
-          console.error("Gagal memeriksa duplikasi:", e);
-        }
-      }, 350);
+      dupTimeout = setTimeout(performDuplicateCheck, 120);
+    });
+    nameInput.addEventListener("change", performDuplicateCheck);
+    nameInput.addEventListener("blur", performDuplicateCheck);
+    nameInput.addEventListener("paste", function() {
+      setTimeout(performDuplicateCheck, 50);
+    });
+  }
+
+  if (parentSelect) {
+    parentSelect.addEventListener("change", performDuplicateCheck);
+  }
+
+  if (newPhoneInput) {
+    newPhoneInput.addEventListener("input", function() {
+      clearTimeout(dupTimeout);
+      dupTimeout = setTimeout(performDuplicateCheck, 200);
     });
   }
 </script>
