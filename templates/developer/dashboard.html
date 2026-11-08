@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Developer Monitoring Real-Time &bull; DESI PRIVAT</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0d1117;
+      --bg-card: #161b22;
+      --bg-hover: #1f242c;
+      --border: #30363d;
+      --border-subtle: #21262d;
+      --text-main: #f0f6fc;
+      --text-muted: #8b949e;
+      --text-dim: #6e7681;
+      --accent-blue: #58a6ff;
+      --accent-green: #3fb950;
+      --accent-amber: #d29922;
+      --accent-red: #f85149;
+      --accent-purple: #bc8cff;
+      --code-font: 'Fira Code', monospace;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Top Navbar */
+    .topbar {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .logo-badge {
+      background: linear-gradient(135deg, #1f6feb 0%, #238636 100%);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-family: var(--code-font);
+    }
+    .brand-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+    .live-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 600;
+      font-family: var(--code-font);
+      background: rgba(63, 185, 80, 0.15);
+      color: var(--accent-green);
+      border: 1px solid rgba(63, 185, 80, 0.3);
+    }
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent-green);
+      border-radius: 50%;
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); opacity: 0.8; box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.7); }
+      70% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 0 6px rgba(63, 185, 80, 0); }
+      100% { transform: scale(0.95); opacity: 0.8; box-shadow: 0 0 0 0 rgba(63, 185, 80, 0); }
+    }
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12.5px;
+    }
+    .btn-dev {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-weight: 500;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      background: #21262d;
+      color: var(--text-main);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-dev:hover {
+      background: #30363d;
+      border-color: #8b949e;
+    }
+    .btn-dev-danger {
+      background: rgba(248, 81, 73, 0.1);
+      color: var(--accent-red);
+      border-color: rgba(248, 81, 73, 0.3);
+    }
+    .btn-dev-danger:hover {
+      background: rgba(248, 81, 73, 0.2);
+    }
+
+    /* Container */
+    .dashboard-container {
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 20px;
+      flex: 1;
+    }
+
+    /* Overview Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .metric-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .metric-label {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .metric-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-top: 6px;
+      font-family: var(--code-font);
+    }
+    .metric-sub {
+      font-size: 11.5px;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+
+    /* Navigation Tabs */
+    .tab-bar {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+      overflow-x: auto;
+    }
+    .tab-btn {
+      padding: 10px 16px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+    }
+    .tab-btn.active {
+      color: var(--accent-blue);
+      border-bottom-color: var(--accent-blue);
+    }
+
+    /* Control Bar */
+    .control-bar {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .filter-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    .filter-select, .filter-input {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12.5px;
+    }
+    .filter-select:focus, .filter-input:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+    }
+
+    /* Activity Table */
+    .table-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .dev-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+      text-align: left;
+    }
+    .dev-table th {
+      background: #21262d;
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 11.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .dev-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      vertical-align: middle;
+    }
+    .dev-table tr:hover {
+      background: var(--bg-hover);
+    }
+    .dev-table tr.highlight-new {
+      animation: highlightRow 2s ease-out;
+    }
+    @keyframes highlightRow {
+      0% { background: rgba(88, 166, 255, 0.25); }
+      100% { background: transparent; }
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: var(--code-font);
+    }
+    .badge-module {
+      background: rgba(188, 140, 255, 0.15);
+      color: var(--accent-purple);
+      border: 1px solid rgba(188, 140, 255, 0.3);
+    }
+    .badge-action {
+      background: rgba(88, 166, 255, 0.15);
+      color: var(--accent-blue);
+      border: 1px solid rgba(88, 166, 255, 0.3);
+    }
+    .badge-admin {
+      background: rgba(63, 185, 80, 0.15);
+      color: var(--accent-green);
+      border: 1px solid rgba(63, 185, 80, 0.3);
+    }
+
+    /* Diffs Box */
+    .diff-box {
+      font-family: var(--code-font);
+      font-size: 11.5px;
+      background: #0d1117;
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
+      padding: 8px 10px;
+      margin-top: 4px;
+    }
+    .diff-old {
+      color: var(--accent-red);
+      background: rgba(248, 81, 73, 0.1);
+      padding: 2px 6px;
+      border-radius: 3px;
+      text-decoration: line-through;
+    }
+    .diff-new {
+      color: var(--accent-green);
+      background: rgba(63, 185, 80, 0.1);
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="logo-badge">DEV CONSOLE</span>
+      <span class="brand-title">DESI PRIVAT Monitoring</span>
+      <span class="live-status" id="liveIndicator">
+        <span class="pulse-dot"></span>
+        <span id="liveText">LIVE STREAMING</span>
+      </span>
+    </div>
+    <div class="topbar-right">
+      <span style="color: var(--text-muted);">Operator: <strong style="color: var(--text-main);">{{ dev_user }}</strong></span>
+      <span style="color: var(--text-dim);">&bull;</span>
+      <a href="{{ url_for('developer.export_audit_logs', format='csv') }}" class="btn-dev" title="Download Riwayat Log CSV">
+        <span>&darr;</span> Unduh CSV
+      </a>
+      <a href="{{ url_for('developer.export_audit_logs', format='json') }}" class="btn-dev" title="Download Riwayat Log JSON">
+        <span>&darr;</span> JSON
+      </a>
+      <a href="{{ url_for('developer.logout') }}" class="btn-dev btn-dev-danger">
+        Keluar
+      </a>
+    </div>
+  </header>
+
+  <div class="dashboard-container">
+
+    <!-- Overview Cards -->
+    <section class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Status Server & Database</div>
+        <div class="metric-value" style="color: var(--accent-green); font-size: 18px;">
+          {% if metrics.db_integrity == 'ok' %}
+            &check; ONLINE (100%)
+          {% else %}
+            &excl; WARNING ({{ metrics.db_integrity }})
+          {% endif %}
+        </div>
+        <div class="metric-sub">{{ metrics.db_engine }}</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-label">Total Siswa Terdaftar</div>
+        <div class="metric-value">{{ metrics.students_total }}</div>
+        <div class="metric-sub">{{ metrics.students_active }} siswa berstatus aktif</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-label">Program Les Aktif</div>
+        <div class="metric-value">{{ metrics.student_programs_active }}</div>
+        <div class="metric-sub">Pendaftaran multi-program</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-label">Jadwal & Absensi</div>
+        <div class="metric-value">{{ metrics.schedules_total }} / {{ metrics.attendances_total }}</div>
+        <div class="metric-sub">Sesi terjadwal vs kehadiran valid</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-label">Total Audit Trail</div>
+        <div class="metric-value" id="metricAuditCount">{{ metrics.audit_logs_total }}</div>
+        <div class="metric-sub">Append-only immutable record</div>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('liveFeedTab', this)">
+        <span>&bull;</span> Live Activity Feed (<span id="feedCount">{{ activities|length }}</span>)
+      </button>
+      <button class="tab-btn" onclick="switchTab('studentDiffsTab', this)">
+        <span>&Delta;</span> Perubahan Data Siswa (Field Diffs)
+      </button>
+      <button class="tab-btn" onclick="switchTab('systemHealthTab', this)">
+        <span>&hearts;</span> System Health & Diagnostics
+      </button>
+    </nav>
+
+    <!-- TAB 1: LIVE ACTIVITY FEED -->
+    <div id="liveFeedTab" class="tab-content active">
+      <div class="control-bar">
+        <div class="filter-group">
+          <input type="text" id="filterSearch" class="filter-input" placeholder="Cari aktivitas / nama..." oninput="applyFilters()">
+          
+          <select id="filterModule" class="filter-select" onchange="applyFilters()">
+            <option value="">-- Semua Modul --</option>
+            {% for m in modules %}
+              <option value="{{ m.module_name }}">{{ m.module_name }}</option>
+            {% endfor %}
+          </select>
+
+          <select id="filterAdmin" class="filter-select" onchange="applyFilters()">
+            <option value="">-- Semua Admin / User --</option>
+            {% for a in admins %}
+              <option value="{{ a.user_name }}">{{ a.user_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+          <button id="btnPauseStream" class="btn-dev" onclick="toggleStreamPause()">
+            <span id="pauseIcon">&par;</span> <span id="pauseText">Jeda Streaming</span>
+          </button>
+          <button class="btn-dev" onclick="clearFeedTable()">
+            Bersihkan Tampilan
+          </button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="dev-table" id="activitiesTable">
+          <thead>
+            <tr>
+              <th style="width: 70px;">ID</th>
+              <th style="width: 140px;">Waktu</th>
+              <th style="width: 130px;">Pelaku</th>
+              <th style="width: 120px;">Modul</th>
+              <th style="width: 160px;">Aksi</th>
+              <th>Detail Aktivitas & Data Terdampak</th>
+              <th style="width: 100px;">IP Address</th>
+            </tr>
+          </thead>
+          <tbody id="activitiesBody">
+            {% for act in activities %}
+            <tr data-module="{{ act.module_name or '' }}" data-user="{{ act.user_name or '' }}" data-text="{{ act.details or '' }}">
+              <td style="font-family: var(--code-font); color: var(--text-dim);">#{{ act.id }}</td>
+              <td style="font-family: var(--code-font); font-size: 11.5px; color: var(--text-muted);">{{ act.created_at }}</td>
+              <td><span class="badge badge-admin">{{ act.user_name or 'system' }}</span></td>
+              <td><span class="badge badge-module">{{ act.module_name or 'Operasional' }}</span></td>
+              <td><span class="badge badge-action">{{ act.action_type }}</span></td>
+              <td>
+                <div>{{ act.details }}</div>
+                {% if act.fields_changed %}
+                  <div class="diff-box">
+                    <strong>Perubahan field:</strong> {{ act.fields_changed }}
+                    {% if act.old_values and act.new_values %}
+                      <div style="margin-top: 4px;">
+                        <span class="diff-old">Sebelum: {{ act.old_values }}</span> &rarr;
+                        <span class="diff-new">Sesudah: {{ act.new_values }}</span>
+                      </div>
+                    {% endif %}
+                  </div>
+                {% endif %}
+              </td>
+              <td style="font-family: var(--code-font); font-size: 11px; color: var(--text-dim);">{{ act.ip_address or '-' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 2: STUDENT DATA CHANGES (FIELD-LEVEL DIFFS) -->
+    <div id="studentDiffsTab" class="tab-content">
+      <div class="table-container">
+        <table class="dev-table">
+          <thead>
+            <tr>
+              <th style="width: 70px;">ID Log</th>
+              <th style="width: 140px;">Waktu</th>
+              <th style="width: 130px;">Admin Pengubah</th>
+              <th style="width: 100px;">ID Siswa</th>
+              <th style="width: 150px;">Field yang Diubah</th>
+              <th>Perbandingan Nilai (Sebelum vs Sesudah)</th>
+            </tr>
+          </thead>
+          <tbody id="studentDiffsBody">
+            {% for df in student_diffs %}
+            <tr>
+              <td style="font-family: var(--code-font); color: var(--text-dim);">#{{ df.id }}</td>
+              <td style="font-family: var(--code-font); font-size: 11.5px; color: var(--text-muted);">{{ df.created_at }}</td>
+              <td><span class="badge badge-admin">{{ df.user_name }}</span></td>
+              <td style="font-family: var(--code-font);">Student #{{ df.target_id }}</td>
+              <td>
+                <span class="badge badge-module">{{ df.fields_changed }}</span>
+              </td>
+              <td>
+                <div class="diff-box">
+                  <div style="margin-bottom: 3px;">
+                    <span style="color: var(--text-dim);">Nilai Lama:</span>
+                    <span class="diff-old">{{ df.old_values or '(kosong)' }}</span>
+                  </div>
+                  <div>
+                    <span style="color: var(--text-dim);">Nilai Baru:</span>
+                    <span class="diff-new">{{ df.new_values or '(kosong)' }}</span>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                Belum ada perubahan data siswa tercatat dengan format diff.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 3: SYSTEM HEALTH & DIAGNOSTICS -->
+    <div id="systemHealthTab" class="tab-content">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+        <div class="metric-card">
+          <div class="metric-label">Status Koneksi Engine</div>
+          <div style="margin-top: 12px; font-family: var(--code-font); font-size: 13px; line-height: 1.8;">
+            <div>&bull; Engine Aktif: <strong style="color: var(--accent-blue);">{{ metrics.db_engine }}</strong></div>
+            <div>&bull; Integritas SQLite: <strong style="color: var(--accent-green);">{{ metrics.db_integrity }}</strong></div>
+            <div>&bull; Waktu Server: <span style="color: var(--text-muted);">{{ metrics.server_time }}</span></div>
+            <div>&bull; Operator Terhubung: <span style="color: var(--accent-green);">{{ dev_user }}</span></div>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Keamanan & Pembatasan Akses</div>
+          <div style="margin-top: 12px; font-size: 12.5px; color: var(--text-muted); line-height: 1.7;">
+            <div>&check; Route <code>/developer/*</code> terlindungi otorisasi <code>@developer_required</code>.</div>
+            <div>&check; Akses publik, admin biasa, dan siswa/wali ditolak secara tegas (403 Forbidden).</div>
+            <div>&check; Password, secret keys, dan kredensial database tidak pernah ditampilkan di antarmuka.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Real-Time SSE and Polling Script -->
+  <script>
+    let isStreamPaused = false;
+    let highestActivityId = parseInt("{{ activities[0].id if activities else 0 }}", 10);
+    const feedBody = document.getElementById("activitiesBody");
+    const diffBody = document.getElementById("studentDiffsBody");
+    const liveIndicator = document.getElementById("liveIndicator");
+    const liveText = document.getElementById("liveText");
+    const metricAuditCount = document.getElementById("metricAuditCount");
+    const feedCount = document.getElementById("feedCount");
+
+    function switchTab(tabId, btn) {
+      document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+      document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
+      document.getElementById(tabId).classList.add("active");
+      btn.classList.add("active");
+    }
+
+    function toggleStreamPause() {
+      isStreamPaused = !isStreamPaused;
+      const pauseIcon = document.getElementById("pauseIcon");
+      const pauseText = document.getElementById("pauseText");
+      if (isStreamPaused) {
+        pauseIcon.innerHTML = "&#9658;";
+        pauseText.innerText = "Lanjutkan Streaming";
+        liveText.innerText = "STREAM PAUSED";
+        liveIndicator.style.background = "rgba(210, 153, 34, 0.15)";
+        liveIndicator.style.color = "var(--accent-amber)";
+        liveIndicator.style.borderColor = "rgba(210, 153, 34, 0.3)";
+      } else {
+        pauseIcon.innerHTML = "&par;";
+        pauseText.innerText = "Jeda Streaming";
+        liveText.innerText = "LIVE STREAMING";
+        liveIndicator.style.background = "rgba(63, 185, 80, 0.15)";
+        liveIndicator.style.color = "var(--accent-green)";
+        liveIndicator.style.borderColor = "rgba(63, 185, 80, 0.3)";
+      }
+    }
+
+    function clearFeedTable() {
+      feedBody.innerHTML = "";
+      feedCount.innerText = "0";
+    }
+
+    function prependActivityRow(act) {
+      if (!act || act.id <= highestActivityId) return;
+      highestActivityId = act.id;
+
+      if (isStreamPaused) return;
+
+      const row = document.createElement("tr");
+      row.className = "highlight-new";
+      row.setAttribute("data-module", act.module_name || "");
+      row.setAttribute("data-user", act.user_name || "");
+      row.setAttribute("data-text", act.details || "");
+
+      let diffHtml = "";
+      if (act.fields_changed) {
+        let diffDetail = "";
+        if (act.old_values && act.new_values) {
+          diffDetail = `<div style="margin-top: 4px;">
+            <span class="diff-old">Sebelum: ${escapeHtml(act.old_values)}</span> &rarr;
+            <span class="diff-new">Sesudah: ${escapeHtml(act.new_values)}</span>
+          </div>`;
+        }
+        diffHtml = `<div class="diff-box">
+          <strong>Perubahan field:</strong> ${escapeHtml(act.fields_changed)}
+          ${diffDetail}
+        </div>`;
+      }
+
+      row.innerHTML = `
+        <td style="font-family: var(--code-font); color: var(--text-dim);">#${act.id}</td>
+        <td style="font-family: var(--code-font); font-size: 11.5px; color: var(--text-muted);">${escapeHtml(act.created_at)}</td>
+        <td><span class="badge badge-admin">${escapeHtml(act.user_name || 'system')}</span></td>
+        <td><span class="badge badge-module">${escapeHtml(act.module_name || 'Operasional')}</span></td>
+        <td><span class="badge badge-action">${escapeHtml(act.action_type)}</span></td>
+        <td>
+          <div>${escapeHtml(act.details)}</div>
+          ${diffHtml}
+        </td>
+        <td style="font-family: var(--code-font); font-size: 11px; color: var(--text-dim);">${escapeHtml(act.ip_address || '-')}</td>
+      `;
+
+      feedBody.insertBefore(row, feedBody.firstChild);
+
+      // Batasi 200 baris agar tidak membebani browser
+      if (feedBody.children.length > 200) {
+        feedBody.removeChild(feedBody.lastChild);
+      }
+
+      // Update counters
+      const currentCount = parseInt(metricAuditCount.innerText, 10) || 0;
+      metricAuditCount.innerText = (currentCount + 1).toString();
+      feedCount.innerText = feedBody.children.length.toString();
+
+      // Jika field-diff siswa, tambahkan ke tab diff
+      if (act.fields_changed && diffBody) {
+        const diffRow = document.createElement("tr");
+        diffRow.className = "highlight-new";
+        diffRow.innerHTML = `
+          <td style="font-family: var(--code-font); color: var(--text-dim);">#${act.id}</td>
+          <td style="font-family: var(--code-font); font-size: 11.5px; color: var(--text-muted);">${escapeHtml(act.created_at)}</td>
+          <td><span class="badge badge-admin">${escapeHtml(act.user_name || '')}</span></td>
+          <td style="font-family: var(--code-font);">Student #${escapeHtml(act.target_id || '-')}</td>
+          <td><span class="badge badge-module">${escapeHtml(act.fields_changed)}</span></td>
+          <td>
+            <div class="diff-box">
+              <div style="margin-bottom: 3px;">
+                <span style="color: var(--text-dim);">Nilai Lama:</span>
+                <span class="diff-old">${escapeHtml(act.old_values || '(kosong)')}</span>
+              </div>
+              <div>
+                <span style="color: var(--text-dim);">Nilai Baru:</span>
+                <span class="diff-new">${escapeHtml(act.new_values || '(kosong)')}</span>
+              </div>
+            </div>
+          </td>
+        `;
+        diffBody.insertBefore(diffRow, diffBody.firstChild);
+      }
+
+      applyFilters();
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function applyFilters() {
+      const q = document.getElementById("filterSearch").value.toLowerCase();
+      const mod = document.getElementById("filterModule").value.toLowerCase();
+      const adm = document.getElementById("filterAdmin").value.toLowerCase();
+
+      const rows = feedBody.querySelectorAll("tr");
+      rows.forEach(r => {
+        const rMod = (r.getAttribute("data-module") || "").toLowerCase();
+        const rUser = (r.getAttribute("data-user") || "").toLowerCase();
+        const rText = (r.getAttribute("data-text") || "").toLowerCase();
+
+        let show = true;
+        if (q && !rText.includes(q) && !rUser.includes(q)) show = false;
+        if (mod && rMod !== mod) show = false;
+        if (adm && rUser !== adm) show = false;
+
+        r.style.display = show ? "" : "none";
+      });
+    }
+
+    // Inisialisasi Server-Sent Events (SSE)
+    function initEventSource() {
+      if (!window.EventSource) {
+        startPollingFallback();
+        return;
+      }
+
+      const evtSource = new EventSource("{{ url_for('developer.api_live_feed') }}");
+
+      evtSource.addEventListener("activity", function(e) {
+        try {
+          const act = JSON.parse(e.data);
+          prependActivityRow(act);
+        } catch (err) {
+          console.error("Gagal memproses SSE activity:", err);
+        }
+      });
+
+      evtSource.onerror = function() {
+        console.warn("Koneksi SSE terputus. Mencoba reconnect otomatis atau fallback ke polling...");
+      };
+    }
+
+    // Fallback Polling jika SSE terganggu
+    function startPollingFallback() {
+      setInterval(async () => {
+        if (isStreamPaused) return;
+        try {
+          const resp = await fetch(`{{ url_for('developer.api_activities') }}?since_id=${highestActivityId}&limit=20`);
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data.activities && data.activities.length > 0) {
+              // Balik urutan agar ascending
+              data.activities.reverse().forEach(act => prependActivityRow(act));
+            }
+          }
+        } catch (e) {
+          // Silent polling error
+        }
+      }, 5000);
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+      initEventSource();
+      startPollingFallback();
+    });
+  </script>
+</body>
+</html>
+

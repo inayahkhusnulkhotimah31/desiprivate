@@ -31,9 +31,12 @@ from services.whatsapp_service import (
 )
 from services.meeting_service import (
     calculate_period_and_meeting, calculate_total_from_period_and_meeting,
-    get_student_meeting_stats, set_student_initial_history,
-    resequence_student_attendances
+    get_student_meeting_stats, get_student_program_meeting_stats,
+    set_student_initial_history, set_student_program_initial_history,
+    resequence_student_attendances, resequence_student_program_attendances,
+    format_meeting_label
 )
+from services.audit_service import compute_field_diff
 from services.schedule_service import (
     check_schedule_conflict, create_schedule_proposal, generate_recurring_schedules,
     approve_schedule, mentor_respond_schedule, check_overdue_mentor_responses,
@@ -252,8 +255,8 @@ def student_detail(student_id):
         flash("Siswa tidak ditemukan.", "danger")
         return redirect(url_for("admin.students"))
 
-    # Program yang diikuti
-    programs = query_db("""
+    # Program yang diikuti beserta statistik periode independen masing-masing
+    raw_programs = query_db("""
         SELECT sp.*, pr.name as program_name, m.full_name as mentor_name
         FROM student_programs sp
         JOIN programs pr ON sp.program_id = pr.id
@@ -261,6 +264,12 @@ def student_detail(student_id):
         WHERE sp.student_id = ?
         ORDER BY sp.created_at DESC
     """, (student_id,))
+
+    programs = []
+    for pr in raw_programs:
+        pr_d = dict(pr)
+        pr_d["meeting_stats"] = get_student_program_meeting_stats(student_id, pr["program_id"])
+        programs.append(pr_d)
 
     # Riwayat jadwal
     schedules = query_db("""
@@ -310,6 +319,11 @@ def student_detail(student_id):
 @admin_bp.route("/students/<int:student_id>/edit", methods=["POST"])
 def edit_student(student_id):
     validate_csrf()
+    old_st = query_db("SELECT parent_id, full_name, school, grade, birth_date, address, notes, status FROM students WHERE id = ?", (student_id,), one=True)
+    if not old_st:
+        flash("Siswa tidak ditemukan.", "danger")
+        return redirect(url_for("admin.students"))
+
     parent_id = request.form.get("parent_id")
     full_name = request.form.get("full_name", "").strip()
     school = request.form.get("school", "").strip()
@@ -319,6 +333,19 @@ def edit_student(student_id):
     notes = request.form.get("notes", "").strip()
     status = request.form.get("status", "aktif")
 
+    new_data = {
+        "parent_id": int(parent_id) if parent_id else None,
+        "full_name": full_name,
+        "school": school,
+        "grade": grade,
+        "birth_date": birth_date,
+        "address": address,
+        "notes": notes,
+        "status": status
+    }
+    old_data = dict(old_st)
+    changed_fields, old_diff, new_diff = compute_field_diff(old_data, new_data)
+
     execute_db("""
         UPDATE students
         SET parent_id = ?, full_name = ?, school = ?, grade = ?, birth_date = ?,
@@ -326,7 +353,19 @@ def edit_student(student_id):
         WHERE id = ?
     """, (parent_id, full_name, school, grade, birth_date, address, notes, status, student_id))
 
-    log_audit(session["user_id"], session["username"], "UBAH_SISWA", "students", student_id, f"Mengubah data siswa ID {student_id} ({full_name})")
+    detail_msg = f"Mengubah data siswa ID {student_id} ({full_name})"
+    if changed_fields:
+        detail_msg += f". Field diubah: {', '.join(changed_fields)}"
+
+    log_audit(
+        session["user_id"], session["username"], "UBAH_SISWA", "students", student_id,
+        detail_msg,
+        module_name="Siswa",
+        old_values=old_diff,
+        new_values=new_diff,
+        fields_changed=changed_fields,
+        ip_address=request.remote_addr
+    )
     flash(f"Data siswa {full_name} berhasil diperbarui.", "success")
     return redirect(url_for("admin.student_detail", student_id=student_id))
 
@@ -448,6 +487,57 @@ def api_preview_meeting_calc():
         "next_meeting_str": next_str
     })
 
+@admin_bp.route("/api/check-duplicate-student")
+def api_check_duplicate_student():
+    """
+    Memeriksa potensi duplikasi siswa berdasarkan kemiripan nama siswa atau kontak wali.
+    Menghindari pembuatan profil ganda ketika siswa mendaftar program kedua.
+    """
+    name = request.args.get("name", "").strip()
+    phone = request.args.get("phone", "").strip()
+    if not name and not phone:
+        return jsonify({"matches": []})
+
+    conditions = []
+    args = []
+    if name and len(name) >= 3:
+        conditions.append("(LOWER(s.full_name) LIKE ? OR LOWER(?) LIKE '%' || LOWER(s.full_name) || '%')")
+        args.extend([f"%{name.lower()}%", name.lower()])
+    if phone and len(phone) >= 6:
+        conditions.append("p.phone LIKE ?")
+        args.append(f"%{phone}%")
+
+    if not conditions:
+        return jsonify({"matches": []})
+
+    query = f"""
+        SELECT s.id, s.full_name, s.school, s.grade, s.status,
+               p.full_name as parent_name, p.phone as parent_phone
+        FROM students s
+        JOIN parents p ON s.parent_id = p.id
+        WHERE {' OR '.join(conditions)}
+        LIMIT 6
+    """
+    rows = query_db(query, args)
+    matches = []
+    for r in rows:
+        progs = query_db(
+            "SELECT pr.name FROM student_programs sp JOIN programs pr ON sp.program_id = pr.id WHERE sp.student_id = ?",
+            (r["id"],)
+        )
+        prog_names = [p["name"] for p in progs]
+        matches.append({
+            "id": r["id"],
+            "full_name": r["full_name"],
+            "school": r["school"] or "-",
+            "grade": r["grade"] or "-",
+            "status": r["status"],
+            "parent_name": r["parent_name"],
+            "parent_phone": r["parent_phone"] or "-",
+            "programs": prog_names
+        })
+    return jsonify({"matches": matches})
+
 @admin_bp.route("/students/<int:student_id>/programs/add", methods=["POST"])
 def add_student_program(student_id):
     validate_csrf()
@@ -460,6 +550,18 @@ def add_student_program(student_id):
     mentor_id = request.form.get("mentor_id") or None
     start_date = request.form.get("start_date") or None
     notes = request.form.get("notes", "").strip()
+
+    # Opsi riwayat awal jika siswa sudah pernah les program ini sebelumnya
+    init_period = request.form.get("initial_periods_completed", 1)
+    init_meeting = request.form.get("initial_last_meeting", 0)
+    init_notes = request.form.get("initial_offset_notes", "").strip()
+    try:
+        p_val = max(1, int(init_period))
+        m_val = max(0, min(8, int(init_meeting)))
+    except (TypeError, ValueError):
+        p_val = 1
+        m_val = 0
+    total_offset = calculate_total_from_period_and_meeting(p_val, m_val) if (p_val > 1 or m_val > 0) else 0
 
     if not program_id:
         flash("Silakan pilih program les yang ingin didaftarkan.", "danger")
@@ -475,14 +577,70 @@ def add_student_program(student_id):
         return redirect(url_for("admin.student_detail", student_id=student_id))
 
     execute_db("""
-        INSERT INTO student_programs (student_id, program_id, mentor_id, start_date, status, notes)
-        VALUES (?, ?, ?, COALESCE(?, date('now')), 'aktif', ?)
-    """, (student_id, program_id, mentor_id, start_date, notes))
+        INSERT INTO student_programs (
+            student_id, program_id, mentor_id, start_date, status, notes,
+            initial_periods_completed, initial_last_meeting, initial_offset_total,
+            initial_offset_notes, initial_offset_set_at, initial_offset_set_by
+        )
+        VALUES (?, ?, ?, COALESCE(?, date('now')), 'aktif', ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+    """, (student_id, program_id, mentor_id, start_date, notes,
+          p_val if total_offset > 0 else 0, m_val if total_offset > 0 else 0,
+          total_offset, init_notes, session["user_id"]))
 
     p = query_db("SELECT name FROM programs WHERE id = ?", (program_id,), one=True)
     p_name = p["name"] if p else f"ID {program_id}"
-    log_audit(session["user_id"], session["username"], "TAMBAH_PROGRAM_SISWA", "student_programs", student_id, f"Mendaftarkan program {p_name} ke siswa {student['full_name']}")
+    log_audit(
+        session["user_id"], session["username"], "TAMBAH_PROGRAM_SISWA", "student_programs", student_id,
+        f"Mendaftarkan program {p_name} ke siswa {student['full_name']}" + (f" (Riwayat awal: Periode {p_val}, Pertemuan {m_val})" if total_offset > 0 else ""),
+        module_name="Program Siswa",
+        new_values={"program_id": program_id, "program_name": p_name, "mentor_id": mentor_id, "initial_offset": total_offset},
+        fields_changed=["pendaftaran_program_baru"]
+    )
     flash(f"Program les {p_name} berhasil didaftarkan untuk siswa {student['full_name']}.", "success")
+    return redirect(url_for("admin.student_detail", student_id=student_id))
+
+@admin_bp.route("/students/<int:student_id>/programs/<int:sp_id>/initial-history", methods=["POST"])
+def set_student_program_initial_history_route(student_id, sp_id):
+    """Mengatur riwayat awal pertemuan siswa lama pada program tertentu."""
+    validate_csrf()
+    student = query_db("SELECT id, full_name FROM students WHERE id = ?", (student_id,), one=True)
+    if not student:
+        flash("Siswa tidak ditemukan.", "danger")
+        return redirect(url_for("admin.students"))
+
+    sp = query_db("""
+        SELECT sp.*, pr.name as program_name
+        FROM student_programs sp
+        JOIN programs pr ON sp.program_id = pr.id
+        WHERE sp.id = ? AND sp.student_id = ?
+    """, (sp_id, student_id), one=True)
+    if not sp:
+        flash("Data program siswa tidak ditemukan.", "danger")
+        return redirect(url_for("admin.student_detail", student_id=student_id))
+
+    last_period = request.form.get("last_period", 1)
+    last_meeting = request.form.get("last_meeting", 0)
+    notes = request.form.get("notes", "").strip()
+
+    res = set_student_program_initial_history(
+        student_id=student_id,
+        program_id=sp["program_id"],
+        last_period=last_period,
+        last_meeting=last_meeting,
+        notes=notes,
+        admin_user_id=session["user_id"]
+    )
+
+    if res["success"]:
+        flash(
+            f"Riwayat awal untuk program {res['program_name']} ({student['full_name']}) berhasil disimpan! "
+            f"Posisi awal: Periode {res['period']}, Pertemuan {res['meeting']} (Total: {res['total_offset']} sesi). "
+            f"Sesi berikutnya di sistem: {res['stats']['next_meeting_bracket']}.",
+            "success"
+        )
+    else:
+        flash(f"Gagal mengatur riwayat: {res.get('message')}", "danger")
+
     return redirect(url_for("admin.student_detail", student_id=student_id))
 
 @admin_bp.route("/students/<int:student_id>/programs/<int:sp_id>/edit", methods=["POST"])

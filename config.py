@@ -85,6 +85,10 @@ class Config:
     SUPABASE_SECRET_KEY = os.getenv("SUPABASE_SECRET_KEY", "")
     SUPABASE_JWKS_URL = os.getenv("SUPABASE_JWKS_URL", "")
 
+    # Developer Monitoring Real-Time Credentials (Terpisah dari Admin/Siswa)
+    DEVELOPER_USERNAME = os.getenv("DEVELOPER_USERNAME", "developer")
+    DEVELOPER_PASSWORD = os.getenv("DEVELOPER_PASSWORD", "DesiPrivat@Dev2026!")
+
 
 class DevelopmentConfig(Config):
     """Konfigurasi mode pengembangan lokal."""

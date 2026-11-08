@@ -82,6 +82,12 @@ CREATE TABLE IF NOT EXISTS student_programs (
     end_date TEXT,
     status TEXT NOT NULL DEFAULT 'aktif' CHECK(status IN ('aktif', 'selesai', 'dibatalkan')),
     notes TEXT,
+    initial_periods_completed INTEGER NOT NULL DEFAULT 0,
+    initial_last_meeting INTEGER NOT NULL DEFAULT 0,
+    initial_offset_total INTEGER NOT NULL DEFAULT 0,
+    initial_offset_notes TEXT,
+    initial_offset_set_at DATETIME,
+    initial_offset_set_by INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -194,6 +200,7 @@ CREATE TABLE IF NOT EXISTS attendance (
     schedule_id INTEGER UNIQUE NOT NULL REFERENCES schedules(id) ON DELETE CASCADE,
     student_id INTEGER NOT NULL REFERENCES students(id),
     mentor_id INTEGER NOT NULL REFERENCES mentors(id),
+    program_id INTEGER REFERENCES programs(id),
     status TEXT NOT NULL CHECK(status IN ('hadir', 'izin', 'tidak_hadir')),
     topics_covered TEXT,
     progress_notes TEXT,
@@ -253,9 +260,14 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
     user_name TEXT,
     action_type TEXT NOT NULL,
+    module_name TEXT,
     target_entity TEXT NOT NULL,
     target_id TEXT,
     details TEXT,
+    old_values TEXT,
+    new_values TEXT,
+    fields_changed TEXT,
+    status_code INTEGER DEFAULT 200,
     ip_address TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

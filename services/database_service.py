@@ -319,6 +319,36 @@ def init_db(db_path=None, schema_path=None):
             cur.execute("ALTER TABLE attendance ADD COLUMN period_number INTEGER")
         if "cumulative_meeting" not in att_cols:
             cur.execute("ALTER TABLE attendance ADD COLUMN cumulative_meeting INTEGER")
+        if "program_id" not in att_cols:
+            cur.execute("ALTER TABLE attendance ADD COLUMN program_id INTEGER REFERENCES programs(id)")
+
+        # Migrasi kolom riwayat periode per program pada tabel student_programs
+        sp_cols = [col[1] for col in cur.execute("PRAGMA table_info(student_programs)").fetchall()]
+        if "initial_periods_completed" not in sp_cols:
+            cur.execute("ALTER TABLE student_programs ADD COLUMN initial_periods_completed INTEGER NOT NULL DEFAULT 0")
+        if "initial_last_meeting" not in sp_cols:
+            cur.execute("ALTER TABLE student_programs ADD COLUMN initial_last_meeting INTEGER NOT NULL DEFAULT 0")
+        if "initial_offset_total" not in sp_cols:
+            cur.execute("ALTER TABLE student_programs ADD COLUMN initial_offset_total INTEGER NOT NULL DEFAULT 0")
+        if "initial_offset_notes" not in sp_cols:
+            cur.execute("ALTER TABLE student_programs ADD COLUMN initial_offset_notes TEXT")
+        if "initial_offset_set_at" not in sp_cols:
+            cur.execute("ALTER TABLE student_programs ADD COLUMN initial_offset_set_at DATETIME")
+        if "initial_offset_set_by" not in sp_cols:
+            cur.execute("ALTER TABLE student_programs ADD COLUMN initial_offset_set_by INTEGER")
+
+        # Migrasi kolom audit_logs untuk field-level diffs dan modul
+        audit_cols = [col[1] for col in cur.execute("PRAGMA table_info(audit_logs)").fetchall()]
+        if "module_name" not in audit_cols:
+            cur.execute("ALTER TABLE audit_logs ADD COLUMN module_name TEXT")
+        if "old_values" not in audit_cols:
+            cur.execute("ALTER TABLE audit_logs ADD COLUMN old_values TEXT")
+        if "new_values" not in audit_cols:
+            cur.execute("ALTER TABLE audit_logs ADD COLUMN new_values TEXT")
+        if "fields_changed" not in audit_cols:
+            cur.execute("ALTER TABLE audit_logs ADD COLUMN fields_changed TEXT")
+        if "status_code" not in audit_cols:
+            cur.execute("ALTER TABLE audit_logs ADD COLUMN status_code INTEGER DEFAULT 200")
 
         # Nonaktifkan akses login untuk semua akun orang tua lama per ketentuan
         cur.execute("UPDATE users SET is_active = 0 WHERE role = 'parent'")

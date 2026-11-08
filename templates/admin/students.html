@@ -79,28 +79,39 @@
               <span style="font-size: 12px; font-weight: 600; color: var(--text-main);">{{ st.enrolled_programs or 'Belum ada program' }}</span>
             </td>
             <td>
-              {% if st.meeting_stats and st.meeting_stats.total_completed > 0 %}
+              {% if st.meeting_stats and st.meeting_stats.programs_stats and st.meeting_stats.programs_stats|length > 0 %}
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                  {% for p_st in st.meeting_stats.programs_stats %}
+                    <div style="font-size: 11.5px; border-left: 2px solid var(--lavender); padding-left: 6px;">
+                      <span style="font-weight: 600; color: var(--text-main);">{{ p_st.program_name }}:</span>
+                      <span class="badge badge-period" style="font-size: 11px; padding: 2px 6px;">
+                        {{ p_st.next_meeting_bracket }}
+                      </span>
+                      <span style="font-size: 10px; color: var(--text-muted); display: block;">
+                        Total: {{ p_st.total_completed }} sesi
+                      </span>
+                    </div>
+                  {% endfor %}
+                </div>
+              {% elif st.meeting_stats and st.meeting_stats.total_completed > 0 %}
                 <div style="display: flex; flex-direction: column; gap: 3px;">
                   <div>
                     <span class="badge badge-period" title="Pertemuan terakhir yang telah selesai dihadiri">
-                      Terakhir: {{ st.meeting_stats.last_meeting_str }}
+                      Terakhir: {{ st.meeting_stats.last_meeting_bracket or st.meeting_stats.last_meeting_str }}
                     </span>
                   </div>
                   <div style="font-size: 11px; color: var(--blue-brand); font-weight: 600;">
-                    {{ icon('arrow-right') }} Berikutnya: {{ st.meeting_stats.next_meeting_str }}
+                    {{ icon('arrow-right') }} Berikutnya: {{ st.meeting_stats.next_meeting_bracket or st.meeting_stats.next_meeting_str }}
                   </div>
                   <div style="font-size: 10.5px; color: var(--text-muted);">
                     Total: {{ st.meeting_stats.total_completed }} pertemuan
-                    {% if st.meeting_stats.initial_offset > 0 %}
-                      ({{ st.meeting_stats.initial_offset }} awal + {{ st.meeting_stats.valid_attendance_count }} sistem)
-                    {% endif %}
                   </div>
                 </div>
               {% else %}
                 <div style="display: flex; flex-direction: column; gap: 2px;">
                   <span class="badge badge-secondary">Belum ada pertemuan</span>
                   <div style="font-size: 11px; color: var(--blue-brand); font-weight: 600;">
-                    {{ icon('arrow-right') }} Berikutnya: Pertemuan 1 (1)
+                    {{ icon('arrow-right') }} Berikutnya: Pertemuan 1
                   </div>
                 </div>
               {% endif %}
@@ -202,7 +213,25 @@
 
         <div class="form-group">
           <label class="form-label" for="stNameInput">Nama Lengkap Siswa <span style="color: var(--danger);">*</span></label>
-          <input type="text" class="form-control" id="stNameInput" name="full_name" placeholder="Contoh: Muhammad Kevin" required>
+          <input type="text" class="form-control" id="stNameInput" name="full_name" placeholder="Contoh: Muhammad Kevin" required autocomplete="off">
+          
+          <!-- KOTAK PERINGATAN DETEKSI DUPLIKASI SISWA -->
+          <div id="duplicateStudentAlert" style="display: none; background: #fff8e6; border: 1px solid #ffd166; border-radius: 8px; padding: 12px; margin-top: 8px;">
+            <div style="display: flex; gap: 8px; align-items: flex-start;">
+              <span style="font-size: 16px;">⚠️</span>
+              <div style="flex: 1;">
+                <strong style="color: #8c5b00; font-size: 12.5px;">Kemungkinan Siswa Sudah Terdaftar!</strong>
+                <div style="font-size: 11.5px; color: #555; margin-top: 2px;">
+                  Ditemukan siswa yang mirip dengan nama yang Anda masukkan:
+                </div>
+                <div id="duplicateStudentList" style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px;"></div>
+                <div style="margin-top: 10px; font-size: 11px; color: #777; border-top: 1px dashed #ffd166; padding-top: 6px;">
+                  &bull; Jika ini adalah siswa yang sama dan ingin menambah program les kedua, silakan klik tombol <strong>Buka Profil & Daftarkan Program</strong>.<br>
+                  &bull; Jika ini adalah siswa yang berbeda (orang lain), Anda dapat mengabaikan peringatan ini dan tetap melanjutkan pendaftaran siswa baru.
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="grid-form-2">
@@ -626,6 +655,56 @@
     document.getElementById("deleteStudentName").innerText = studentName;
     document.getElementById("deleteStudentForm").action = "/admin/students/" + studentId + "/delete";
     openModal("deleteStudentModal");
+  }
+
+  // Deteksi Duplikasi Siswa Real-Time saat Admin Mengetik Nama
+  let dupTimeout = null;
+  const nameInput = document.getElementById("stNameInput");
+  const dupAlert = document.getElementById("duplicateStudentAlert");
+  const dupList = document.getElementById("duplicateStudentList");
+
+  if (nameInput) {
+    nameInput.addEventListener("input", function() {
+      clearTimeout(dupTimeout);
+      const val = this.value.trim();
+      if (val.length < 3) {
+        dupAlert.style.display = "none";
+        dupList.innerHTML = "";
+        return;
+      }
+      dupTimeout = setTimeout(async () => {
+        try {
+          const resp = await fetch(`/admin/api/check-duplicate-student?name=${encodeURIComponent(val)}`);
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data.matches && data.matches.length > 0) {
+              dupList.innerHTML = "";
+              data.matches.forEach(st => {
+                const item = document.createElement("div");
+                item.style.cssText = "background: #fff; border: 1px solid #ffeeba; border-radius: 6px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;";
+                const progsStr = st.programs && st.programs.length > 0 ? st.programs.join(", ") : "Belum ada program";
+                item.innerHTML = `
+                  <div>
+                    <strong style="color: #212529;">${st.full_name}</strong>
+                    <span style="font-size: 11px; color: #6c757d;">(${st.school}, Kelas ${st.grade})</span>
+                    <div style="font-size: 11px; color: #495057;">Wali: ${st.parent_name} (${st.parent_phone}) &bull; Program: <em>${progsStr}</em></div>
+                  </div>
+                  <a href="/admin/students/${st.id}" target="_blank" class="btn btn-sm btn-primary" style="padding: 3px 8px; font-size: 11px; text-decoration: none;">
+                    Buka Profil & Tambah Program &rarr;
+                  </a>
+                `;
+                dupList.appendChild(item);
+              });
+              dupAlert.style.display = "block";
+            } else {
+              dupAlert.style.display = "none";
+            }
+          }
+        } catch (e) {
+          console.error("Gagal memeriksa duplikasi:", e);
+        }
+      }, 350);
+    });
   }
 </script>
 {% endblock %}

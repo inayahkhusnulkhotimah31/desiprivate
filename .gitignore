@@ -19,6 +19,8 @@ backups/
 *.db-journal
 *.db-wal
 *.db-shm
+database/test_*.db
+test_*.db
 
 # IDE & Editors
 .vscode/

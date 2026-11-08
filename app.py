@@ -25,6 +25,7 @@ from routes.auth import auth_bp, generate_csrf_token
 from routes.admin import admin_bp
 from routes.owner import owner_bp
 from routes.mentor import mentor_bp
+from routes.developer import developer_bp
 from services.icon_service import render_icon
 
 def create_app(config_class=None):
@@ -79,6 +80,7 @@ def create_app(config_class=None):
     app.register_blueprint(admin_bp)
     app.register_blueprint(owner_bp)
     app.register_blueprint(mentor_bp)
+    app.register_blueprint(developer_bp)
 
     # Registrasi Sistem SVG Icon Helper
     app.jinja_env.globals["icon"] = render_icon

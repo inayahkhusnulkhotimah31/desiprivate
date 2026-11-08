@@ -176,9 +176,9 @@
             <thead>
               <tr>
                 <th>Program Les</th>
+                <th>Siklus Periode & Pertemuan</th>
                 <th>Mentor Pengampu</th>
                 <th>Mulai / Selesai</th>
-                <th>Catatan</th>
                 <th>Status</th>
                 <th style="text-align: right;">Aksi</th>
               </tr>
@@ -186,7 +186,23 @@
             <tbody>
               {% for pr in programs %}
               <tr>
-                <td><strong>{{ pr.program_name }}</strong></td>
+                <td>
+                  <strong>{{ pr.program_name }}</strong>
+                  {% if pr.notes %}
+                    <div style="font-size: 11.5px; color: var(--gray-500); margin-top: 2px;">{{ pr.notes }}</div>
+                  {% endif %}
+                </td>
+                <td>
+                  <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <span class="badge badge-period" style="font-size: 12px; padding: 4px 8px;">
+                      {{ pr.meeting_stats.next_meeting_bracket }}
+                    </span>
+                  </div>
+                  <div style="font-size: 11.5px; color: var(--gray-600); margin-top: 4px;">
+                    Total: <strong>{{ pr.meeting_stats.total_completed }} sesi</strong>
+                    (Sistem: {{ pr.meeting_stats.valid_attendance_count }}{% if pr.meeting_stats.initial_offset > 0 %}, Awal: P{{ pr.meeting_stats.initial_period }}/M{{ pr.meeting_stats.initial_meeting }}{% endif %})
+                  </div>
+                </td>
                 <td>{{ pr.mentor_name or 'Belum ditentukan' }}</td>
                 <td>
                   <div>{{ pr.start_date|date_indo }}</div>
@@ -194,27 +210,33 @@
                   <div style="font-size: 11px; color: var(--gray-500);">s/d {{ pr.end_date|date_indo }}</div>
                   {% endif %}
                 </td>
-                <td>
-                  <span style="font-size: 12px; color: var(--gray-600);">{{ pr.notes or '-' }}</span>
-                </td>
                 <td>{{ pr.status|status_badge|safe }}</td>
                 <td style="text-align: right; white-space: nowrap;">
                   <button
                     type="button"
+                    class="btn btn-primary btn-sm"
+                    style="padding: 4px 8px; font-size: 11.5px; margin-right: 3px;"
+                    title="Atur Riwayat Periode Awal Program Ini (Siswa Lama)"
+                    onclick="openProgramInitialModal({{ pr.id }}, {{ pr.program_id }}, '{{ pr.program_name }}', {{ pr.meeting_stats.initial_period or 1 }}, {{ pr.meeting_stats.initial_meeting or 0 }}, {{ (pr.meeting_stats.offset_notes or '')|tojson }})"
+                  >
+                    {{ icon('settings') }} Atur Periode
+                  </button>
+                  <button
+                    type="button"
                     class="btn btn-secondary btn-sm"
-                    style="padding: 4px 8px; font-size: 12px;"
+                    style="padding: 4px 8px; font-size: 11.5px;"
                     onclick="openEditStudentProgramModal({{ pr.id }}, {{ pr.program_id }}, '{{ pr.mentor_id or '' }}', '{{ pr.status }}', '{{ pr.start_date or '' }}', '{{ pr.end_date or '' }}', {{ (pr.notes or '')|tojson }})"
                   >
-                    {{ icon('edit') }} Ganti / Edit
+                    {{ icon('edit') }} Edit
                   </button>
                   <form
                     method="POST"
                     action="{{ url_for('admin.delete_student_program', student_id=student.id, sp_id=pr.id) }}"
-                    style="display: inline-block; margin-left: 4px;"
+                    style="display: inline-block; margin-left: 3px;"
                     onsubmit="return confirm('Apakah Anda yakin ingin menghapus program {{ pr.program_name }} dari siswa ini? Riwayat jadwal lama tidak akan terhapus.');"
                   >
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn btn-danger btn-sm" style="padding: 4px 8px; font-size: 12px;" title="Hapus Program">
+                    <button type="submit" class="btn btn-danger btn-sm" style="padding: 4px 8px; font-size: 11.5px;" title="Hapus Program">
                       {{ icon('trash') }}
                     </button>
                   </form>
@@ -465,6 +487,29 @@
           <label class="form-label">Catatan Program (Opsional)</label>
           <textarea name="notes" class="form-control" rows="2" placeholder="Contoh: Fokus persiapan ujian sekolah atau target capaian"></textarea>
         </div>
+
+        <!-- OPSI RIWAYAT AWAL UNTUK SISWA LAMA -->
+        <div style="background: var(--blue-ultra-soft); border: 1px solid var(--border-lavender); border-radius: 8px; padding: 12px; margin-top: 14px;">
+          <div style="font-size: 12.5px; font-weight: 700; color: var(--text-heading); margin-bottom: 6px;">
+            {{ icon('settings') }} Riwayat Awal (Khusus Siswa Lama)
+          </div>
+          <div style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 10px;">
+            Jika siswa sudah pernah mengikuti program ini sebelum website dibuat, isi periode & pertemuan terakhir:
+          </div>
+          <div class="grid-form-2">
+            <div class="form-group" style="margin-bottom: 6px;">
+              <label class="form-label" style="font-size: 11.5px;">Periode Terakhir (1 Periode = 8 Sesi)</label>
+              <input type="number" name="initial_periods_completed" class="form-control" value="1" min="1" max="20">
+            </div>
+            <div class="form-group" style="margin-bottom: 6px;">
+              <label class="form-label" style="font-size: 11.5px;">Pertemuan Terakhir pada Periode (0-8)</label>
+              <input type="number" name="initial_last_meeting" class="form-control" value="0" min="0" max="8">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <input type="text" name="initial_offset_notes" class="form-control" placeholder="Catatan riwayat (misal: Dilanjutkan dari bimbel offline)" style="font-size: 12px;">
+          </div>
+        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" onclick="closeModal('addStudentProgramModal')">Batal</button>
@@ -532,6 +577,69 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" onclick="closeModal('editStudentProgramModal')">Batal</button>
         <button type="submit" class="btn btn-primary">{{ icon('backup') }} Simpan Perubahan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL ATUR RIWAYAT PERIODE AWAL PROGRAM SPESIFIK -->
+<div class="modal-overlay" id="setProgramInitialModal">
+  <div class="modal-content" style="max-width: 520px;">
+    <div class="modal-header" style="background: linear-gradient(135deg, var(--blue-ultra-soft) 0%, var(--lavender-soft) 100%);">
+      <div>
+        <div class="modal-title" style="color: var(--text-heading);">Atur Riwayat Periode Awal Program</div>
+        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;" id="progInitialProgramTitle">Program Les</div>
+      </div>
+      <button class="modal-close-btn" onclick="closeModal('setProgramInitialModal')">&times;</button>
+    </div>
+    <form id="setProgramInitialForm" method="POST" action="">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <div style="background: #fff8e6; border: 1px solid #ffd166; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #8c5b00; margin-bottom: 14px;">
+          <strong>Petunjuk Penyesuaian Siswa Lama:</strong><br>
+          1 periode = 8 pertemuan. Masukkan periode dan pertemuan terakhir yang telah dijalani siswa sebelum menggunakan sistem. Sistem akan melanjutkan penomoran pertemuan dari posisi berikutnya tanpa membuat absensi fiktif.
+        </div>
+
+        <div class="grid-form-2">
+          <div class="form-group">
+            <label class="form-label">Periode Terakhir yang Dijalani <span style="color:red">*</span></label>
+            <input type="number" class="form-control" id="progInitialPeriod" name="last_period" min="1" max="25" value="1" required oninput="updateProgInitialPreview()">
+            <small style="color: var(--gray-500);">Contoh: 3 (jika sedang di periode 3)</small>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pertemuan Terakhir pada Periode Tersebut <span style="color:red">*</span></label>
+            <input type="number" class="form-control" id="progInitialMeeting" name="last_meeting" min="0" max="8" value="0" required oninput="updateProgInitialPreview()">
+            <small style="color: var(--gray-500);">Angka 0 s/d 8 (Contoh: 5)</small>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Catatan Baseline Riwayat Awal</label>
+          <input type="text" class="form-control" id="progInitialNotes" name="notes" placeholder="Contoh: Riwayat dari kartu les fisik sebelum sistem website">
+        </div>
+
+        <!-- LIVE PREVIEW KALKULASI -->
+        <div style="background: var(--bg-soft); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px;">
+          <div style="font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Hasil Penyesuaian Sistem:</div>
+          <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px; font-size: 12.5px;">
+            <div style="display: flex; justify-content: space-between;">
+              <span>Total sesi awal diselesaikan:</span>
+              <strong id="previewProgOffset">0 sesi</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span>Posisi riwayat terakhir:</span>
+              <strong id="previewProgLast" class="badge badge-secondary">Belum ada</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-top: 1px dashed var(--border-subtle); padding-top: 6px;">
+              <span>Sesi berikutnya di website:</span>
+              <strong id="previewProgNext" class="badge badge-period">Pertemuan 1</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('setProgramInitialModal')">Batal</button>
+        <button type="submit" class="btn btn-primary">{{ icon('check-circle') }} Simpan Riwayat Program</button>
       </div>
     </form>
   </div>
@@ -919,6 +1027,42 @@ function openEditStudentProgramModal(spId, programId, mentorId, status, startDat
   document.getElementById("editSpEndDate").value = endDate || "";
   document.getElementById("editSpNotes").value = notes || "";
   openModal("editStudentProgramModal");
+}
+
+function openProgramInitialModal(spId, programId, programName, period, meeting, notes) {
+  const form = document.getElementById("setProgramInitialForm");
+  form.action = "{{ url_for('admin.student_detail', student_id=student.id) }}/programs/" + spId + "/initial-history";
+  document.getElementById("progInitialProgramTitle").innerText = "Program: " + programName;
+  document.getElementById("progInitialPeriod").value = period || 1;
+  document.getElementById("progInitialMeeting").value = meeting || 0;
+  document.getElementById("progInitialNotes").value = notes || "";
+  openModal("setProgramInitialModal");
+  updateProgInitialPreview();
+}
+
+function updateProgInitialPreview() {
+  const p = Math.max(1, parseInt(document.getElementById("progInitialPeriod").value) || 1);
+  const m = Math.max(0, Math.min(8, parseInt(document.getElementById("progInitialMeeting").value) || 0));
+  const totalOffset = (p - 1) * 8 + m;
+
+  document.getElementById("previewProgOffset").innerText = totalOffset + " sesi";
+
+  if (totalOffset > 0) {
+    const lastP = Math.floor((totalOffset - 1) / 8) + 1;
+    const lastM = ((totalOffset - 1) % 8) + 1;
+    const label = (lastP > 1) ? `Pertemuan ${lastM} [${lastP}]` : `Pertemuan ${lastM}`;
+    document.getElementById("previewProgLast").innerText = label;
+    document.getElementById("previewProgLast").className = "badge badge-period";
+  } else {
+    document.getElementById("previewProgLast").innerText = "Belum ada";
+    document.getElementById("previewProgLast").className = "badge badge-secondary";
+  }
+
+  const nextTotal = totalOffset + 1;
+  const nextP = Math.floor((nextTotal - 1) / 8) + 1;
+  const nextM = ((nextTotal - 1) % 8) + 1;
+  const nextLabel = (nextP > 1) ? `Pertemuan ${nextM} [${nextP}]` : `Pertemuan ${nextM}`;
+  document.getElementById("previewProgNext").innerText = nextLabel;
 }
 </script>
 {% endblock %}
