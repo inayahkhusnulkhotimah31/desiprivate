@@ -420,11 +420,13 @@ a:hover {
   flex-direction: column;
   transition: margin-left 0.3s ease;
   width: calc(100% - var(--sidebar-width));
+  min-width: 0;
+  max-width: 100%;
 }
 
 .top-navbar {
   height: var(--header-height);
-  background: var(--white-glass);
+  background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border-subtle);
@@ -528,6 +530,7 @@ a:hover {
   box-shadow: var(--shadow-glass);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   overflow: hidden;
+  max-width: 100%;
 }
 
 .card:hover {
@@ -535,21 +538,24 @@ a:hover {
 }
 
 .card-header {
-  padding: 18px 24px;
+  padding: 16px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
   border-bottom: 1px solid var(--border-subtle);
   background: rgba(255, 255, 255, 0.4);
 }
 
 .card-title {
-  font-size: 15.5px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--text-main);
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .card-title span.card-icon {
@@ -862,8 +868,10 @@ textarea.form-control {
    ========================================================================== */
 .table-responsive {
   width: 100%;
+  max-width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  display: block;
 }
 
 .table-desi {
@@ -874,20 +882,20 @@ textarea.form-control {
 }
 
 .table-desi th {
-  padding: 14px 18px;
-  font-size: 12px;
+  padding: 12px 14px;
+  font-size: 11.5px;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.5px;
   background: rgba(240, 249, 255, 0.6);
   border-bottom: 1px solid var(--border-subtle);
   white-space: nowrap;
 }
 
 .table-desi td {
-  padding: 14px 18px;
-  font-size: 13px;
+  padding: 12px 14px;
+  font-size: 12.5px;
   color: var(--text-body);
   border-bottom: 1px solid rgba(226, 232, 240, 0.6);
   vertical-align: middle;
@@ -1251,8 +1259,27 @@ form.modal-content {
 
 .grid-profile-layout {
   display: grid;
-  grid-template-columns: 1fr 2fr;
+  grid-template-columns: 340px minmax(0, 1fr);
   gap: 24px;
+  align-items: start;
+}
+
+.grid-profile-layout > div {
+  min-width: 0;
+}
+
+@media (max-width: 1240px) {
+  .grid-profile-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .grid-profile-layout > .profile-col-right {
+    order: 1;
+  }
+  .grid-profile-layout > .profile-col-left {
+    order: 2;
+  }
 }
 
 .grid-form-2 {

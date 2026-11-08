@@ -4,170 +4,65 @@
 {% block page_subtitle %}Profil lengkap, riwayat program, jadwal, dan perkembangan belajar{% endblock %}
 
 {% block content %}
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-  <a href="{{ url_for('admin.students') }}" class="btn btn-secondary btn-sm">
-    &larr; Kembali ke Daftar Siswa
-  </a>
-  <div>
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+  <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+    <a href="{{ url_for('admin.students') }}" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+      &larr; Kembali ke Daftar Siswa
+    </a>
+    <span style="color: var(--text-muted); font-size: 13px;">/</span>
+    <span style="font-weight: 700; color: var(--navy-dark); font-size: 14px;">Profil Siswa #{{ student.id }}</span>
+  </div>
+  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
     {{ student.status|status_badge|safe }}
+    <button type="button" class="btn btn-primary btn-sm" onclick="openModal('addStudentProgramModal')">
+      {{ icon('plus') }} Tambah Program
+    </button>
+  </div>
+</div>
+
+<!-- KARTU RINGKASAN PROFIL SISWA (OVERVIEW CARD) -->
+<div class="card" style="margin-bottom: 22px; background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(240,249,255,0.95) 100%); border: 1.5px solid var(--border-blue);">
+  <div class="card-body" style="padding: 18px 22px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+      <div style="display: flex; align-items: center; gap: 14px; min-width: 0;">
+        <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, var(--blue-brand) 0%, var(--navy-dark) 100%); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25); flex-shrink: 0;">
+          {{ student.full_name[:1].upper() if student.full_name else 'S' }}
+        </div>
+        <div style="min-width: 0;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <h2 style="font-size: 19px; font-weight: 800; color: var(--navy-dark); margin: 0;">{{ student.full_name }}</h2>
+            <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 700; font-size: 11px;">ID #{{ student.id }}</span>
+          </div>
+          <div style="font-size: 12.5px; color: var(--text-muted); margin-top: 3px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <span>{{ icon('school') }} {{ student.school or 'Sekolah belum diisi' }} (Kelas {{ student.grade or '-' }})</span>
+            <span>&bull;</span>
+            <span>{{ icon('family') }} Wali: <strong>{{ student.parent_name }}</strong> (<a href="tel:{{ student.parent_phone }}" style="color: var(--blue-brand); text-decoration: none;">{{ student.parent_phone }}</a>)</span>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+        <div style="background: rgba(2, 132, 199, 0.08); border: 1px solid var(--border-blue); border-radius: var(--radius-sm); padding: 6px 12px; text-align: center;">
+          <div style="font-size: 10px; text-transform: uppercase; font-weight: 700; color: var(--blue-brand); letter-spacing: 0.5px;">Program Aktif</div>
+          <strong style="font-size: 14px; color: var(--navy-dark);">{{ programs|length }} Program</strong>
+        </div>
+        <div style="background: rgba(5, 150, 105, 0.08); border: 1px solid var(--success-border); border-radius: var(--radius-sm); padding: 6px 12px; text-align: center;">
+          <div style="font-size: 10px; text-transform: uppercase; font-weight: 700; color: var(--success); letter-spacing: 0.5px;">Total Selesai</div>
+          <strong style="font-size: 14px; color: var(--navy-dark);">{{ meeting_stats.total_completed }} Sesi</strong>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
 <div class="grid-profile-layout">
-  <!-- KOLOM KIRI: PROFIL & EDIT DATA SISWA -->
-  <div>
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title"><span>{{ icon('user') }}</span> Informasi Profil Siswa</div>
-      </div>
-      <div class="card-body">
-        <form method="POST" action="{{ url_for('admin.edit_student', student_id=student.id) }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-          <div class="form-group">
-            <label class="form-label">Orang Tua / Wali Murid</label>
-            <select class="form-select" name="parent_id" required>
-              {% for p in parents %}
-                <option value="{{ p.id }}" {% if student.parent_id == p.id %}selected{% endif %}>{{ p.full_name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Nama Lengkap</label>
-            <input type="text" class="form-control" name="full_name" value="{{ student.full_name }}" required>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Asal Sekolah</label>
-            <input type="text" class="form-control" name="school" value="{{ student.school or '' }}">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Tingkat / Kelas</label>
-            <input type="text" class="form-control" name="grade" value="{{ student.grade or '' }}">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Tanggal Lahir</label>
-            <input type="date" class="form-control" name="birth_date" value="{{ student.birth_date or '' }}">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Alamat Pelaksanaan Les</label>
-            <textarea class="form-control" name="address">{{ student.address or '' }}</textarea>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Status Siswa</label>
-            <select class="form-select" name="status">
-              <option value="aktif" {% if student.status == 'aktif' %}selected{% endif %}>Aktif</option>
-              <option value="nonaktif" {% if student.status == 'nonaktif' %}selected{% endif %}>Nonaktif</option>
-              <option value="berhenti" {% if student.status == 'berhenti' %}selected{% endif %}>Berhenti (Arsip)</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Catatan Kebutuhan Belajar</label>
-            <textarea class="form-control" name="notes">{{ student.notes or '' }}</textarea>
-          </div>
-
-          <button type="submit" class="btn btn-primary" style="width: 100%;">
-            {{ icon('backup') }} Perbarui Data Siswa
-          </button>
-        </form>
-
-        <div style="display: flex; gap: 8px; margin-top: 12px;">
-          <form method="POST" action="{{ url_for('admin.archive_student', student_id=student.id) }}" style="flex: 1;" onsubmit="return confirm('Ubah status arsip siswa ini?');">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            {% if student.status == 'aktif' %}
-              <input type="hidden" name="action" value="berhenti">
-              <button type="submit" class="btn btn-warning btn-sm" style="width: 100%;" title="Arsipkan / Set Berhenti">
-                {{ icon('package') }} Arsipkan
-              </button>
-            {% else %}
-              <input type="hidden" name="action" value="aktif">
-              <button type="submit" class="btn btn-success btn-sm" style="width: 100%;" title="Aktifkan Kembali">
-                {{ icon('check-circle') }} Aktifkan
-              </button>
-            {% endif %}
-          </form>
-          <button type="button" class="btn btn-danger btn-sm" style="flex: 1;" onclick="openModal('deleteStudentModal')" title="Kelola / Hapus Siswa">
-            {{ icon('trash') }} Hapus...
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- KARTU SIKLUS PERIODE & RIWAYAT PERTEMUAN (OTOMATIS 8 PERTEMUAN = 1 PERIODE) -->
-    <div class="card" style="border: 1px solid var(--border-lavender); background: var(--white-glass-strong); margin-bottom: 20px;">
-      <div class="card-header" style="background: linear-gradient(135deg, var(--blue-ultra-soft) 0%, var(--lavender-soft) 100%);">
-        <div class="card-title" style="color: var(--text-heading); font-size: 14.5px;">
-          <span class="card-icon">{{ icon('settings') }}</span> Siklus Pertemuan & Periode
-        </div>
-      </div>
-      <div class="card-body">
-        <div style="margin-bottom: 12px;">
-          <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Status Sesi Berikutnya</div>
-          <div style="margin-top: 4px;">
-            <span class="badge badge-period" style="font-size: 14px; padding: 6px 14px;">
-              {{ icon('arrow-right') }} {{ meeting_stats.next_meeting_str }}
-            </span>
-          </div>
-        </div>
-
-        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12.5px; border-top: 1px dashed var(--border-subtle); padding-top: 10px; margin-bottom: 14px;">
-          <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--text-muted);">Pertemuan Terakhir:</span>
-            <strong>{{ meeting_stats.last_meeting_str }}</strong>
-          </div>
-          <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--text-muted);">Total Pertemuan Selesai:</span>
-            <strong>{{ meeting_stats.total_completed }} pertemuan</strong>
-          </div>
-          <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--text-muted);">Baseline Awal (Siswa Lama):</span>
-            <span class="badge badge-secondary">{{ meeting_stats.initial_offset }} manual</span>
-          </div>
-          <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--text-muted);">Absensi Hadir di Website:</span>
-            <span class="badge badge-success">{{ meeting_stats.valid_attendance_count }} sesi valid</span>
-          </div>
-          {% if meeting_stats.offset_notes %}
-            <div style="font-size: 11px; color: var(--text-muted); background: var(--blue-ultra-soft); padding: 6px 10px; border-radius: var(--radius-xs);">
-              Catatan Baseline: {{ meeting_stats.offset_notes }}
-            </div>
-          {% endif %}
-        </div>
-
-        <button type="button" class="btn btn-secondary btn-sm" style="width: 100%; border-color: var(--lavender);" onclick="openInitialMeetingModal()">
-          {{ icon('settings') }} Atur Riwayat Awal Pertemuan
-        </button>
-      </div>
-    </div>
-
-    <!-- KARTU DATA WALI -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title"><span>{{ icon('family') }}</span> Data Orang Tua / Wali</div>
-      </div>
-      <div class="card-body">
-        <div style="font-weight: 700; font-size: 15px; color: var(--text-main);">{{ student.parent_name }}</div>
-        <div style="font-size: 13px; color: var(--text-body); margin-top: 6px;">{{ icon('phone') }} Telepon: <strong>{{ student.parent_phone }}</strong></div>
-        <div style="font-size: 13px; color: var(--text-body); margin-top: 4px;">{{ icon('mail') }} Email: {{ student.parent_email or '-' }}</div>
-        <div style="font-size: 13px; color: var(--text-body); margin-top: 4px;">{{ icon('school') }} Alamat: {{ student.parent_address or '-' }}</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- KOLOM KANAN: PROGRAM, JADWAL, DAN PERKEMBANGAN BELAJAR -->
-  <div>
+  <!-- KOLOM KANAN (OPERASIONAL UTAMA): PROGRAM, JADWAL, DAN PERKEMBANGAN BELAJAR -->
+  <div class="profile-col-right">
     <!-- PROGRAM LES YANG DIIKUTI -->
-    <div class="card">
-      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-        <div class="card-title"><span>{{ icon('book') }}</span> Program Les Diikuti</div>
-        <button type="button" class="btn btn-primary btn-sm" onclick="openModal('addStudentProgramModal')">
-          {{ icon('plus') }} Tambah / Daftarkan Program
+    <div class="card" style="margin-bottom: 22px;">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div class="card-title"><span>{{ icon('book') }}</span> Program Les Diikuti ({{ programs|length }})</div>
+        <button type="button" class="btn btn-primary btn-sm" onclick="openModal('addStudentProgramModal')" style="white-space: nowrap;">
+          {{ icon('plus') }} Tambah Program
         </button>
       </div>
       <div class="card-body" style="padding: 0;">
@@ -180,7 +75,7 @@
                 <th>Mentor Pengampu</th>
                 <th>Mulai / Selesai</th>
                 <th>Status</th>
-                <th style="text-align: right;">Aksi</th>
+                <th style="text-align: right; min-width: 140px;">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -211,41 +106,43 @@
                   {% endif %}
                 </td>
                 <td>{{ pr.status|status_badge|safe }}</td>
-                <td style="text-align: right; white-space: nowrap;">
-                  <button
-                    type="button"
-                    class="btn btn-primary btn-sm"
-                    style="padding: 4px 8px; font-size: 11.5px; margin-right: 3px;"
-                    title="Atur Riwayat Periode Awal Program Ini (Siswa Lama)"
-                    onclick="openProgramInitialModal({{ pr.id }}, {{ pr.program_id }}, '{{ pr.program_name }}', {{ pr.meeting_stats.initial_period or 1 }}, {{ pr.meeting_stats.initial_meeting or 0 }}, {{ (pr.meeting_stats.offset_notes or '')|tojson }})"
-                  >
-                    {{ icon('settings') }} Atur Periode
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-secondary btn-sm"
-                    style="padding: 4px 8px; font-size: 11.5px;"
-                    onclick="openEditStudentProgramModal({{ pr.id }}, {{ pr.program_id }}, '{{ pr.mentor_id or '' }}', '{{ pr.status }}', '{{ pr.start_date or '' }}', '{{ pr.end_date or '' }}', {{ (pr.notes or '')|tojson }})"
-                  >
-                    {{ icon('edit') }} Edit
-                  </button>
-                  <form
-                    method="POST"
-                    action="{{ url_for('admin.delete_student_program', student_id=student.id, sp_id=pr.id) }}"
-                    style="display: inline-block; margin-left: 3px;"
-                    onsubmit="return confirm('Apakah Anda yakin ingin menghapus program {{ pr.program_name }} dari siswa ini? Riwayat jadwal lama tidak akan terhapus.');"
-                  >
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn btn-danger btn-sm" style="padding: 4px 8px; font-size: 11.5px;" title="Hapus Program">
-                      {{ icon('trash') }}
+                <td style="text-align: right;">
+                  <div style="display: inline-flex; align-items: center; gap: 4px; justify-content: flex-end; flex-wrap: nowrap;">
+                    <button
+                      type="button"
+                      class="btn btn-primary btn-sm"
+                      style="padding: 4px 8px; font-size: 11.5px; white-space: nowrap;"
+                      title="Atur Riwayat Periode Awal Program Ini (Siswa Lama)"
+                      onclick="openProgramInitialModal({{ pr.id }}, {{ pr.program_id }}, '{{ pr.program_name }}', {{ pr.meeting_stats.initial_period or 1 }}, {{ pr.meeting_stats.initial_meeting or 0 }}, {{ (pr.meeting_stats.offset_notes or '')|tojson }})"
+                    >
+                      {{ icon('settings') }} Periode
                     </button>
-                  </form>
+                    <button
+                      type="button"
+                      class="btn btn-secondary btn-sm"
+                      style="padding: 4px 8px; font-size: 11.5px; white-space: nowrap;"
+                      onclick="openEditStudentProgramModal({{ pr.id }}, {{ pr.program_id }}, '{{ pr.mentor_id or '' }}', '{{ pr.status }}', '{{ pr.start_date or '' }}', '{{ pr.end_date or '' }}', {{ (pr.notes or '')|tojson }})"
+                    >
+                      {{ icon('edit') }} Edit
+                    </button>
+                    <form
+                      method="POST"
+                      action="{{ url_for('admin.delete_student_program', student_id=student.id, sp_id=pr.id) }}"
+                      style="display: inline-block; margin: 0;"
+                      onsubmit="return confirm('Apakah Anda yakin ingin menghapus program {{ pr.program_name }} dari siswa ini? Riwayat jadwal lama tidak akan terhapus.');"
+                    >
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button type="submit" class="btn btn-danger btn-sm" style="padding: 4px 8px; font-size: 11.5px;" title="Hapus Program">
+                        {{ icon('trash') }}
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
               {% else %}
               <tr>
                 <td colspan="6" style="text-align: center; color: var(--gray-500); padding: 16px;">
-                  Belum ada program yang terdaftar untuk siswa ini. Silakan klik tombol <strong>{{ icon('plus') }} Tambah / Daftarkan Program</strong>.
+                  Belum ada program yang terdaftar untuk siswa ini. Silakan klik tombol <strong>{{ icon('plus') }} Tambah Program</strong>.
                 </td>
               </tr>
               {% endfor %}
@@ -302,14 +199,14 @@
     </div>
 
     <!-- JADWAL LES RUTIN MINGGUAN SISWA -->
-    <div class="card" style="margin-bottom: 24px;">
-      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+    <div class="card" style="margin-bottom: 22px;">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
         <div>
           <div class="card-title"><span>{{ icon('calendar') }}</span> Jadwal Les Rutin Mingguan</div>
-          <div style="font-size: 11.5px; color: var(--text-muted);">Jadwal berulang setiap minggu untuk siswa ini.</div>
+          <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">Jadwal berulang setiap minggu untuk siswa ini.</div>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="openModal('addStudentRoutineModal')">
-          {{ icon('plus') }} Tambah Hari / Jam Les
+        <button class="btn btn-primary btn-sm" onclick="openModal('addStudentRoutineModal')" style="white-space: nowrap;">
+          {{ icon('plus') }} Tambah Jadwal
         </button>
       </div>
       <div class="card-body" style="padding: 0;">
@@ -321,7 +218,7 @@
                 <th>Program & Fokus Materi</th>
                 <th>Mentor Pengampu</th>
                 <th>Catatan</th>
-                <th>Aksi</th>
+                <th style="text-align: right; min-width: 130px;">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -348,19 +245,20 @@
                 <td>
                   <div style="font-size: 11.5px; color: var(--text-muted);">{{ rs.notes or '-' }}</div>
                 </td>
-                <td>
-                  <div style="display: flex; gap: 6px;">
+                <td style="text-align: right;">
+                  <div style="display: inline-flex; gap: 4px; align-items: center; justify-content: flex-end; white-space: nowrap;">
                     <button
                       type="button"
                       class="btn btn-secondary btn-sm"
+                      style="padding: 4px 8px; font-size: 11.5px;"
                       onclick="openEditStudentRoutineModal({{ rs.id }}, {{ rs.day_of_week }}, '{{ rs.start_time }}', '{{ rs.end_time }}', {{ rs.mentor_id }}, '{{ rs.subject_info|default('', true) }}', '{{ rs.notes|default('', true) }}')"
                       title="Edit Jadwal"
                     >
                       {{ icon('edit') }} Edit
                     </button>
-                    <form method="POST" action="{{ url_for('admin.admin_delete_routine_schedule', routine_id=rs.id) }}" onsubmit="return confirm('Hapus slot jadwal rutin hari {{ rs.day_name }} ini?');" style="display:inline;">
+                    <form method="POST" action="{{ url_for('admin.admin_delete_routine_schedule', routine_id=rs.id) }}" onsubmit="return confirm('Hapus slot jadwal rutin hari {{ rs.day_name }} ini?');" style="display:inline; margin: 0;">
                       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                      <button type="submit" class="btn btn-danger btn-sm" title="Hapus">{{ icon('trash') }}</button>
+                      <button type="submit" class="btn btn-danger btn-sm" style="padding: 4px 8px; font-size: 11.5px;" title="Hapus">{{ icon('trash') }}</button>
                     </form>
                   </div>
                 </td>
@@ -368,7 +266,7 @@
               {% else %}
               <tr>
                 <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 22px;">
-                  Belum ada jadwal les rutin mingguan untuk siswa ini. Klik tombol <strong>{{ icon('plus') }} Tambah Hari / Jam Les</strong> di atas untuk menetapkan jadwal.
+                  Belum ada jadwal les rutin mingguan untuk siswa ini. Klik tombol <strong>{{ icon('plus') }} Tambah Jadwal</strong> di atas untuk menetapkan jadwal.
                 </td>
               </tr>
               {% endfor %}
@@ -379,7 +277,7 @@
     </div>
 
     <!-- RIWAYAT SESI JADWAL & ABSENSI -->
-    <div class="card">
+    <div class="card" style="margin-bottom: 22px;">
       <div class="card-header">
         <div class="card-title"><span>{{ icon('calendar') }}</span> Riwayat Sesi Jadwal, Pertemuan & Kehadiran</div>
       </div>
@@ -442,6 +340,150 @@
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KOLOM KIRI (PROFIL & PENGATURAN SISWA) -->
+  <div class="profile-col-left">
+    <!-- KARTU INFORMASI PROFIL & EDIT DATA SISWA -->
+    <div class="card" style="margin-bottom: 20px;">
+      <div class="card-header">
+        <div class="card-title"><span>{{ icon('user') }}</span> Informasi Profil Siswa</div>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('admin.edit_student', student_id=student.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="form-group">
+            <label class="form-label">Orang Tua / Wali Murid</label>
+            <select class="form-select" name="parent_id" required>
+              {% for p in parents %}
+                <option value="{{ p.id }}" {% if student.parent_id == p.id %}selected{% endif %}>{{ p.full_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Nama Lengkap Siswa</label>
+            <input type="text" class="form-control" name="full_name" value="{{ student.full_name }}" required>
+          </div>
+
+          <div class="grid-form-2">
+            <div class="form-group">
+              <label class="form-label">Asal Sekolah</label>
+              <input type="text" class="form-control" name="school" value="{{ student.school or '' }}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tingkat / Kelas</label>
+              <input type="text" class="form-control" name="grade" value="{{ student.grade or '' }}">
+            </div>
+          </div>
+
+          <div class="grid-form-2">
+            <div class="form-group">
+              <label class="form-label">Tanggal Lahir</label>
+              <input type="date" class="form-control" name="birth_date" value="{{ student.birth_date or '' }}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Status Siswa</label>
+              <select class="form-select" name="status">
+                <option value="aktif" {% if student.status == 'aktif' %}selected{% endif %}>Aktif</option>
+                <option value="nonaktif" {% if student.status == 'nonaktif' %}selected{% endif %}>Nonaktif</option>
+                <option value="berhenti" {% if student.status == 'berhenti' %}selected{% endif %}>Berhenti (Arsip)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Alamat Pelaksanaan Les</label>
+            <textarea class="form-control" name="address" style="min-height: 60px;">{{ student.address or '' }}</textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Catatan Kebutuhan Belajar</label>
+            <textarea class="form-control" name="notes" style="min-height: 60px;">{{ student.notes or '' }}</textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%;">
+            {{ icon('backup') }} Simpan Perubahan Profil
+          </button>
+        </form>
+
+        <div style="display: flex; gap: 8px; margin-top: 12px;">
+          <form method="POST" action="{{ url_for('admin.archive_student', student_id=student.id) }}" style="flex: 1;" onsubmit="return confirm('Ubah status arsip siswa ini?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% if student.status == 'aktif' %}
+              <input type="hidden" name="action" value="berhenti">
+              <button type="submit" class="btn btn-warning btn-sm" style="width: 100%;" title="Arsipkan / Set Berhenti">
+                {{ icon('package') }} Arsipkan
+              </button>
+            {% else %}
+              <input type="hidden" name="action" value="aktif">
+              <button type="submit" class="btn btn-success btn-sm" style="width: 100%;" title="Aktifkan Kembali">
+                {{ icon('check-circle') }} Aktifkan
+              </button>
+            {% endif %}
+          </form>
+          <button type="button" class="btn btn-danger btn-sm" style="flex: 1;" onclick="openModal('deleteStudentModal')" title="Kelola / Hapus Siswa">
+            {{ icon('trash') }} Hapus...
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- KARTU SIKLUS PERIODE & RIWAYAT PERTEMUAN (BASELINE GLOBAL SISWA LAMA) -->
+    <div class="card" style="border: 1px solid var(--border-lavender); background: var(--white-glass-strong); margin-bottom: 20px;">
+      <div class="card-header" style="background: linear-gradient(135deg, var(--blue-ultra-soft) 0%, var(--lavender-soft) 100%);">
+        <div class="card-title" style="color: var(--text-heading); font-size: 14px;">
+          <span class="card-icon">{{ icon('settings') }}</span> Baseline Pertemuan Siswa
+        </div>
+      </div>
+      <div class="card-body">
+        <div style="margin-bottom: 12px;">
+          <div style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Status Sesi Berikutnya</div>
+          <div style="margin-top: 4px;">
+            <span class="badge badge-period" style="font-size: 13.5px; padding: 5px 12px;">
+              {{ icon('arrow-right') }} {{ meeting_stats.next_meeting_str }}
+            </span>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12px; border-top: 1px dashed var(--border-subtle); padding-top: 10px; margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-muted);">Pertemuan Terakhir:</span>
+            <strong>{{ meeting_stats.last_meeting_str }}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-muted);">Total Pertemuan Selesai:</span>
+            <strong>{{ meeting_stats.total_completed }} sesi</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-muted);">Baseline Awal (Siswa Lama):</span>
+            <span class="badge badge-secondary">{{ meeting_stats.initial_offset }} manual</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-muted);">Absensi Hadir Sistem:</span>
+            <span class="badge badge-success">{{ meeting_stats.valid_attendance_count }} valid</span>
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-secondary btn-sm" style="width: 100%; border-color: var(--lavender); font-size: 11.5px;" onclick="openInitialMeetingModal()">
+          {{ icon('settings') }} Atur Baseline Siswa Lama
+        </button>
+      </div>
+    </div>
+
+    <!-- KARTU DATA ORANG TUA / WALI -->
+    <div class="card" style="margin-bottom: 20px;">
+      <div class="card-header">
+        <div class="card-title"><span>{{ icon('family') }}</span> Data Orang Tua / Wali</div>
+      </div>
+      <div class="card-body">
+        <div style="font-weight: 700; font-size: 14.5px; color: var(--navy-dark);">{{ student.parent_name }}</div>
+        <div style="font-size: 12.5px; color: var(--text-body); margin-top: 6px;">{{ icon('phone') }} Telepon: <strong><a href="tel:{{ student.parent_phone }}" style="color: var(--blue-brand); text-decoration: none;">{{ student.parent_phone }}</a></strong></div>
+        <div style="font-size: 12.5px; color: var(--text-body); margin-top: 4px;">{{ icon('mail') }} Email: {{ student.parent_email or '-' }}</div>
+        <div style="font-size: 12.5px; color: var(--text-body); margin-top: 4px;">{{ icon('school') }} Alamat: {{ student.parent_address or '-' }}</div>
       </div>
     </div>
   </div>
