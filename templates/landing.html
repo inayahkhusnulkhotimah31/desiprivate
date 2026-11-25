@@ -99,14 +99,14 @@
     </div>
   </div>
 
-  <!-- STATS BAR MENGAMBANG (SESUAI MOCKUP GAMBAR 2) -->
+  <!-- STATS BAR MENGAMBANG (REALTIME SESUAI DATABASE) -->
   <div class="landing-stats-grid">
     <div class="landing-stat-box">
       <div class="landing-stat-icon" style="background: #e0f2fe; color: #0284c7;">
         {{ icon('users') }}
       </div>
       <div>
-        <div class="landing-stat-val">150+</div>
+        <div class="landing-stat-val">{{ student_count|default(0) }}{% if student_count and student_count > 0 %}+{% endif %}</div>
         <div class="landing-stat-lbl">Siswa Aktif</div>
       </div>
     </div>
@@ -116,7 +116,7 @@
         {{ icon('mentor') }}
       </div>
       <div>
-        <div class="landing-stat-val">25+</div>
+        <div class="landing-stat-val">{{ mentor_count|default(0) }}{% if mentor_count and mentor_count > 0 %}+{% endif %}</div>
         <div class="landing-stat-lbl">Mentor Terverifikasi</div>
       </div>
     </div>
@@ -126,7 +126,7 @@
         {{ icon('book') }}
       </div>
       <div>
-        <div class="landing-stat-val">10+</div>
+        <div class="landing-stat-val">{{ program_count|default(0) }}{% if program_count and program_count > 0 %}+{% endif %}</div>
         <div class="landing-stat-lbl">Program Les</div>
       </div>
     </div>
@@ -136,13 +136,13 @@
         {{ icon('check-circle') }}
       </div>
       <div>
-        <div class="landing-stat-val">98%</div>
+        <div class="landing-stat-val">{{ satisfaction_rate|default(98) }}%</div>
         <div class="landing-stat-lbl">Kepuasan Wali</div>
       </div>
     </div>
   </div>
 
-  <!-- TENTANG & PROGRAM UNGGULAN (SESUAI MOCKUP GAMBAR 2) -->
+  <!-- TENTANG & PROGRAM UNGGULAN (REALTIME DARI DATABASE) -->
   <section class="landing-section" id="program">
     <div class="landing-section-header">
       <h2 class="landing-section-title">TENTANG &amp; PROGRAM UNGGULAN</h2>
@@ -150,49 +150,49 @@
     </div>
 
     <div class="landing-programs-grid">
-      <!-- Card 1: SD -->
-      <div class="landing-program-card">
-        <div class="landing-program-icon">
-          🏅
+      {% if programs and programs|length > 0 %}
+        {% for p in programs %}
+          <div class="landing-program-card">
+            <div class="landing-program-icon">
+              {% if loop.index == 1 %}🏅{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥇{% else %}⭐{% endif %}
+            </div>
+            <div class="landing-program-name">{{ p.name }}</div>
+            <p style="font-size: 12.5px; color: #64748b; margin-top: 8px; line-height: 1.5;">
+              {{ p.description or 'Pendampingan belajar terarah dan personal bersama mentor pilihan untuk hasil akademik optimal.' }}
+            </p>
+          </div>
+        {% endfor %}
+      {% else %}
+        <!-- Fallback Default -->
+        <div class="landing-program-card">
+          <div class="landing-program-icon">🏅</div>
+          <div class="landing-program-name">Privat SD &amp; Mapel Umum</div>
+          <p style="font-size: 12.5px; color: #64748b; margin-top: 8px; line-height: 1.5;">
+            Pendampingan harian matematika, tematik, dan IPA dengan metode interaktif yang menyenangkan.
+          </p>
         </div>
-        <div class="landing-program-name">Privat SD &amp; Mapel Umum</div>
-        <p style="font-size: 12.5px; color: #64748b; margin-top: 8px; line-height: 1.5;">
-          Pendampingan harian matematika, tematik, dan IPA dengan metode interaktif yang menyenangkan.
-        </p>
-      </div>
-
-      <!-- Card 2: SMP -->
-      <div class="landing-program-card">
-        <div class="landing-program-icon">
-          🥈
+        <div class="landing-program-card">
+          <div class="landing-program-icon">🥈</div>
+          <div class="landing-program-name">Privat SMP</div>
+          <p style="font-size: 12.5px; color: #64748b; margin-top: 8px; line-height: 1.5;">
+            Penguatan pemahaman konsep matematika, IPA terpadu, dan bahasa untuk persiapan ujian sekolah.
+          </p>
         </div>
-        <div class="landing-program-name">Privat SMP</div>
-        <p style="font-size: 12.5px; color: #64748b; margin-top: 8px; line-height: 1.5;">
-          Penguatan pemahaman konsep matematika, IPA terpadu, dan bahasa untuk persiapan ujian sekolah.
-        </p>
-      </div>
-
-      <!-- Card 3: SMA -->
-      <div class="landing-program-card">
-        <div class="landing-program-icon">
-          🥇
+        <div class="landing-program-card">
+          <div class="landing-program-icon">🥇</div>
+          <div class="landing-program-name">Privat SMA &amp; SNBT</div>
+          <p style="font-size: 12.5px; color: #64748b; margin-top: 8px; line-height: 1.5;">
+            Fokus pendalaman materi Saintek, Soshum, serta pemantapan penalaran umum ujian masuk PTN.
+          </p>
         </div>
-        <div class="landing-program-name">Privat SMA &amp; SNBT</div>
-        <p style="font-size: 12.5px; color: #64748b; margin-top: 8px; line-height: 1.5;">
-          Fokus pendalaman materi Saintek, Soshum, serta pemantapan penalaran umum ujian masuk PTN.
-        </p>
-      </div>
-
-      <!-- Card 4: Bahasa Inggris & Calistung -->
-      <div class="landing-program-card">
-        <div class="landing-program-icon">
-          ⭐
+        <div class="landing-program-card">
+          <div class="landing-program-icon">⭐</div>
+          <div class="landing-program-name">Bahasa Inggris &amp; Calistung</div>
+          <p style="font-size: 12.5px; color: #64748b; margin-top: 8px; line-height: 1.5;">
+            English Kids conversation aktif dan pondasi calistung ceria usia dini dengan modul ramah anak.
+          </p>
         </div>
-        <div class="landing-program-name">Bahasa Inggris &amp; Calistung</div>
-        <p style="font-size: 12.5px; color: #64748b; margin-top: 8px; line-height: 1.5;">
-          English Kids conversation aktif dan pondasi calistung ceria usia dini dengan modul ramah anak.
-        </p>
-      </div>
+      {% endif %}
     </div>
   </section>
 

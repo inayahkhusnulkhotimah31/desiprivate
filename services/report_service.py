@@ -51,6 +51,25 @@ def get_dashboard_summary():
     total_parents = query_db("SELECT COUNT(*) as c FROM parents WHERE status = 'aktif'", one=True)["c"]
     total_admins = query_db("SELECT COUNT(*) as c FROM users WHERE role = 'admin' AND is_active = 1", one=True)["c"]
 
+    # 11. Statistik Rasio Kehadiran Realtime
+    att_ratio_row = query_db("""
+        SELECT 
+            COUNT(*) as total,
+            SUM(CASE WHEN status = 'hadir' THEN 1 ELSE 0 END) as hadir,
+            SUM(CASE WHEN status != 'hadir' THEN 1 ELSE 0 END) as belum_hadir
+        FROM attendance
+    """, one=True)
+    total_att = (att_ratio_row["total"] or 0) if att_ratio_row else 0
+    hadir_att = (att_ratio_row["hadir"] or 0) if att_ratio_row else 0
+    belum_att = (att_ratio_row["belum_hadir"] or 0) if att_ratio_row else 0
+
+    if total_att > 0:
+        attendance_attended_pct = round((hadir_att / total_att) * 100)
+        attendance_absent_pct = 100 - attendance_attended_pct
+    else:
+        attendance_attended_pct = 0
+        attendance_absent_pct = 0
+
     return {
         "active_students": st_active,
         "active_mentors": m_active,
@@ -62,7 +81,12 @@ def get_dashboard_summary():
         "monthly_sessions": monthly_sessions,
         "total_replacements": total_replacements,
         "total_parents": total_parents,
-        "total_admins": total_admins
+        "total_admins": total_admins,
+        "attendance_attended_pct": attendance_attended_pct,
+        "attendance_absent_pct": attendance_absent_pct,
+        "attendance_attended_count": hadir_att,
+        "attendance_absent_count": belum_att,
+        "total_attendance_records": total_att
     }
 
 def get_students_report(status_filter=None, program_filter=None, search=None):
