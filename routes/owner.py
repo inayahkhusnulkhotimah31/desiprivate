@@ -57,7 +57,7 @@ def check_owner_access():
         if request.endpoint not in allowed_executive_endpoints:
             abort(403, description="Akses ditolak. Akun Pemilik hanya memiliki hak eksekutif pada validasi pembayaran dan pencairan fee honor.")
 
-@owner_bp.route("/dashboard", methods=["GET", "POST"])
+@owner_bp.route("/dashboard")
 def dashboard():
     summary = get_dashboard_summary()
 

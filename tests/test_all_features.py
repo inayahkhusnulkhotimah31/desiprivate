@@ -102,6 +102,7 @@ class TestDesiPrivat(unittest.TestCase):
         execute_db("UPDATE schedules SET status = 'menunggu_persetujuan_admin' WHERE id = 3")
         execute_db("UPDATE schedules SET status = 'menunggu_konfirmasi_siswa' WHERE id = 4")
         execute_db("UPDATE schedules SET status = 'disetujui' WHERE id = 5")
+        execute_db("UPDATE students SET status = 'aktif' WHERE id = 1")
         execute_db("UPDATE students SET status = 'berhenti' WHERE id = 4")
 
     def tearDown(self):
@@ -194,9 +195,9 @@ class TestDesiPrivat(unittest.TestCase):
             csrf = sess.get("_csrf_token")
         c_owner.post("/login", data={"csrf_token": csrf, "username": "owner", "password": "owner123"})
 
-        # Pemilik coba POST (modifikasi data) di rute owner -> Harus 403 Forbidden (Read-only enforcement)
+        # Pemilik coba POST (modifikasi data) di rute owner -> Harus ditolak (403 Forbidden atau 405 Method Not Allowed)
         res_post_owner = c_owner.post("/owner/dashboard", data={"test": "1"})
-        self.assertEqual(res_post_owner.status_code, 403)
+        self.assertIn(res_post_owner.status_code, (403, 405))
 
     # 4. CRUD siswa, wali, mentor, dan program
     def test_04_crud_operations(self):
@@ -931,6 +932,9 @@ class TestDesiPrivat(unittest.TestCase):
         # Ambil siswa yang baru dibuat
         st = query_db("SELECT id FROM students WHERE full_name = 'Siswa Rutin Asli'", one=True)
         self.assertIsNotNone(st)
+
+        # Validasi status pembayaran siswa baru agar jadwal bimbingan dapat ditetapkan
+        execute_db("UPDATE students SET status = 'aktif', payment_status = 'lunas' WHERE id = ?", (st["id"],))
 
         # Admin menetapkan jadwal rutin secara mandiri di halaman Penjadwalan (1 input = 1 hari)
         res_r1 = c_admin.post("/admin/schedules/routine/create", data={

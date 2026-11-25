@@ -293,9 +293,9 @@ def students():
         JOIN students s ON sp.student_id = s.id
         JOIN programs pr ON sp.program_id = pr.id
         LEFT JOIN routine_schedules rs ON s.id = rs.student_id AND pr.id = rs.program_id AND rs.status = 'aktif'
-        WHERE (sp.mentor_id = ? OR rs.mentor_id = ?) AND sp.status = 'aktif' AND s.status = 'aktif'
+        WHERE (sp.mentor_id = ? OR rs.mentor_id = ? OR s.id IN (SELECT student_id FROM schedules WHERE mentor_id = ? AND status NOT IN ('dibatalkan', 'ditolak'))) AND sp.status = 'aktif' AND s.status = 'aktif'
         ORDER BY s.full_name ASC
-    """, (mentor_id, mentor_id, mentor_id))
+    """, (mentor_id, mentor_id, mentor_id, mentor_id))
 
     students_data = []
     for s in students_list:

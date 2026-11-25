@@ -150,26 +150,27 @@ class TestUserFeedback4Points(unittest.TestCase):
             sess["user_id"] = 1
             sess["role"] = "admin"
 
-        # Admin mencoba akses tagihan -> diredirect ke dashboard dengan flash warning
+        # Admin memiliki hak akses operasional ke tagihan dan pencatatan pembayaran murid
         res_bills = self.client.get("/admin/bills", follow_redirects=True)
-        self.assertIn(b"Pemilik (Owner)", res_bills.data)
+        self.assertEqual(res_bills.status_code, 200)
+        self.assertIn(b"Tagihan & Pembayaran", res_bills.data)
 
-        # Admin mencoba akses honor mentor -> diredirect ke dashboard dengan flash warning
+        # Namun rekap honor mentor (/admin/mentor-honor) adalah wewenang eksklusif Pemilik (Owner)
         res_honor = self.client.get("/admin/mentor-honor", follow_redirects=True)
         self.assertIn(b"Pemilik (Owner)", res_honor.data)
 
-        # Periksa sidebar admin tidak lagi memiliki link /admin/bills atau /admin/mentor-honor
+        # Periksa sidebar admin tidak memiliki link /admin/mentor-honor
         res_dash = self.client.get("/admin/dashboard")
-        self.assertNotIn(b'href="/admin/bills"', res_dash.data)
+        self.assertIn(b'href="/admin/bills"', res_dash.data)
         self.assertNotIn(b'href="/admin/mentor-honor"', res_dash.data)
 
-        # Owner tetap bisa mengakses /owner/finance
+        # Owner tetap bisa mengakses laporan keuangan /owner/finance-report dan honor /owner/honor
         with self.client.session_transaction() as sess:
             sess["user_id"] = 2
             sess["username"] = "owner"
             sess["role"] = "owner"
 
-        res_owner_fin = self.client.get("/owner/finance")
+        res_owner_fin = self.client.get("/owner/finance-report")
         self.assertEqual(res_owner_fin.status_code, 200)
 
     def test_point_4_multi_slot_routine_schedule_creation(self):

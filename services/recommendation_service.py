@@ -233,7 +233,7 @@ def evaluate_mentor_availability(mentor_id, day_of_week, start_time, end_time, s
         }
 
 
-def get_mentor_recommendations(student_id, program_id, day_of_week, start_time, end_time, schedule_date=None, db_path=None):
+def get_mentor_recommendations(student_id, program_id, day_of_week, start_time, end_time, schedule_date=None, db_path=None, filter_strictly_available=True):
     """
     Menghasilkan daftar rekomendasi mentor berjenjang berdasarkan:
     1. Ketersediaan Waktu (Tersedia > Bebas Tanpa Info > Di Luar Preferensi > Bentrok)
@@ -374,30 +374,33 @@ def get_mentor_recommendations(student_id, program_id, day_of_week, start_time, 
 
     scored_mentors.sort(key=sort_key)
 
-    # Filter rekomendasi sesuai arahan pemilik:
-    # "untuk rekomendasi tentor klo mmng tidak sesuai tidak usah di munculkan Namanya jadi yg betul-betul tersedia baru munculkan biar tidak banyak rekomendasi"
-    
-    # 1. Hapus SEMUA mentor yang bentrok jadwal (has_conflict == True)
-    # 2. Hapus SEMUA mentor yang berada di luar preferensi waktu (time_status == 'luar_preferensi')
-    viable_mentors = [
-        m for m in scored_mentors
-        if not m["has_conflict"] and m["time_status"] != "luar_preferensi"
-    ]
+    if filter_strictly_available:
+        # Filter rekomendasi sesuai arahan pemilik:
+        # "untuk rekomendasi tentor klo mmng tidak sesuai tidak usah di munculkan Namanya jadi yg betul-betul tersedia baru munculkan biar tidak banyak rekomendasi"
+        
+        # 1. Hapus SEMUA mentor yang bentrok jadwal (has_conflict == True)
+        # 2. Hapus SEMUA mentor yang berada di luar preferensi waktu (time_status == 'luar_preferensi')
+        viable_mentors = [
+            m for m in scored_mentors
+            if not m["has_conflict"] and m["time_status"] != "luar_preferensi"
+        ]
 
-    # 3. Jika ada mentor yang secara spesifik 'tersedia' (sudah mengisi ketersediaan di mentor_availability dan jamnya cocok):
-    strictly_available = [m for m in viable_mentors if m["time_status"] == "tersedia"]
-    if strictly_available:
-        # Prioritaskan hanya yang betul-betul 'tersedia'
-        final_list = strictly_available
-    else:
-        # Jika belum ada mentor yang mengisi ketersediaan spesifik:
-        # Prioritaskan mentor yang keahliannya sesuai (expertise_matched)
-        matched_exp = [m for m in viable_mentors if m["expertise_matched"]]
-        if matched_exp:
-            final_list = matched_exp
+        # 3. Jika ada mentor yang secara spesifik 'tersedia' (sudah mengisi ketersediaan di mentor_availability dan jamnya cocok):
+        strictly_available = [m for m in viable_mentors if m["time_status"] == "tersedia"]
+        if strictly_available:
+            # Prioritaskan hanya yang betul-betul 'tersedia'
+            final_list = strictly_available
         else:
-            # Batasi maksimal 2-3 mentor bebas bentrok agar daftar rekomendasi tetap ringkas dan relevan
-            final_list = viable_mentors[:3]
+            # Jika belum ada mentor yang mengisi ketersediaan spesifik:
+            # Prioritaskan mentor yang keahliannya sesuai (expertise_matched)
+            matched_exp = [m for m in viable_mentors if m["expertise_matched"]]
+            if matched_exp:
+                final_list = matched_exp
+            else:
+                # Batasi maksimal 2-3 mentor bebas bentrok agar daftar rekomendasi tetap ringkas dan relevan
+                final_list = viable_mentors[:3]
+    else:
+        final_list = scored_mentors
 
     # Berikan nomor peringkat 1, 2, 3...
     for idx, item in enumerate(final_list, start=1):

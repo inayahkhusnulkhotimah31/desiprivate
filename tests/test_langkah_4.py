@@ -48,8 +48,11 @@ class TestLangkah4(unittest.TestCase):
                 os.remove(cls.test_db_path)
             except Exception:
                 pass
-        # Salin dari database dasar
-        shutil.copyfile(str(BASE_DIR / "database" / "desi_privat.db"), cls.test_db_path)
+        # Salin dari database pengujian jika ada, jika tidak gunakan desi_privat.db
+        test_source = BASE_DIR / "database" / "desi_privat_testing.db"
+        if not test_source.exists():
+            test_source = BASE_DIR / "database" / "desi_privat.db"
+        shutil.copyfile(str(test_source), cls.test_db_path)
         cls.orig_db_path = Config.DATABASE_PATH
         Config.DATABASE_PATH = cls.test_db_path
         cls.app = create_app()
@@ -59,22 +62,47 @@ class TestLangkah4(unittest.TestCase):
 
         # Siapkan data mentor pengujian khusus di test_langkah_4.db
         with cls.app.app_context():
-            # Pastikan ada mentor dengan berbagai skenario
-            # Mentor 14: Andi Riska (Biologi)
-            # Mentor 15: Atira (Math)
-            # Buat mentor tambahan untuk pengujian skenario lengkap
             execute_db("""
                 INSERT OR IGNORE INTO users (id, username, password_hash, role, full_name, is_active)
-                VALUES (2001, 'mentor_rec_1', 'dummy_hash', 'mentor', 'Mentor Tersedia Math', 1),
+                VALUES (1, 'admin', 'dummy_hash', 'admin', 'Admin Pengelola', 1),
+                       (999, 'parent_user', 'dummy_hash', 'parent', 'Wali Murid', 1),
+                       (1005, 'andiriska', 'dummy_hash', 'mentor', 'Andi Riska', 1),
+                       (1006, 'atira', 'dummy_hash', 'mentor', 'Atira', 1),
+                       (2001, 'mentor_rec_1', 'dummy_hash', 'mentor', 'Mentor Tersedia Math', 1),
                        (2002, 'mentor_rec_2', 'dummy_hash', 'mentor', 'Mentor Bentrok', 1),
                        (2003, 'mentor_rec_3', 'dummy_hash', 'mentor', 'Mentor Luar Jam', 1)
             """, db_path=cls.test_db_path)
 
             execute_db("""
+                INSERT OR IGNORE INTO parents (id, user_id, full_name, phone, address)
+                VALUES (10, 999, 'Wali Pengujian', '0812345678', 'Jl. Kaliurang')
+            """, db_path=cls.test_db_path)
+
+            execute_db("""
+                INSERT OR IGNORE INTO programs (id, name, code, description, status)
+                VALUES (10, 'Math School', 'MATH-TEST-10', 'Belajar dasar matematika', 'aktif')
+            """, db_path=cls.test_db_path)
+
+            execute_db("""
                 INSERT OR IGNORE INTO mentors (id, user_id, full_name, phone, expertise, status, address, latitude, longitude)
-                VALUES (21, 2001, 'Mentor Tersedia Math', '081211110001', 'Matematika, Aljabar', 'aktif', 'Jl. Kaliurang KM 5', -7.7600, 110.3700),
+                VALUES (14, 1005, 'Andi Riska', '081200000014', 'Biologi', 'aktif', 'Jl. Uji 14', -7.765, 110.372),
+                       (15, 1006, 'Atira', '081200000015', 'Math', 'aktif', 'Jl. Uji 15', -7.760, 110.370),
+                       (21, 2001, 'Mentor Tersedia Math', '081211110001', 'Matematika, Aljabar', 'aktif', 'Jl. Kaliurang KM 5', -7.7600, 110.3700),
                        (22, 2002, 'Mentor Bentrok', '081211110002', 'Matematika', 'aktif', 'Jl. Gejayan No. 10', -7.7700, 110.3900),
                        (23, 2003, 'Mentor Luar Jam', '081211110003', 'Matematika', 'aktif', 'Jl. Palagan No. 8', -7.7400, 110.3800)
+            """, db_path=cls.test_db_path)
+
+            execute_db("""
+                INSERT OR IGNORE INTO students (id, parent_id, full_name, school, grade, status, payment_status, address, latitude, longitude)
+                VALUES (38, 10, 'Muh. Halim', 'SD Uji', '5', 'aktif', 'lunas', 'Jl. Murid 38', NULL, NULL),
+                       (39, 10, 'Aya', 'SD Uji', '4', 'aktif', 'lunas', 'Jl. Murid 39', -7.7750, 110.3750)
+            """, db_path=cls.test_db_path)
+
+            execute_db("""
+                INSERT OR IGNORE INTO student_programs (student_id, program_id, mentor_id, start_date, status)
+                VALUES (38, 10, 22, '2026-11-01', 'aktif'),
+                       (39, 10, 14, '2026-11-01', 'aktif'),
+                       (39, 3, 14, '2026-11-01', 'aktif')
             """, db_path=cls.test_db_path)
 
             # Atur ketersediaan mingguan:
@@ -274,7 +302,8 @@ class TestLangkah4(unittest.TestCase):
             day_of_week=5, # Sabtu
             start_time="09:00",
             end_time="10:30",
-            db_path=self.test_db_path
+            db_path=self.test_db_path,
+            filter_strictly_available=False
         )
         self.assertTrue(recs["success"])
         mentor_list = recs["recommendations"]

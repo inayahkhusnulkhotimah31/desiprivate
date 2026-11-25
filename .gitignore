@@ -24,11 +24,7 @@ test_*.db
 
 # Test Artifacts & Temporary Screenshots
 stage_screenshots/
-scratch/*.png
-scratch/*.jpg
-scratch/*.jpeg
-scratch/*.json
-scratch/*.html
+scratch/
 
 # IDE & Editors
 .vscode/
