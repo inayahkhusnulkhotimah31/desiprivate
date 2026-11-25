@@ -22,6 +22,14 @@ backups/
 database/test_*.db
 test_*.db
 
+# Test Artifacts & Temporary Screenshots
+stage_screenshots/
+scratch/*.png
+scratch/*.jpg
+scratch/*.jpeg
+scratch/*.json
+scratch/*.html
+
 # IDE & Editors
 .vscode/
 .idea/

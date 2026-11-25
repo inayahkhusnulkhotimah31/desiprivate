@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kuitansi Pembayaran - {{ receipt.receipt_number }}</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+  <style>
+    :root {
+      --navy: #0F172A;
+      --blue: #2563EB;
+      --gray-600: #475569;
+      --gray-200: #E2E8F0;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    body {
+      background-color: #F8FAFC;
+      color: #1E293B;
+      padding: 40px 20px;
+    }
+    .receipt-container {
+      max-width: 680px;
+      margin: 0 auto;
+      background: #FFFFFF;
+      padding: 40px 48px;
+      border-radius: 12px;
+      border: 1px solid var(--gray-200);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    }
+    .receipt-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--navy);
+      padding-bottom: 20px;
+      margin-bottom: 28px;
+    }
+    .brand-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    .brand-desi { color: #2563EB; }
+    .brand-privat { color: #0F172A; }
+    .brand-sub {
+      font-size: 12px;
+      color: var(--gray-600);
+      margin-top: 2px;
+    }
+    .receipt-badge {
+      text-align: right;
+    }
+    .badge-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--navy);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .badge-number {
+      font-size: 13px;
+      font-weight: 600;
+      color: #2563EB;
+      margin-top: 3px;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 28px;
+      background: #F8FAFC;
+      padding: 16px 20px;
+      border-radius: 8px;
+      font-size: 13.5px;
+    }
+    .info-item {
+      display: flex;
+      flex-direction: column;
+    }
+    .info-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--gray-600);
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
+    .info-value {
+      font-weight: 600;
+      color: var(--navy);
+    }
+    .table-details {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 28px;
+      font-size: 13.5px;
+    }
+    .table-details th {
+      background: #F1F5F9;
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 700;
+      color: var(--navy);
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .table-details td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .total-section {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 32px;
+    }
+    .total-box {
+      width: 280px;
+      font-size: 13.5px;
+    }
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+    }
+    .total-row.grand {
+      border-top: 2px solid var(--navy);
+      font-size: 16px;
+      font-weight: 800;
+      color: #2563EB;
+      padding-top: 8px;
+      margin-top: 4px;
+    }
+    .signature-section {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px dashed var(--gray-200);
+    }
+    .signature-box {
+      text-align: center;
+      width: 200px;
+      font-size: 12.5px;
+    }
+    .signature-line {
+      margin-top: 60px;
+      border-top: 1px solid #475569;
+      padding-top: 4px;
+      font-weight: 700;
+    }
+    .no-print-bar {
+      max-width: 680px;
+      margin: 0 auto 20px auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-primary { background: #2563EB; color: #FFFFFF; border: none; }
+    .btn-secondary { background: #E2E8F0; color: #334155; border: none; }
+
+    @media print {
+      body { background: #FFFFFF; padding: 0; }
+      .receipt-container { box-shadow: none; border: none; padding: 20px 0; }
+      .no-print-bar { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="no-print-bar">
+  <button type="button" class="btn btn-secondary" onclick="window.close()">Tutup</button>
+  <button type="button" class="btn btn-primary" onclick="window.print()">Cetak / Simpan PDF</button>
+</div>
+
+<div class="receipt-container">
+  <div class="receipt-header">
+    <div>
+      <div class="brand-title"><span class="brand-desi">DESI</span> <span class="brand-privat">PRIVAT</span></div>
+      <div class="brand-sub">Sistem Manajemen Lembaga Bimbingan Belajar Privat</div>
+    </div>
+    <div class="receipt-badge">
+      <div class="badge-title">Kuitansi Resmi</div>
+      <div class="badge-number">{{ receipt.receipt_number }}</div>
+    </div>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-item">
+      <span class="info-label">Diterima Dari (Siswa)</span>
+      <span class="info-value">{{ receipt.student_name }} ({{ receipt.student_grade or 'Siswa' }})</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">Wali Murid / Kontak</span>
+      <span class="info-value">{{ receipt.parent_name or '-' }} ({{ receipt.parent_phone or '-' }})</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">Tanggal Transaksi</span>
+      <span class="info-value">{{ receipt.payment_date }}</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">Metode Pembayaran</span>
+      <span class="info-value">{{ receipt.payment_method }}</span>
+    </div>
+  </div>
+
+  <table class="table-details">
+    <thead>
+      <tr>
+        <th>Deskripsi Pembayaran</th>
+        <th>Program &amp; Periode</th>
+        <th style="text-align: right;">Jumlah</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <strong>{{ receipt.bill_title }}</strong>
+          {% if receipt.notes %}
+            <div style="font-size: 11.5px; color: #64748B; margin-top: 3px;">Catatan: {{ receipt.notes }}</div>
+          {% endif %}
+        </td>
+        <td>{{ receipt.program_name }} (Periode {{ receipt.period_number }})</td>
+        <td style="text-align: right; font-weight: 700;">Rp {{ "{:,.0f}".format(receipt.amount).replace(",", ".") }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="total-section">
+    <div class="total-box">
+      <div class="total-row">
+        <span>Total Biaya Periode:</span>
+        <span>Rp {{ "{:,.0f}".format(receipt.total_amount).replace(",", ".") }}</span>
+      </div>
+      <div class="total-row">
+        <span>Total Telah Dibayar:</span>
+        <span>Rp {{ "{:,.0f}".format(receipt.bill_paid_total).replace(",", ".") }}</span>
+      </div>
+      <div class="total-row">
+        <span>Sisa Tunggakan:</span>
+        <span style="color: #DC2626; font-weight: 700;">Rp {{ "{:,.0f}".format(receipt.remaining_amount).replace(",", ".") }}</span>
+      </div>
+      <div class="total-row grand">
+        <span>Jumlah Kuitansi Ini:</span>
+        <span>Rp {{ "{:,.0f}".format(receipt.amount).replace(",", ".") }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="signature-section">
+    <div class="signature-box">
+      <div>Orang Tua / Wali Pembayar</div>
+      <div class="signature-line">{{ receipt.parent_name or receipt.student_name }}</div>
+    </div>
+    <div class="signature-box">
+      <div>Pengelola DESI PRIVAT</div>
+      <div class="signature-line">{{ receipt.recorder_name or 'Administrasi' }}</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

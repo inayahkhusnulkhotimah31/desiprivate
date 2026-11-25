@@ -13,9 +13,12 @@ Pusat kendali operasional DESI PRIVAT:
 - Riwayat Audit Log & Laporan / Ekspor
 """
 from datetime import datetime, date
+import os
+import uuid
+import time
 from flask import (
     Blueprint, render_template, request, redirect,
-    url_for, session, flash, jsonify, Response
+    url_for, session, flash, jsonify, Response, current_app
 )
 from werkzeug.security import generate_password_hash
 from routes.auth import login_required, role_required, validate_csrf
@@ -50,6 +53,11 @@ from services.report_service import (
     get_schedules_report, get_attendance_report, get_progress_report,
     get_mentor_replacements_report, generate_csv_string
 )
+from services.finance_service import (
+    get_student_bills, create_student_bill, record_bill_payment,
+    get_student_bill_detail, get_bill_payment_receipt, get_all_payments,
+    get_financial_overview, get_mentor_honor_summary
+)
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -68,35 +76,88 @@ def dashboard():
     summary = get_dashboard_summary()
     overdue_responses = check_overdue_mentor_responses()
     recent_notifs = get_user_notifications(session["user_id"], limit=5)
-    today_str = date.today().strftime("%Y-%m-%d")
+    today_date = date.today()
+    today_str = today_date.strftime("%Y-%m-%d")
+    today_dow = today_date.weekday()
 
+    # Gabungkan sesi tanggal spesifik hari ini dan jadwal rutin mingguan yang jatuh hari ini
     today_schedules_list = query_db("""
         SELECT s.id, s.title, s.start_time, s.end_time, s.status, s.mentor_response_status,
-               st.full_name as student_name, m.full_name as mentor_name, pr.name as program_name
+               st.full_name as student_name, m.full_name as mentor_name, pr.name as program_name,
+               'sesi_spesifik' as schedule_type
         FROM schedules s
         JOIN students st ON s.student_id = st.id
         JOIN mentors m ON s.mentor_id = m.id
         JOIN programs pr ON s.program_id = pr.id
-        WHERE s.schedule_date = ?
-        ORDER BY s.start_time ASC
-    """, (today_str,))
+        WHERE s.schedule_date = ? AND s.status NOT IN ('dibatalkan', 'ditolak')
+
+        UNION ALL
+
+        SELECT rs.id, 'Jadwal Rutin Mingguan' as title, rs.start_time, rs.end_time, 'aktif' as status,
+               'rutin' as mentor_response_status, st.full_name as student_name, m.full_name as mentor_name,
+               pr.name as program_name, 'jadwal_rutin' as schedule_type
+        FROM routine_schedules rs
+        JOIN students st ON rs.student_id = st.id AND st.status = 'aktif'
+        JOIN mentors m ON rs.mentor_id = m.id AND m.status = 'aktif'
+        JOIN programs pr ON rs.program_id = pr.id AND pr.status = 'aktif'
+        WHERE rs.day_of_week = ? AND rs.status = 'aktif'
+        ORDER BY start_time ASC
+    """, (today_str, today_dow))
+
+    # Hitung total jadwal yang memerlukan perhatian (tidak dibatasi LIMIT 10)
+    action_count_row = query_db("""
+        SELECT COUNT(s.id) as total
+        FROM schedules s
+        LEFT JOIN mentors m ON s.mentor_id = m.id
+        WHERE s.status NOT IN ('dibatalkan', 'ditolak', 'selesai')
+          AND (s.mentor_id IS NULL
+               OR s.status IN ('menunggu_persetujuan_admin', 'menunggu_konfirmasi_siswa')
+               OR s.mentor_response_status = 'perlu_mentor_pengganti')
+    """, one=True)
+    action_count = action_count_row["total"] if action_count_row else 0
 
     # Jadwal yang butuh tindakan (menunggu persetujuan atau perlu pengganti)
     action_required_schedules = query_db("""
         SELECT s.id, s.title, s.schedule_date, s.start_time, s.status, s.mentor_response_status,
-               s.mentor_response_notes, st.full_name as student_name, m.full_name as mentor_name,
+               s.mentor_response_notes, st.full_name as student_name,
+               COALESCE(m.full_name, 'Belum Ditentukan') as mentor_name,
                pr.name as program_name
         FROM schedules s
         JOIN students st ON s.student_id = st.id
-        JOIN mentors m ON s.mentor_id = m.id
+        LEFT JOIN mentors m ON s.mentor_id = m.id
         JOIN programs pr ON s.program_id = pr.id
-        WHERE s.status IN ('menunggu_persetujuan_admin', 'menunggu_konfirmasi_siswa')
-           OR s.mentor_response_status = 'perlu_mentor_pengganti'
+        WHERE s.status NOT IN ('dibatalkan', 'ditolak', 'selesai')
+          AND (s.mentor_id IS NULL
+               OR s.status IN ('menunggu_persetujuan_admin', 'menunggu_konfirmasi_siswa')
+               OR s.mentor_response_status = 'perlu_mentor_pengganti')
         ORDER BY s.schedule_date ASC
         LIMIT 10
     """)
 
     recent_audits = get_audit_logs(limit=5)
+
+    # Riwayat absensi terkini beserta rincian pertemuan, periode, dokumentasi foto, dan laporan perkembangan
+    recent_attendances = query_db("""
+        SELECT att.id as attendance_id, att.schedule_id, att.status, att.mentor_status, att.session_status,
+               att.meeting_number, att.period_number, att.cumulative_meeting,
+               att.topics_covered, att.progress_notes,
+               prog.skills_mastered, prog.difficulties, prog.recommendations,
+               att.documentation_status, att.documentation_photo, att.documentation_pending_reason,
+               att.recorded_at,
+               s.schedule_date as session_date,
+               s.start_time, s.end_time,
+               st.id as student_id, st.full_name as student_name, st.grade as student_grade, st.school as student_school,
+               m.id as mentor_id, m.full_name as mentor_name,
+               pr.id as program_id, pr.name as program_name
+        FROM attendance att
+        JOIN schedules s ON att.schedule_id = s.id
+        JOIN students st ON att.student_id = st.id
+        JOIN mentors m ON att.mentor_id = m.id
+        JOIN programs pr ON s.program_id = pr.id
+        LEFT JOIN student_progress prog ON att.schedule_id = prog.schedule_id
+        ORDER BY s.schedule_date DESC, att.recorded_at DESC
+        LIMIT 10
+    """)
 
     return render_template(
         "admin/dashboard.html",
@@ -104,8 +165,12 @@ def dashboard():
         overdue_responses=overdue_responses,
         recent_notifs=recent_notifs,
         recent_audits=recent_audits,
+        recent_attendances=recent_attendances,
         today_schedules=today_schedules_list,
-        action_schedules=action_required_schedules
+        action_schedules=action_required_schedules,
+        action_count=action_count,
+        today_str=today_str,
+        today_dow=today_dow
     )
 
 # ==========================================
@@ -152,9 +217,20 @@ def create_student():
     address = request.form.get("address", "").strip()
     notes = request.form.get("notes", "").strip()
     program_id = request.form.get("program_id")
-    mentor_id = request.form.get("mentor_id")
     subject_info = request.form.get("subject_info", "").strip()
-    
+
+    # Ekstraksi riwayat periode & pertemuan awal (untuk siswa lama)
+    init_p_raw = request.form.get("initial_periods_completed", 1)
+    init_m_raw = request.form.get("initial_last_meeting", 0)
+    try:
+        init_p = max(1, int(init_p_raw or 1))
+        init_m = max(0, min(8, int(init_m_raw or 0)))
+    except (TypeError, ValueError):
+        init_p, init_m = 1, 0
+
+    from services.meeting_service import calculate_total_from_period_and_meeting
+    total_offset = calculate_total_from_period_and_meeting(init_p, init_m) if (init_p > 1 or init_m > 0) else 0
+
     # 1. Buat data orang tua baru jika diisi di formulir
     if new_parent_name and new_parent_phone:
         parent_id = execute_db("""
@@ -195,119 +271,120 @@ def create_student():
                 return redirect(url_for("admin.student_detail", student_id=target_student_id))
 
             execute_db("""
-                INSERT INTO student_programs (student_id, program_id, mentor_id, start_date, notes, status)
-                VALUES (?, ?, ?, date('now'), ?, 'aktif')
-            """, (target_student_id, program_id, mentor_id if mentor_id else None, subject_info))
+                INSERT INTO student_programs (
+                    student_id, program_id, mentor_id, start_date, notes, status,
+                    initial_periods_completed, initial_last_meeting, initial_offset_total,
+                    initial_offset_notes, initial_offset_set_at, initial_offset_set_by, meetings_per_period
+                )
+                VALUES (?, ?, NULL, date('now'), ?, 'aktif', ?, ?, ?, 'Baseline pendaftaran program', CURRENT_TIMESTAMP, ?, 8)
+            """, (target_student_id, program_id, notes or subject_info, init_p, init_m, total_offset, session["user_id"]))
+
+            # Buat tagihan awal Periode 1 untuk program yang baru ditambahkan
+            from services.finance_service import create_student_bill
+            from services.pricing_service import calculate_package_tuition_fee
+            pr_info = query_db("SELECT name, level, service_type, price_per_session FROM programs WHERE id = ?", (program_id,), one=True)
+            pr_name = pr_info["name"] if pr_info else "Les Privat"
+            pr_level = pr_info["level"] if pr_info else (existing_student["grade"] or "SD")
+            pr_service = pr_info["service_type"] if (pr_info and "service_type" in pr_info.keys() and pr_info["service_type"]) else "Private Tutoring"
+
+            prog_fee, rate_session, _ = calculate_package_tuition_fee(
+                service_type=pr_service,
+                level=pr_level,
+                meetings_per_period=8,
+                student_grade=existing_student["grade"],
+                program_name=pr_name,
+                custom_fee=None
+            )
+
+            existing_bill = query_db("SELECT id FROM student_bills WHERE student_id = ? AND program_id = ? AND period_number = 1", (target_student_id, program_id), one=True)
+            if not existing_bill:
+                create_student_bill(
+                    student_id=target_student_id,
+                    program_id=program_id,
+                    period_number=1,
+                    title=f"Tagihan {pr_name} - Periode 1 (8 Pertemuan)",
+                    total_amount=prog_fee,
+                    notes=f"Tagihan penambahan program les baru {pr_name} (8 sesi). Menunggu pembayaran sebelum pembelajaran dimulai."
+                )
 
             log_audit(session["user_id"], session["username"], "TAMBAH_PROGRAM_SISWA", "student_programs", target_student_id,
                       f"Menambahkan program baru (ID {program_id}) ke profil siswa yang sudah ada ({existing_student['full_name']})")
 
-            # Daftarkan jadwal rutin mingguan jika ada
-            routine_days = request.form.getlist("routine_day[]")
-            routine_starts = request.form.getlist("routine_start[]")
-            routine_ends = request.form.getlist("routine_end[]")
-            slots_added = 0
-            if mentor_id and routine_days:
-                for idx_slot, r_day in enumerate(routine_days):
-                    try:
-                        dow = int(r_day)
-                    except (TypeError, ValueError):
-                        continue
-                    r_start = routine_starts[idx_slot].strip() if idx_slot < len(routine_starts) else "16:00"
-                    r_end = routine_ends[idx_slot].strip() if idx_slot < len(routine_ends) else calculate_end_time(r_start, 90)
-                    res_rs = create_routine_schedule(
-                        student_id=target_student_id,
-                        program_id=program_id,
-                        mentor_id=mentor_id,
-                        day_of_week=dow,
-                        start_time=r_start,
-                        end_time=r_end,
-                        subject_info=subject_info,
-                        notes=notes or "Jadwal rutin mingguan program tambahan"
-                    )
-                    if res_rs.get("success"):
-                        slots_added += 1
-
-            flash(f"Pemberitahuan Sistem: Siswa '{existing_student['full_name']}' sudah terdaftar (ID #{target_student_id}). Program les berhasil ditambahkan ke profil siswa tersebut tanpa membuat identitas ganda.", "success")
+            flash(f"Pemberitahuan Sistem: Siswa '{existing_student['full_name']}' sudah terdaftar (ID #{target_student_id}). Program les {pr_name} berhasil ditambahkan dan tagihan SPP telah terbit.", "success")
             return redirect(url_for("admin.student_detail", student_id=target_student_id))
         else:
             flash(f"Pemberitahuan Sistem: Siswa '{existing_student['full_name']}' sudah terdaftar (ID #{target_student_id}).", "info")
             return redirect(url_for("admin.student_detail", student_id=target_student_id))
 
     try:
+        meetings_per_period = int(request.form.get("meetings_per_period", 8))
+        if meetings_per_period not in (4, 8, 12):
+            meetings_per_period = 8
+    except (ValueError, TypeError):
+        meetings_per_period = 8
+
+    try:
         initial_offset = max(0, int(request.form.get("initial_meeting_offset", 0)))
     except (TypeError, ValueError):
-        initial_offset = 0
+        initial_offset = total_offset
+
+    lat_val = request.form.get("latitude", "").strip()
+    lng_val = request.form.get("longitude", "").strip()
+    try:
+        latitude = float(lat_val) if lat_val else None
+    except (ValueError, TypeError):
+        latitude = None
+    try:
+        longitude = float(lng_val) if lng_val else None
+    except (ValueError, TypeError):
+        longitude = None
 
     student_id = execute_db("""
         INSERT INTO students (
-            parent_id, full_name, school, grade, birth_date, address, notes, status,
-            initial_meeting_offset, initial_offset_notes, initial_offset_set_at, initial_offset_set_by
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'aktif', ?, 'Baseline pendaftaran awal', CURRENT_TIMESTAMP, ?)
-    """, (parent_id, full_name, school, grade, birth_date, address, notes, initial_offset, session["user_id"]))
+            parent_id, full_name, school, grade, birth_date, address, latitude, longitude, notes, status, payment_status,
+            initial_meeting_offset, initial_offset_notes, initial_offset_set_at, initial_offset_set_by, meetings_per_period
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'nonaktif', 'menunggu_validasi', ?, 'Pendaftaran murid baru (menunggu validasi pembayaran)', CURRENT_TIMESTAMP, ?, ?)
+    """, (parent_id, full_name, school, grade, birth_date, address, latitude, longitude, notes, initial_offset, session["user_id"], meetings_per_period))
 
     if program_id:
         execute_db("""
-            INSERT INTO student_programs (student_id, program_id, mentor_id, start_date, notes, status)
-            VALUES (?, ?, ?, date('now'), ?, 'aktif')
-        """, (student_id, program_id, mentor_id if mentor_id else None, subject_info))
+            INSERT INTO student_programs (
+                student_id, program_id, mentor_id, start_date, notes, status,
+                initial_periods_completed, initial_last_meeting, initial_offset_total,
+                initial_offset_notes, initial_offset_set_at, initial_offset_set_by, meetings_per_period
+            )
+            VALUES (?, ?, NULL, date('now'), ?, 'aktif', ?, ?, ?, 'Baseline pendaftaran awal', CURRENT_TIMESTAMP, ?, ?)
+        """, (student_id, program_id, notes or subject_info, init_p, init_m, total_offset, session["user_id"], meetings_per_period))
 
-    log_audit(session["user_id"], session["username"], "TAMBAH_SISWA", "students", student_id, f"Menambahkan siswa baru: {full_name}")
+        # Buat tagihan awal Periode 1 sesuai biaya yang diinput atau kalkulasi dari kategori layanan & jenjang
+        from services.finance_service import create_student_bill
+        from services.pricing_service import calculate_package_tuition_fee
+        pr_info = query_db("SELECT name, level, service_type, price_per_session FROM programs WHERE id = ?", (program_id,), one=True)
+        pr_name = pr_info["name"] if pr_info else "Les Privat"
+        pr_level = pr_info["level"] if pr_info else grade
+        pr_service = pr_info["service_type"] if (pr_info and "service_type" in pr_info.keys() and pr_info["service_type"]) else "Private Tutoring"
 
-    # 2. Pengaturan Jadwal Rutin Mingguan Siswa (Dapat lebih dari 1 hari dengan jam berbeda)
-    routine_days = request.form.getlist("routine_day[]")
-    routine_starts = request.form.getlist("routine_start[]")
-    routine_ends = request.form.getlist("routine_end[]")
+        initial_fee, rate_session, is_custom = calculate_package_tuition_fee(
+            service_type=pr_service,
+            level=pr_level,
+            meetings_per_period=meetings_per_period,
+            student_grade=grade,
+            program_name=pr_name,
+            custom_fee=None
+        )
 
-    # Fallback jika formulir menggunakan format checkbox hari
-    if not routine_days:
-        cb_days = request.form.getlist("recurring_days")
-        st_time = request.form.get("schedule_start_time", "16:00").strip() or "16:00"
-        dur = int(request.form.get("schedule_duration", 90))
-        ed_time = calculate_end_time(st_time, dur)
-        for d in cb_days:
-            routine_days.append(d)
-            routine_starts.append(st_time)
-            routine_ends.append(ed_time)
+        create_student_bill(
+            student_id=student_id,
+            program_id=program_id,
+            period_number=1,
+            title=f"Tagihan {pr_name} - Periode 1 ({meetings_per_period} Pertemuan)",
+            total_amount=initial_fee,
+            notes=f"Tagihan pendaftaran awal murid baru ({meetings_per_period} sesi). Menunggu validasi pembayaran oleh Pemilik sebelum pembelajaran dimulai."
+        )
 
-    slots_added = 0
-    conflict_warnings = []
+    log_audit(session["user_id"], session["username"], "TAMBAH_SISWA", "students", student_id, f"Menambahkan siswa baru: {full_name} (Menunggu Validasi Pembayaran Pemilik)")
 
-    if program_id and mentor_id and routine_days:
-        for idx_slot, r_day in enumerate(routine_days):
-            try:
-                dow = int(r_day)
-            except (TypeError, ValueError):
-                continue
-            r_start = routine_starts[idx_slot].strip() if idx_slot < len(routine_starts) else "16:00"
-            r_end = routine_ends[idx_slot].strip() if idx_slot < len(routine_ends) else calculate_end_time(r_start, 90)
-
-            # Cek bentrokan jadwal rutin mentor
-            conflict = check_routine_schedule_conflict(mentor_id, dow, r_start, r_end, student_id=student_id)
-            if conflict["has_conflict"]:
-                conflict_warnings.append(conflict["message"])
-            else:
-                res_rs = create_routine_schedule(
-                    student_id=student_id,
-                    program_id=program_id,
-                    mentor_id=mentor_id,
-                    day_of_week=dow,
-                    start_time=r_start,
-                    end_time=r_end,
-                    subject_info=subject_info,
-                    notes=notes or "Jadwal rutin mingguan pendaftaran siswa"
-                )
-                if res_rs["success"]:
-                    slots_added += 1
-
-    success_msg = f"Siswa {full_name} berhasil didaftarkan."
-    if slots_added > 0:
-        success_msg += f" {slots_added} slot jadwal rutin mingguan berhasil ditetapkan dan langsung aktif."
-    if conflict_warnings:
-        flash(f"{success_msg} Peringatan bentrokan jadwal: {'; '.join(conflict_warnings)}", "warning")
-    else:
-        flash(success_msg, "success")
-
+    flash(f"Siswa {full_name} berhasil didaftarkan dengan status 'Menunggu Validasi Pembayaran oleh Pemilik'. Pembelajaran dan penjadwalan akan dibuka setelah Pemilik memvalidasi pembayaran awal.", "info")
     return redirect(url_for("admin.students"))
 
 @admin_bp.route("/students/<int:student_id>")
@@ -355,10 +432,12 @@ def student_detail(student_id):
 
     # Riwayat perkembangan belajar
     progress_list = query_db("""
-        SELECT sp.*, m.full_name as mentor_name, pr.name as program_name
+        SELECT sp.*, m.full_name as mentor_name, pr.name as program_name,
+               att.documentation_photo, att.documentation_status
         FROM student_progress sp
         JOIN mentors m ON sp.mentor_id = m.id
         JOIN programs pr ON sp.program_id = pr.id
+        LEFT JOIN attendance att ON sp.schedule_id = att.schedule_id
         WHERE sp.student_id = ?
         ORDER BY sp.session_date DESC
         LIMIT 30
@@ -367,7 +446,7 @@ def student_detail(student_id):
     meeting_stats = get_student_meeting_stats(student_id)
     routine_schedules = get_routine_schedules(student_id=student_id)
     parents_list = query_db("SELECT id, full_name FROM parents ORDER BY full_name ASC")
-    all_programs = query_db("SELECT id, name, code, level FROM programs WHERE status = 'aktif' ORDER BY name ASC")
+    all_programs = query_db("SELECT id, name, code, level, default_fee_8, default_fee_4 FROM programs WHERE status = 'aktif' ORDER BY name ASC")
     all_mentors = query_db("SELECT id, full_name, expertise FROM mentors WHERE status = 'aktif' ORDER BY full_name ASC")
 
     return render_template(
@@ -387,7 +466,7 @@ def student_detail(student_id):
 @admin_bp.route("/students/<int:student_id>/edit", methods=["POST"])
 def edit_student(student_id):
     validate_csrf()
-    old_st = query_db("SELECT parent_id, full_name, school, grade, birth_date, address, notes, status FROM students WHERE id = ?", (student_id,), one=True)
+    old_st = query_db("SELECT parent_id, full_name, school, grade, birth_date, address, latitude, longitude, notes, status FROM students WHERE id = ?", (student_id,), one=True)
     if not old_st:
         flash("Siswa tidak ditemukan.", "danger")
         return redirect(url_for("admin.students"))
@@ -401,6 +480,17 @@ def edit_student(student_id):
     notes = request.form.get("notes", "").strip()
     status = request.form.get("status", "aktif")
 
+    lat_val = request.form.get("latitude", "").strip()
+    lng_val = request.form.get("longitude", "").strip()
+    try:
+        latitude = float(lat_val) if lat_val else None
+    except (ValueError, TypeError):
+        latitude = None
+    try:
+        longitude = float(lng_val) if lng_val else None
+    except (ValueError, TypeError):
+        longitude = None
+
     new_data = {
         "parent_id": int(parent_id) if parent_id else None,
         "full_name": full_name,
@@ -408,6 +498,8 @@ def edit_student(student_id):
         "grade": grade,
         "birth_date": birth_date,
         "address": address,
+        "latitude": latitude,
+        "longitude": longitude,
         "notes": notes,
         "status": status
     }
@@ -417,9 +509,9 @@ def edit_student(student_id):
     execute_db("""
         UPDATE students
         SET parent_id = ?, full_name = ?, school = ?, grade = ?, birth_date = ?,
-            address = ?, notes = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+            address = ?, latitude = ?, longitude = ?, notes = ?, status = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-    """, (parent_id, full_name, school, grade, birth_date, address, notes, status, student_id))
+    """, (parent_id, full_name, school, grade, birth_date, address, latitude, longitude, notes, status, student_id))
 
     detail_msg = f"Mengubah data siswa ID {student_id} ({full_name})"
     if changed_fields:
@@ -627,7 +719,7 @@ def api_check_duplicate_student():
 @admin_bp.route("/students/<int:student_id>/programs/add", methods=["POST"])
 def add_student_program(student_id):
     validate_csrf()
-    student = query_db("SELECT id, full_name FROM students WHERE id = ?", (student_id,), one=True)
+    student = query_db("SELECT id, full_name, grade FROM students WHERE id = ?", (student_id,), one=True)
     if not student:
         flash("Siswa tidak ditemukan.", "danger")
         return redirect(url_for("admin.students"))
@@ -662,19 +754,51 @@ def add_student_program(student_id):
         flash("Siswa sudah terdaftar pada program les ini. Anda dapat mengubah mentor atau statusnya melalui tombol '✏️ Ganti / Edit'.", "warning")
         return redirect(url_for("admin.student_detail", student_id=student_id))
 
+    try:
+        meetings_per_period = int(request.form.get("meetings_per_period", 8))
+        if meetings_per_period not in (4, 8, 12):
+            meetings_per_period = 8
+    except (ValueError, TypeError):
+        meetings_per_period = 8
+
     execute_db("""
         INSERT INTO student_programs (
             student_id, program_id, mentor_id, start_date, status, notes,
             initial_periods_completed, initial_last_meeting, initial_offset_total,
-            initial_offset_notes, initial_offset_set_at, initial_offset_set_by
+            initial_offset_notes, initial_offset_set_at, initial_offset_set_by, meetings_per_period
         )
-        VALUES (?, ?, ?, COALESCE(?, date('now')), 'aktif', ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+        VALUES (?, ?, ?, COALESCE(?, date('now')), 'aktif', ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?)
     """, (student_id, program_id, mentor_id, start_date, notes,
           p_val if total_offset > 0 else 0, m_val if total_offset > 0 else 0,
-          total_offset, init_notes, session["user_id"]))
+          total_offset, init_notes, session["user_id"], meetings_per_period))
 
-    p = query_db("SELECT name FROM programs WHERE id = ?", (program_id,), one=True)
+    p = query_db("SELECT name, level, service_type, price_per_session FROM programs WHERE id = ?", (program_id,), one=True)
     p_name = p["name"] if p else f"ID {program_id}"
+    p_level = p["level"] if p else student["grade"]
+    p_service = p["service_type"] if (p and "service_type" in p.keys() and p["service_type"]) else "Private Tutoring"
+
+    # Buat tagihan awal Periode 1 untuk program baru jika siswa belum memiliki tagihan pada program ini
+    from services.finance_service import create_student_bill
+    from services.pricing_service import calculate_package_tuition_fee
+    existing_bill = query_db("SELECT id FROM student_bills WHERE student_id = ? AND program_id = ? AND period_number = 1", (student_id, program_id), one=True)
+    if not existing_bill:
+        prog_fee, rate_session, is_custom = calculate_package_tuition_fee(
+            service_type=p_service,
+            level=p_level,
+            meetings_per_period=meetings_per_period,
+            student_grade=student["grade"],
+            program_name=p_name,
+            custom_fee=None
+        )
+
+        create_student_bill(
+            student_id=student_id,
+            program_id=program_id,
+            period_number=1,
+            title=f"Tagihan {p_name} - Periode 1 ({meetings_per_period} Pertemuan)",
+            total_amount=prog_fee,
+            notes=f"Tagihan penambahan program les baru {p_name} ({meetings_per_period} sesi)."
+        )
     log_audit(
         session["user_id"], session["username"], "TAMBAH_PROGRAM_SISWA", "student_programs", student_id,
         f"Mendaftarkan program {p_name} ke siswa {student['full_name']}" + (f" (Riwayat awal: Periode {p_val}, Pertemuan {m_val})" if total_offset > 0 else ""),
@@ -732,7 +856,7 @@ def set_student_program_initial_history_route(student_id, sp_id):
 @admin_bp.route("/students/<int:student_id>/programs/<int:sp_id>/edit", methods=["POST"])
 def edit_student_program(student_id, sp_id):
     validate_csrf()
-    student = query_db("SELECT id, full_name FROM students WHERE id = ?", (student_id,), one=True)
+    student = query_db("SELECT id, full_name, grade FROM students WHERE id = ?", (student_id,), one=True)
     if not student:
         flash("Siswa tidak ditemukan.", "danger")
         return redirect(url_for("admin.students"))
@@ -767,14 +891,49 @@ def edit_student_program(student_id, sp_id):
             flash("Siswa sudah terdaftar di program les tersebut. Silakan pilih program lain atau kelola program tersebut secara langsung.", "warning")
             return redirect(url_for("admin.student_detail", student_id=student_id))
 
+    try:
+        meetings_per_period = int(request.form.get("meetings_per_period", 8))
+        if meetings_per_period not in (4, 8, 12):
+            meetings_per_period = 8
+    except (ValueError, TypeError):
+        meetings_per_period = 8
+
     execute_db("""
         UPDATE student_programs
-        SET program_id = ?, mentor_id = ?, status = ?, start_date = ?, end_date = ?, notes = ?
+        SET program_id = ?, mentor_id = ?, status = ?, start_date = ?, end_date = ?, notes = ?, meetings_per_period = ?
         WHERE id = ? AND student_id = ?
-    """, (program_id, mentor_id, status, start_date, end_date, notes, sp_id, student_id))
+    """, (program_id, mentor_id, status, start_date, end_date, notes, meetings_per_period, sp_id, student_id))
 
-    p = query_db("SELECT name FROM programs WHERE id = ?", (program_id,), one=True)
+    from services.meeting_service import resequence_student_program_attendances
+    resequence_student_program_attendances(student_id, program_id)
+
+    p = query_db("SELECT name, level, service_type, price_per_session FROM programs WHERE id = ?", (program_id,), one=True)
     p_name = p["name"] if p else f"ID {program_id}"
+    p_level = p["level"] if p else student["grade"]
+    p_service = p["service_type"] if (p and "service_type" in p.keys() and p["service_type"]) else "Private Tutoring"
+
+    # Buat tagihan awal Periode 1 untuk program baru jika siswa belum memiliki tagihan pada program ini
+    from services.finance_service import create_student_bill
+    from services.pricing_service import calculate_package_tuition_fee
+    existing_bill = query_db("SELECT id FROM student_bills WHERE student_id = ? AND program_id = ? AND period_number = 1", (student_id, program_id), one=True)
+    if not existing_bill:
+        prog_fee, rate_session, is_custom = calculate_package_tuition_fee(
+            service_type=p_service,
+            level=p_level,
+            meetings_per_period=meetings_per_period,
+            student_grade=student["grade"],
+            program_name=p_name,
+            custom_fee=None
+        )
+
+        create_student_bill(
+            student_id=student_id,
+            program_id=program_id,
+            period_number=1,
+            title=f"Tagihan {p_name} - Periode 1 ({meetings_per_period} Pertemuan)",
+            total_amount=prog_fee,
+            notes=f"Tagihan penambahan program les baru {p_name} ({meetings_per_period} sesi)."
+        )
     log_audit(session["user_id"], session["username"], "UBAH_PROGRAM_SISWA", "student_programs", sp_id, f"Mengubah program les siswa {student['full_name']} menjadi {p_name} (Status: {status})")
     flash(f"Data program les {p_name} untuk siswa {student['full_name']} berhasil diperbarui.", "success")
     return redirect(url_for("admin.student_detail", student_id=student_id))
@@ -815,9 +974,11 @@ def parents():
     search = request.args.get("q", "").strip()
     query = """
         SELECT p.*,
+               u.username as parent_username, u.is_active as user_is_active,
                COUNT(s.id) as children_count,
                GROUP_CONCAT(s.full_name, ', ') as children_names
         FROM parents p
+        LEFT JOIN users u ON p.user_id = u.id
         LEFT JOIN students s ON p.id = s.parent_id
     """
     conditions = []
@@ -826,9 +987,9 @@ def parents():
         conditions.append("p.status = ?")
         args.append(status_filter)
     if search:
-        conditions.append("(p.full_name LIKE ? OR p.phone LIKE ? OR p.email LIKE ?)")
+        conditions.append("(p.full_name LIKE ? OR p.phone LIKE ? OR p.email LIKE ? OR u.username LIKE ?)")
         term = f"%{search}%"
-        args.extend([term, term, term])
+        args.extend([term, term, term, term])
 
     if conditions:
         query += f" WHERE {' AND '.join(conditions)}"
@@ -845,19 +1006,68 @@ def create_parent():
     email = request.form.get("email", "").strip()
     address = request.form.get("address", "").strip()
     notes = request.form.get("notes", "").strip()
+    create_account = request.form.get("create_account")
+    username = request.form.get("username", "").strip()
+    password = request.form.get("password", "").strip()
 
     if not full_name or not phone:
         flash("Nama lengkap dan nomor telepon wali wajib diisi.", "danger")
         return redirect(url_for("admin.parents"))
 
-    # Orang Tua/Wali tidak lagi memiliki akun login, data disimpan sebagai relasi wali
+    user_id = None
+    if create_account and username and password:
+        existing = query_db("SELECT id FROM users WHERE LOWER(username) = LOWER(?)", (username,), one=True)
+        if existing:
+            flash(f"ID Pengguna / Username '{username}' sudah digunakan. Silakan gunakan username lain.", "danger")
+            return redirect(url_for("admin.parents"))
+        user_id = execute_db("""
+            INSERT INTO users (username, password_hash, role, full_name, email, phone, is_active)
+            VALUES (?, ?, 'parent', ?, ?, ?, 1)
+        """, (username, generate_password_hash(password), full_name, email, phone))
+
     parent_id = execute_db("""
-        INSERT INTO parents (full_name, phone, email, address, notes, status)
-        VALUES (?, ?, ?, ?, ?, 'aktif')
-    """, (full_name, phone, email, address, notes))
+        INSERT INTO parents (user_id, full_name, phone, email, address, notes, status)
+        VALUES (?, ?, ?, ?, ?, ?, 'aktif')
+    """, (user_id, full_name, phone, email, address, notes))
 
     log_audit(session["user_id"], session["username"], "TAMBAH_WALI", "parents", parent_id, f"Menambahkan wali murid baru: {full_name}")
-    flash(f"Data wali {full_name} berhasil disimpan.", "success")
+    flash(f"Data wali {full_name} berhasil disimpan." + (f" Akun login '{username}' aktif." if user_id else ""), "success")
+    return redirect(url_for("admin.parents"))
+
+@admin_bp.route("/parents/<int:parent_id>/create-account", methods=["POST"])
+def create_parent_account(parent_id):
+    validate_csrf()
+    parent = query_db("SELECT * FROM parents WHERE id = ?", (parent_id,), one=True)
+    if not parent:
+        flash("Orang tua/wali tidak ditemukan.", "danger")
+        return redirect(url_for("admin.parents"))
+
+    if parent["user_id"]:
+        flash("Wali murid ini sudah memiliki akun login.", "warning")
+        return redirect(url_for("admin.parents"))
+
+    username = request.form.get("username", "").strip()
+    password = request.form.get("password", "").strip()
+
+    if not username or not password or len(password) < 6:
+        flash("Username dan password (minimal 6 karakter) wajib diisi.", "danger")
+        return redirect(url_for("admin.parents"))
+
+    existing = query_db("SELECT id FROM users WHERE LOWER(username) = LOWER(?)", (username,), one=True)
+    if existing:
+        flash(f"ID Pengguna / Username '{username}' sudah digunakan. Silakan gunakan username lain.", "danger")
+        return redirect(url_for("admin.parents"))
+
+    user_id = execute_db("""
+        INSERT INTO users (username, password_hash, role, full_name, email, phone, is_active)
+        VALUES (?, ?, 'parent', ?, ?, ?, 1)
+    """, (username, generate_password_hash(password), parent["full_name"], parent["email"], parent["phone"]))
+
+    execute_db("UPDATE parents SET user_id = ? WHERE id = ?", (user_id, parent_id))
+
+    log_audit(session["user_id"], session["username"], "BUAT_AKUN_WALI", "parents", parent_id,
+              f"Membuat akun login orang tua untuk {parent['full_name']} (Username: {username})")
+    flash(f"Akun login untuk wali {parent['full_name']} berhasil dibuat dengan username '{username}'.", "success")
     return redirect(url_for("admin.parents"))
 
 @admin_bp.route("/parents/<int:parent_id>/edit", methods=["POST"])
@@ -978,11 +1188,23 @@ def create_mentor():
     full_name = request.form.get("full_name", "").strip()
     phone = request.form.get("phone", "").strip()
     email = request.form.get("email", "").strip()
+    address = request.form.get("address", "").strip()
     expertise = request.form.get("expertise", "").strip()
     bio = request.form.get("bio", "").strip()
     create_account = request.form.get("create_account")
     username = request.form.get("username", "").strip()
     password = request.form.get("password", "").strip()
+
+    lat_val = request.form.get("latitude", "").strip()
+    lng_val = request.form.get("longitude", "").strip()
+    try:
+        latitude = float(lat_val) if lat_val else None
+    except (ValueError, TypeError):
+        latitude = None
+    try:
+        longitude = float(lng_val) if lng_val else None
+    except (ValueError, TypeError):
+        longitude = None
 
     if not full_name or not phone:
         flash("Nama lengkap dan nomor telepon mentor wajib diisi.", "danger")
@@ -1000,9 +1222,9 @@ def create_mentor():
         """, (username, generate_password_hash(password), full_name, email, phone))
 
     mentor_id = execute_db("""
-        INSERT INTO mentors (user_id, full_name, phone, email, expertise, bio, status)
-        VALUES (?, ?, ?, ?, ?, ?, 'aktif')
-    """, (user_id, full_name, phone, email, expertise, bio))
+        INSERT INTO mentors (user_id, full_name, phone, email, expertise, bio, status, address, latitude, longitude)
+        VALUES (?, ?, ?, ?, ?, ?, 'aktif', ?, ?, ?)
+    """, (user_id, full_name, phone, email, expertise, bio, address, latitude, longitude))
 
     log_audit(session["user_id"], session["username"], "TAMBAH_MENTOR", "mentors", mentor_id, f"Menambahkan mentor baru: {full_name}")
     flash(f"Mentor {full_name} berhasil ditambahkan.", "success")
@@ -1014,15 +1236,28 @@ def edit_mentor(mentor_id):
     full_name = request.form.get("full_name", "").strip()
     phone = request.form.get("phone", "").strip()
     email = request.form.get("email", "").strip()
+    address = request.form.get("address", "").strip()
     expertise = request.form.get("expertise", "").strip()
     bio = request.form.get("bio", "").strip()
     status = request.form.get("status", "aktif")
 
+    lat_val = request.form.get("latitude", "").strip()
+    lng_val = request.form.get("longitude", "").strip()
+    try:
+        latitude = float(lat_val) if lat_val else None
+    except (ValueError, TypeError):
+        latitude = None
+    try:
+        longitude = float(lng_val) if lng_val else None
+    except (ValueError, TypeError):
+        longitude = None
+
     execute_db("""
         UPDATE mentors
-        SET full_name = ?, phone = ?, email = ?, expertise = ?, bio = ?, status = ?
+        SET full_name = ?, phone = ?, email = ?, expertise = ?, bio = ?, status = ?,
+            address = ?, latitude = ?, longitude = ?
         WHERE id = ?
-    """, (full_name, phone, email, expertise, bio, status, mentor_id))
+    """, (full_name, phone, email, expertise, bio, status, address, latitude, longitude, mentor_id))
 
     # Perbarui data user jika ada
     m = query_db("SELECT user_id FROM mentors WHERE id = ?", (mentor_id,), one=True)
@@ -1033,6 +1268,42 @@ def edit_mentor(mentor_id):
     log_audit(session["user_id"], session["username"], "UBAH_MENTOR", "mentors", mentor_id, f"Mengubah data mentor ID {mentor_id} ({full_name})")
     flash(f"Data mentor {full_name} berhasil diperbarui.", "success")
     return redirect(url_for("admin.mentors"))
+
+@admin_bp.route("/mentors/<int:mentor_id>/availability/add", methods=["POST"])
+def add_mentor_availability(mentor_id):
+    validate_csrf()
+    flash("Admin tidak diperkenankan mengatur ketersediaan waktu mentor. Ketersediaan waktu hanya dapat diatur secara mandiri oleh mentor melalui akun login mentor masing-masing.", "warning")
+    return redirect(url_for("admin.mentors"))
+
+@admin_bp.route("/mentors/<int:mentor_id>/availability/<int:avail_id>/delete", methods=["POST"])
+def delete_mentor_availability(mentor_id, avail_id):
+    validate_csrf()
+    flash("Admin tidak diperkenankan menghapus ketersediaan waktu mentor. Ketersediaan waktu hanya dapat dikelola secara mandiri oleh mentor.", "warning")
+    return redirect(url_for("admin.mentors"))
+
+@admin_bp.route("/api/mentors/<int:mentor_id>/availability")
+def api_mentor_availability(mentor_id):
+    mentor = query_db("SELECT id, full_name FROM mentors WHERE id = ?", (mentor_id,), one=True)
+    if not mentor:
+        return jsonify({"error": "Mentor tidak ditemukan"}), 404
+    avails = query_db("SELECT * FROM mentor_availability WHERE mentor_id = ? ORDER BY day_of_week ASC, start_time ASC", (mentor_id,))
+    days_name = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"]
+    data = []
+    for av in avails:
+        dow = av["day_of_week"]
+        data.append({
+            "id": av["id"],
+            "day_of_week": dow,
+            "day_name": days_name[dow] if 0 <= dow <= 6 else str(dow),
+            "start_time": av["start_time"],
+            "end_time": av["end_time"],
+            "notes": av["notes"] or ""
+        })
+    return jsonify({
+        "mentor_id": mentor["id"],
+        "mentor_name": mentor["full_name"],
+        "availabilities": data
+    })
 
 @admin_bp.route("/mentors/<int:mentor_id>/toggle-status", methods=["POST"])
 def toggle_mentor_status(mentor_id):
@@ -1119,7 +1390,8 @@ def create_program():
     name = request.form.get("name", "").strip()
     code = request.form.get("code", "").strip().upper()
     description = request.form.get("description", "").strip()
-    level = request.form.get("level", "").strip()
+    level = request.form.get("level", "Semua Jenjang").strip()
+    service_type = request.form.get("service_type", "Private Tutoring").strip()
 
     if not name or not code:
         flash("Nama dan kode program wajib diisi.", "danger")
@@ -1130,31 +1402,42 @@ def create_program():
         flash(f"Kode program '{code}' sudah digunakan. Gunakan kode unik lain.", "danger")
         return redirect(url_for("admin.programs"))
 
-    program_id = execute_db("""
-        INSERT INTO programs (name, code, description, level, status)
-        VALUES (?, ?, ?, ?, 'aktif')
-    """, (name, code, description, level))
+    from services.pricing_service import get_tuition_rate_per_session
+    rate = get_tuition_rate_per_session(service_type=service_type, level=level, program_name=name)
 
-    log_audit(session["user_id"], session["username"], "TAMBAH_PROGRAM", "programs", program_id, f"Menambahkan program les: {name} ({code})")
-    flash(f"Program {name} berhasil dibuat.", "success")
+    program_id = execute_db("""
+        INSERT INTO programs (name, code, description, level, service_type, status, price_per_session, default_fee_4, default_fee_8, default_fee_12)
+        VALUES (?, ?, ?, ?, ?, 'aktif', ?, ?, ?, ?)
+    """, (name, code, description, level, service_type, rate, rate * 4, rate * 8, rate * 12))
+
+    log_audit(session["user_id"], session["username"], "TAMBAH_PROGRAM", "programs", program_id,
+              f"Menambahkan program les: {name} ({code}) - Jenjang: {level}, Layanan: {service_type}")
+    flash(f"Program {name} ({level} - {service_type}) berhasil ditambahkan ke daftar program les.", "success")
     return redirect(url_for("admin.programs"))
 
 @admin_bp.route("/programs/<int:program_id>/edit", methods=["POST"])
 def edit_program(program_id):
     validate_csrf()
     name = request.form.get("name", "").strip()
+    code = request.form.get("code", "").strip().upper()
     description = request.form.get("description", "").strip()
-    level = request.form.get("level", "").strip()
+    level = request.form.get("level", "Semua Jenjang").strip()
+    service_type = request.form.get("service_type", "Private Tutoring").strip()
     status = request.form.get("status", "aktif")
+
+    from services.pricing_service import get_tuition_rate_per_session
+    rate = get_tuition_rate_per_session(service_type=service_type, level=level, program_name=name)
 
     execute_db("""
         UPDATE programs
-        SET name = ?, description = ?, level = ?, status = ?
+        SET name = ?, code = COALESCE(NULLIF(?, ''), code), description = ?, level = ?, service_type = ?, status = ?,
+            price_per_session = ?, default_fee_4 = ?, default_fee_8 = ?, default_fee_12 = ?
         WHERE id = ?
-    """, (name, description, level, status, program_id))
+    """, (name, code, description, level, service_type, status, rate, rate * 4, rate * 8, rate * 12, program_id))
 
-    log_audit(session["user_id"], session["username"], "UBAH_PROGRAM", "programs", program_id, f"Mengubah program les ID {program_id} ({name})")
-    flash(f"Program {name} berhasil diperbarui.", "success")
+    log_audit(session["user_id"], session["username"], "UBAH_PROGRAM", "programs", program_id,
+              f"Mengubah program les ID {program_id}: {name} - Jenjang: {level}, Layanan: {service_type} (Status: {status})")
+    flash(f"Data program {name} berhasil diperbarui.", "success")
     return redirect(url_for("admin.programs"))
 
 @admin_bp.route("/programs/<int:program_id>/archive", methods=["POST"])
@@ -1213,11 +1496,11 @@ def create_account():
         flash("Username, password, role, dan nama lengkap wajib diisi.", "danger")
         return redirect(url_for("admin.accounts"))
 
-    if role not in ("admin", "owner", "mentor"):
-        flash("Role yang dipilih tidak valid. Peran Orang Tua/Wali tidak lagi memiliki akses akun login.", "danger")
+    if role not in ("admin", "owner", "mentor", "parent"):
+        flash("Role yang dipilih tidak valid. Role yang diizinkan: Admin, Pemilik, Mentor, Orang Tua.", "danger")
         return redirect(url_for("admin.accounts"))
 
-    existing = query_db("SELECT id FROM users WHERE username = ?", (username,), one=True)
+    existing = query_db("SELECT id FROM users WHERE LOWER(username) = LOWER(?)", (username,), one=True)
     if existing:
         flash(f"ID Pengguna / Username '{username}' sudah digunakan. Cegah duplikasi ID pengguna.", "danger")
         return redirect(url_for("admin.accounts"))
@@ -1226,6 +1509,10 @@ def create_account():
         INSERT INTO users (username, password_hash, role, full_name, email, phone, is_active)
         VALUES (?, ?, ?, ?, ?, ?, 1)
     """, (username, generate_password_hash(password), role, full_name, email, phone))
+
+    parent_id = request.form.get("parent_id")
+    if role == "parent" and parent_id:
+        execute_db("UPDATE parents SET user_id = ? WHERE id = ?", (user_id, parent_id))
 
     log_audit(session["user_id"], session["username"], "BUAT_AKUN", "users", user_id, f"Membuat akun pengguna baru: {username} (Role: {role})")
     flash(f"Akun pengguna {username} ({role}) berhasil dibuat.", "success")
@@ -1319,24 +1606,158 @@ def admin_create_routine_schedule():
     validate_csrf()
     student_id = request.form.get("student_id")
     program_id = request.form.get("program_id")
-    mentor_id = request.form.get("mentor_id")
-    day_of_week = request.form.get("day_of_week")
-    start_time = request.form.get("start_time", "").strip()
-    end_time = request.form.get("end_time", "").strip()
     subject_info = request.form.get("subject_info", "").strip()
     notes = request.form.get("notes", "").strip()
 
-    if not (student_id and program_id and mentor_id and day_of_week is not None and start_time and end_time):
-        flash("Semua informasi jadwal rutin (siswa, program, mentor, hari, jam mulai & selesai) wajib diisi.", "danger")
+    # Pengecekan validasi: Siswa baru tidak boleh mulai belajar sebelum divalidasi pembayarannya oleh Pemilik
+    st_check = query_db("SELECT full_name, status, payment_status FROM students WHERE id = ?", (student_id,), one=True)
+    if st_check and (st_check["payment_status"] == "menunggu_validasi" or st_check["status"] == "menunggu_validasi"):
+        flash(f"Pembelajaran belum dapat dimulai untuk {st_check['full_name']}. Siswa masih berstatus 'Menunggu Validasi Pembayaran oleh Pemilik'. Silakan tunggu validasi dari Pemilik terlebih dahulu.", "warning")
+        return redirect(url_for("admin.schedules"))
+
+    # Ambil daftar mentor: mentor_ids[] atau fallback ke mentor_id
+    raw_mentors = request.form.getlist("mentor_ids[]") or request.form.getlist("mentor_ids")
+    if not raw_mentors:
+        single_m = request.form.get("mentor_id")
+        if single_m:
+            raw_mentors = [single_m]
+    # Fallback jika ada slot_mentor_id (backward compat)
+    slot_mentors = request.form.getlist("slot_mentor_id[]")
+
+    # Bersihkan duplikat & nilai kosong dengan tetap menjaga urutan
+    mentor_ids = []
+    for m in raw_mentors:
+        m_str = str(m).strip()
+        if m_str and m_str not in mentor_ids:
+            mentor_ids.append(m_str)
+
+    # Ambil seluruh baris jadwal (mendukung opsi multi-hari dalam 1 kali input)
+    days = request.form.getlist("day_of_week[]") or request.form.getlist("day_of_week")
+    start_times = request.form.getlist("start_time[]") or request.form.getlist("start_time")
+    end_times = request.form.getlist("end_time[]") or request.form.getlist("end_time")
+
+    if not (student_id and program_id and (mentor_ids or slot_mentors) and days):
+        flash("Informasi siswa, program les, mentor pengampu, dan minimal 1 jadwal hari les wajib diisi.", "danger")
         return redirect(request.referrer or url_for("admin.schedules"))
 
-    res = create_routine_schedule(student_id, program_id, mentor_id, day_of_week, start_time, end_time, subject_info, notes)
-    if res["success"]:
-        flash(res["message"], "success")
-        log_audit(session["user_id"], session["username"], "BUAT_JADWAL_RUTIN", "routine_schedules", res["id"], f"Membuat jadwal rutin ID {res['id']}")
-    else:
-        flash(res["message"], "danger")
+    # Validasi: Siswa harus terdaftar aktif dalam program les yang dipilih
+    enrolled = query_db(
+        "SELECT id FROM student_programs WHERE student_id = ? AND program_id = ? AND status = 'aktif'",
+        (student_id, program_id),
+        one=True
+    )
+    if not enrolled:
+        flash("Siswa yang dipilih belum terdaftar aktif dalam program les tersebut. Tambahkan program ke profil siswa terlebih dahulu.", "danger")
+        return redirect(request.referrer or url_for("admin.schedules"))
 
+    # Update paket pertemuan per periode jika dipilih saat membuat jadwal rutin
+    mpp_input = request.form.get("meetings_per_period")
+    if mpp_input:
+        try:
+            mpp_val = int(mpp_input)
+            if mpp_val in (4, 8, 12):
+                execute_db("UPDATE student_programs SET meetings_per_period = ? WHERE student_id = ? AND program_id = ?", (mpp_val, student_id, program_id))
+                from services.meeting_service import resequence_student_program_attendances
+                resequence_student_program_attendances(student_id, program_id)
+        except (ValueError, TypeError):
+            pass
+
+    # Update riwayat awal belajar (khusus siswa lama) jika diisi saat membuat jadwal rutin
+    init_period = request.form.get("initial_periods_completed")
+    init_meeting = request.form.get("initial_last_meeting")
+    init_notes = request.form.get("initial_offset_notes", "").strip()
+    if init_period or init_meeting:
+        try:
+            p_val = max(1, int(init_period or 1))
+            m_val = max(0, min(12, int(init_meeting or 0)))
+            if p_val > 1 or m_val > 0:
+                from services.meeting_service import calculate_total_from_period_and_meeting, resequence_student_program_attendances
+                eff_mpp = mpp_val if ('mpp_val' in locals() and mpp_val in (4, 8, 12)) else 8
+                tot_offset = calculate_total_from_period_and_meeting(p_val, m_val, eff_mpp)
+                execute_db("""
+                    UPDATE student_programs
+                    SET initial_periods_completed = ?, initial_last_meeting = ?, initial_offset_total = ?,
+                        initial_offset_notes = ?, initial_offset_set_at = CURRENT_TIMESTAMP, initial_offset_set_by = ?
+                    WHERE student_id = ? AND program_id = ?
+                """, (p_val, m_val, tot_offset, init_notes or "Riwayat awal saat penetapan jadwal", session["user_id"], student_id, program_id))
+                execute_db("""
+                    UPDATE students
+                    SET initial_meeting_offset = ?, initial_offset_notes = ?,
+                        initial_offset_set_at = CURRENT_TIMESTAMP, initial_offset_set_by = ?
+                    WHERE id = ?
+                """, (tot_offset, init_notes or "Riwayat awal saat penetapan jadwal", session["user_id"], student_id))
+                resequence_student_program_attendances(student_id, program_id)
+        except (ValueError, TypeError):
+            pass
+
+    slots_to_add = []
+    conflict_errors = []
+
+    for idx, d_raw in enumerate(days):
+        if d_raw is None or d_raw == "":
+            continue
+        try:
+            dow = int(d_raw)
+        except (ValueError, TypeError):
+            continue
+
+        st = start_times[idx].strip() if idx < len(start_times) else ""
+        et = end_times[idx].strip() if idx < len(end_times) else ""
+
+        if not (st and et):
+            flash(f"Jam mulai dan jam selesai untuk baris jadwal ke-{idx+1} wajib diisi.", "danger")
+            return redirect(request.referrer or url_for("admin.schedules"))
+
+        # Tentukan mentor untuk slot ini: jika ada slot_mentor_id spesifik, gunakan itu;
+        # jika tidak, gunakan seluruh mentor_ids yang didaftarkan untuk program ini
+        target_mentors = []
+        if idx < len(slot_mentors) and slot_mentors[idx].strip():
+            target_mentors = [slot_mentors[idx].strip()]
+        else:
+            target_mentors = mentor_ids
+
+        # Cek bentrokan untuk setiap mentor pada slot ini
+        for m_id in target_mentors:
+            conflict = check_routine_schedule_conflict(m_id, dow, st, et, student_id=student_id, program_id=program_id)
+            if conflict.get("has_conflict"):
+                conflict_errors.append(conflict["message"])
+
+        slots_to_add.append({
+            "mentors": target_mentors,
+            "day_of_week": dow,
+            "start_time": st,
+            "end_time": et
+        })
+
+    if conflict_errors:
+        flash("Gagal menyimpan jadwal: " + " | ".join(conflict_errors), "danger")
+        return redirect(request.referrer or url_for("admin.schedules"))
+
+    if not slots_to_add:
+        flash("Tidak ada jadwal valid yang dimasukkan.", "warning")
+        return redirect(request.referrer or url_for("admin.schedules"))
+
+    # Update primary mentor di student_programs jika belum ada
+    if mentor_ids:
+        execute_db(
+            "UPDATE student_programs SET mentor_id = ? WHERE student_id = ? AND program_id = ? AND (mentor_id IS NULL OR mentor_id = '')",
+            (mentor_ids[0], student_id, program_id)
+        )
+
+    # Simpan seluruh slot jadwal yang telah tervalidasi
+    created_messages = []
+    for s in slots_to_add:
+        for m_id in s["mentors"]:
+            res = create_routine_schedule(
+                student_id, program_id, m_id,
+                s["day_of_week"], s["start_time"], s["end_time"],
+                subject_info, notes
+            )
+            if res["success"]:
+                log_audit(session["user_id"], session["username"], "BUAT_JADWAL_RUTIN", "routine_schedules", res["id"], f"Membuat jadwal rutin ID {res['id']}")
+        created_messages.append(f"Hari {DAY_NAMES[s['day_of_week']]} ({s['start_time']} - {s['end_time']})")
+
+    flash(f"Berhasil menetapkan {len(created_messages)} jadwal les rutin: {', '.join(created_messages)}.", "success")
     return redirect(request.referrer or url_for("admin.schedules"))
 
 @admin_bp.route("/schedules/routine/<int:routine_id>/edit", methods=["POST"])
@@ -1384,6 +1805,12 @@ def create_schedule():
 
     if not program_id or not student_id or not mentor_id or not start_time:
         flash("Program, siswa, mentor, dan jam mulai wajib diisi.", "danger")
+        return redirect(url_for("admin.schedules"))
+
+    # Pengecekan validasi: Siswa baru tidak boleh mulai belajar sebelum divalidasi pembayarannya oleh Pemilik
+    st_check = query_db("SELECT full_name, status, payment_status FROM students WHERE id = ?", (student_id,), one=True)
+    if st_check and (st_check["payment_status"] == "menunggu_validasi" or st_check["status"] == "menunggu_validasi"):
+        flash(f"Pembelajaran belum dapat dimulai untuk {st_check['full_name']}. Siswa masih berstatus 'Menunggu Validasi Pembayaran oleh Pemilik'. Silakan tunggu validasi dari Pemilik terlebih dahulu.", "warning")
         return redirect(url_for("admin.schedules"))
 
     end_time = calculate_end_time(start_time, duration_minutes)
@@ -1518,6 +1945,121 @@ def admin_replace_mentor(schedule_id):
         flash(res["message"], "danger")
     return redirect(url_for("admin.schedules"))
 
+@admin_bp.route("/schedules/<int:schedule_id>/reschedule", methods=["POST"])
+def admin_reschedule_schedule(schedule_id):
+    """
+    Penjadwalan ulang (reschedule) sesi sementara tanpa mengubah jadwal rutin mingguan.
+    """
+    validate_csrf()
+    sched = query_db("""
+        SELECT s.*, st.full_name as student_name, m.full_name as mentor_name
+        FROM schedules s
+        JOIN students st ON s.student_id = st.id
+        JOIN mentors m ON s.mentor_id = m.id
+        WHERE s.id = ?
+    """, (schedule_id,), one=True)
+    if not sched:
+        flash("Sesi jadwal tidak ditemukan.", "danger")
+        return redirect(url_for("admin.schedules"))
+
+    new_date = request.form.get("schedule_date", "").strip()
+    new_start = request.form.get("start_time", "").strip()
+    duration = int(sched["duration_minutes"] or 90)
+    new_end = request.form.get("end_time", "").strip() or calculate_end_time(new_start, duration)
+    reason = request.form.get("reason", "").strip()
+
+    if not new_date or not new_start:
+        flash("Tanggal baru dan jam mulai wajib diisi untuk reschedule.", "danger")
+        return redirect(url_for("admin.schedules"))
+
+    # Cek bentrokan jadwal untuk mentor dan siswa pada waktu baru
+    conf = check_schedule_conflict(sched["mentor_id"], sched["student_id"], new_date, new_start, new_end, exclude_schedule_id=schedule_id)
+    if conf["has_conflict"]:
+        flash(f"Tidak dapat reschedule ke waktu tersebut: {conf['message']}", "danger")
+        return redirect(url_for("admin.schedules"))
+
+    old_date = sched["schedule_date"]
+    old_time = f"{sched['start_time']} - {sched['end_time']}"
+    reschedule_note = f"Reschedule sementara dari {old_date} ({old_time}). Alasan: {reason}" if reason else f"Reschedule sementara dari {old_date} ({old_time})"
+
+    execute_db("""
+        UPDATE schedules
+        SET schedule_date = ?, start_time = ?, end_time = ?,
+            session_notes = CASE WHEN session_notes IS NULL OR session_notes = '' THEN ? ELSE session_notes || ' | ' || ? END,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    """, (new_date, new_start, new_end, reschedule_note, reschedule_note, schedule_id))
+
+    log_audit(
+        session["user_id"], session["username"], "RESCHEDULE_SESI", "schedules", schedule_id,
+        f"Reschedule sesi siswa {sched['student_name']} dari {old_date} ({old_time}) menjadi {new_date} ({new_start}-{new_end}). Alasan: {reason}",
+        module_name="Jadwal & Sesi"
+    )
+
+    flash(f"Sesi bimbingan {sched['student_name']} berhasil di-reschedule sementara ke tanggal {new_date} pukul {new_start} - {new_end} WIB.", "success")
+    return redirect(url_for("admin.schedules"))
+
+@admin_bp.route("/routine-schedules/<int:routine_id>/assign-temporary-mentor", methods=["POST"])
+def admin_assign_routine_temporary_mentor(routine_id):
+    """
+    Menugaskan mentor pengganti sementara untuk sesi tertentu dari jadwal rutin.
+    Membuat rekaman sesi di schedules (jika belum ada) dan langsung mengganti mentornya.
+    """
+    validate_csrf()
+    rs = query_db("""
+        SELECT rs.*, st.full_name as student_name, pr.name as program_name, m.full_name as original_mentor_name
+        FROM routine_schedules rs
+        JOIN students st ON rs.student_id = st.id
+        JOIN programs pr ON rs.program_id = pr.id
+        JOIN mentors m ON rs.mentor_id = m.id
+        WHERE rs.id = ?
+    """, (routine_id,), one=True)
+    if not rs:
+        flash("Jadwal rutin tidak ditemukan.", "danger")
+        return redirect(url_for("admin.schedules"))
+
+    target_date = request.form.get("target_date", "").strip()
+    replacement_mentor_id = request.form.get("replacement_mentor_id")
+    reason = request.form.get("reason", "").strip()
+
+    if not target_date or not replacement_mentor_id or not reason:
+        flash("Tanggal sesi, mentor pengganti, dan alasan pergantian wajib diisi.", "danger")
+        return redirect(url_for("admin.schedules"))
+
+    # Cari apakah sudah ada schedule pada tanggal ini
+    existing_sched = query_db("""
+        SELECT id FROM schedules
+        WHERE student_id = ? AND program_id = ? AND schedule_date = ?
+    """, (rs["student_id"], rs["program_id"], target_date), one=True)
+
+    if existing_sched:
+        sched_id = existing_sched["id"]
+    else:
+        # Buat schedule untuk tanggal tersebut
+        sched_id = execute_db("""
+            INSERT INTO schedules (
+                title, program_id, student_id, mentor_id,
+                schedule_date, start_time, end_time, duration_minutes,
+                status, student_confirmation_status, mentor_response_status,
+                is_recurring, session_notes,
+                created_by, approved_by
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 90, 'disetujui', 'bersedia', 'dikonfirmasi', 1, ?, ?, ?)
+        """, (
+            f"Sesi {rs['program_name']} - {rs['student_name']}",
+            rs["program_id"], rs["student_id"], rs["mentor_id"],
+            target_date, rs["start_time"], rs["end_time"],
+            f"Penugasan mentor pengganti: {reason}",
+            session["user_id"], session["user_id"]
+        ))
+
+    # Eksekusi penggantian mentor
+    res = execute_mentor_replacement(sched_id, int(replacement_mentor_id), reason, session["user_id"])
+    if res["success"]:
+        flash(f"Berhasil menugaskan mentor pengganti untuk sesi {target_date}: {res['message']}", "success")
+    else:
+        flash(res["message"], "danger")
+    return redirect(url_for("admin.schedules"))
+
 # API deteksi bentrokan untuk frontend (fetch / AJAX)
 @admin_bp.route("/api/check-conflict", methods=["POST"])
 def api_check_conflict():
@@ -1540,6 +2082,119 @@ def api_check_conflict():
 def api_eligible_replacements(schedule_id):
     replacements = get_eligible_replacement_mentors(schedule_id)
     return jsonify(replacements)
+
+# Sistem Rekomendasi Mentor (Langkah 4)
+@admin_bp.route("/api/mentor-recommendations")
+def api_mentor_recommendations():
+    student_id = request.args.get("student_id")
+    program_id = request.args.get("program_id")
+    day_of_week = request.args.get("day_of_week")
+    start_time = request.args.get("start_time", "").strip()
+    end_time = request.args.get("end_time", "").strip()
+    schedule_date = request.args.get("schedule_date", "").strip() or None
+
+    if not (student_id and program_id and day_of_week is not None and start_time and end_time):
+        return jsonify({
+            "success": False,
+            "message": "Parameter student_id, program_id, day_of_week, start_time, dan end_time wajib diisi."
+        }), 400
+
+    try:
+        student_id_int = int(student_id)
+        program_id_int = int(program_id)
+        day_of_week_int = int(day_of_week)
+    except (ValueError, TypeError):
+        return jsonify({"success": False, "message": "Format parameter numerik tidak valid."}), 400
+
+    from services.recommendation_service import get_mentor_recommendations
+    res = get_mentor_recommendations(
+        student_id=student_id_int,
+        program_id=program_id_int,
+        day_of_week=day_of_week_int,
+        start_time=start_time,
+        end_time=end_time,
+        schedule_date=schedule_date
+    )
+    return jsonify(res)
+
+# API Program yang Diambil Siswa (Untuk Filter Dinamis Penjadwalan Rutin)
+@admin_bp.route("/api/students/<int:student_id>/programs")
+def api_student_enrolled_programs(student_id):
+    """Mengembalikan daftar program aktif yang diambil oleh siswa tertentu."""
+    progs = query_db("""
+        SELECT sp.id as student_program_id, pr.id, pr.name, pr.level, pr.code,
+               sp.mentor_id, m.full_name as mentor_name,
+               COALESCE(sp.meetings_per_period, 8) as meetings_per_period
+        FROM student_programs sp
+        JOIN programs pr ON sp.program_id = pr.id
+        LEFT JOIN mentors m ON sp.mentor_id = m.id
+        WHERE sp.student_id = ? AND sp.status = 'aktif'
+        ORDER BY pr.name ASC
+    """, (student_id,))
+    return jsonify([dict(p) for p in progs])
+
+# Pelengkapan Dokumentasi Foto Tertunda oleh Admin (Langkah 3)
+@admin_bp.route("/attendance/<int:attendance_id>/complete-documentation", methods=["POST"])
+def complete_documentation(attendance_id):
+    validate_csrf()
+    att = query_db("SELECT * FROM attendance WHERE id = ?", (attendance_id,), one=True)
+    if not att:
+        flash("Data absensi tidak ditemukan.", "danger")
+        return redirect(request.referrer or url_for("admin.schedules"))
+
+    if att["documentation_status"] != "menunggu":
+        flash("Hanya sesi dengan status dokumentasi menunggu yang dapat dilengkapi.", "warning")
+        return redirect(request.referrer or url_for("admin.schedules"))
+
+    photo_file = request.files.get("session_photo")
+    if not photo_file or not photo_file.filename:
+        flash("Mohon pilih file foto dokumentasi yang valid.", "danger")
+        return redirect(request.referrer or url_for("admin.schedules"))
+
+    ext = photo_file.filename.rsplit(".", 1)[-1].lower() if "." in photo_file.filename else ""
+    if ext not in ("jpg", "jpeg", "png", "webp"):
+        flash("Format file foto tidak didukung. Mohon gunakan format JPG, PNG, atau WebP.", "danger")
+        return redirect(request.referrer or url_for("admin.schedules"))
+
+    photo_file.seek(0, os.SEEK_END)
+    file_size = photo_file.tell()
+    photo_file.seek(0)
+    if file_size > 5 * 1024 * 1024:
+        flash("Ukuran file foto melebihi batas 5MB. Silakan pilih foto dengan resolusi lebih kecil.", "danger")
+        return redirect(request.referrer or url_for("admin.schedules"))
+
+    upload_folder = os.path.join(current_app.root_path, "uploads", "session_photos")
+    os.makedirs(upload_folder, exist_ok=True)
+    saved_filename = f"session_{att['schedule_id']}_{int(time.time())}_{uuid.uuid4().hex[:8]}.{ext}"
+    saved_file_path = os.path.join(upload_folder, saved_filename)
+
+    try:
+        photo_file.save(saved_file_path)
+        execute_db("""
+            UPDATE attendance
+            SET documentation_status = 'lengkap',
+                documentation_photo = ?,
+                documentation_pending_reason = NULL
+            WHERE id = ?
+        """, (saved_filename, attendance_id))
+
+        log_audit(
+            session["user_id"], session["username"], "COMPLETE_SESSION_DOCUMENTATION",
+            "attendance", attendance_id,
+            f"Admin melengkapi dokumentasi foto sesi belajar tertunda untuk jadwal #{att['schedule_id']} (File: {saved_filename})",
+            old_values={"documentation_status": "menunggu", "documentation_photo": None},
+            new_values={"documentation_status": "lengkap", "documentation_photo": saved_filename}
+        )
+        flash("Foto dokumentasi belajar berhasil dilengkapi dan status diverifikasi LENGKAP.", "success")
+    except Exception as e:
+        if saved_file_path and os.path.exists(saved_file_path):
+            try:
+                os.remove(saved_file_path)
+            except OSError:
+                pass
+        flash(f"Terjadi kesalahan saat menyimpan foto: {str(e)}", "danger")
+
+    return redirect(request.referrer or url_for("admin.schedules"))
 
 # ==========================================
 # 8. BACKUP & RESTORE DATABASE
@@ -1743,3 +2398,202 @@ def test_whatsapp_send():
         flash(f"[Gagal Kirim WhatsApp] {res['message']}", "danger")
 
     return redirect(url_for("admin.notifications_center"))
+
+# ==========================================
+# 11. TAGIHAN, PEMBAYARAN, & KUITANSI SISWA
+# ==========================================
+@admin_bp.route("/bills")
+def bills():
+    # Admin dan Pemilik memiliki akses pengelolaan tagihan dan pencatatan cicilan
+    from services.finance_service import get_billing_alerts_summary, get_pending_new_students
+    status_filter = request.args.get("status")
+    student_filter = request.args.get("student_id")
+    program_filter = request.args.get("program_id")
+    search = request.args.get("q", "").strip()
+
+    bills_list = get_student_bills(
+        student_id=student_filter,
+        program_id=program_filter,
+        status=status_filter,
+        search=search
+    )
+    overview = get_financial_overview()
+    billing_alerts = get_billing_alerts_summary()
+    pending_new_students = get_pending_new_students()
+    students_list = query_db("SELECT id, full_name FROM students WHERE status != 'berhenti' ORDER BY full_name ASC")
+    programs_list = query_db("SELECT id, name FROM programs WHERE status = 'aktif' ORDER BY name ASC")
+
+    return render_template(
+        "admin/bills.html",
+        bills=bills_list,
+        overview=overview,
+        billing_alerts=billing_alerts,
+        pending_new_students=pending_new_students,
+        students=students_list,
+        programs=programs_list,
+        status_filter=status_filter,
+        student_filter=student_filter,
+        program_filter=program_filter,
+        search=search
+    )
+
+@admin_bp.route("/bills/create", methods=["POST"])
+def create_bill():
+    validate_csrf()
+    student_id = request.form.get("student_id")
+    program_id = request.form.get("program_id")
+    period_number = request.form.get("period_number", 1)
+    title = request.form.get("title", "").strip()
+    total_amount = request.form.get("total_amount", 0)
+    due_date = request.form.get("due_date", "").strip() or None
+    notes = request.form.get("notes", "").strip() or None
+
+    if not student_id or not program_id or not title or not total_amount:
+        flash("Siswa, program, judul tagihan, dan nominal wajib diisi.", "danger")
+        return redirect(url_for("admin.bills"))
+
+    try:
+        bill_id = create_student_bill(
+            student_id=student_id,
+            program_id=program_id,
+            period_number=period_number,
+            title=title,
+            total_amount=total_amount,
+            due_date=due_date,
+            notes=notes
+        )
+        st = query_db("SELECT full_name FROM students WHERE id = ?", (student_id,), one=True)
+        st_name = st["full_name"] if st else f"ID {student_id}"
+        log_audit(session["user_id"], session["username"], "BUAT_TAGIHAN", "student_bills", bill_id,
+                  f"Membuat tagihan {title} untuk siswa {st_name} (Rp {float(total_amount):,.0f})")
+        flash(f"Tagihan untuk siswa {st_name} berhasil dibuat.", "success")
+    except Exception as e:
+        flash(f"Gagal membuat tagihan: {e}", "danger")
+
+    return redirect(url_for("admin.bills"))
+
+@admin_bp.route("/bills/<int:bill_id>/pay", methods=["POST"])
+def pay_bill(bill_id):
+    validate_csrf()
+    amount = request.form.get("amount", 0)
+    payment_date = request.form.get("payment_date", date.today().strftime("%Y-%m-%d"))
+    payment_method = request.form.get("payment_method", "Transfer Bank")
+    notes = request.form.get("notes", "").strip() or None
+
+    try:
+        payment_id, receipt_num = record_bill_payment(
+            bill_id=bill_id,
+            amount=amount,
+            payment_date=payment_date,
+            payment_method=payment_method,
+            recorded_by=session["user_id"],
+            notes=notes
+        )
+        bill, _ = get_student_bill_detail(bill_id)
+        log_audit(session["user_id"], session["username"], "BAYAR_TAGIHAN", "bill_payments", payment_id,
+                  f"Mencatat pembayaran Rp {float(amount):,.0f} untuk tagihan {bill['bill_code']} (Kuitansi: {receipt_num})")
+        flash(f"Pembayaran sebesar Rp {float(amount):,.0f} berhasil dicatat. Nomor Kuitansi: {receipt_num}", "success")
+    except Exception as e:
+        flash(f"Gagal mencatat pembayaran: {e}", "danger")
+
+    return redirect(url_for("admin.bills"))
+
+@admin_bp.route("/payments")
+def payments():
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+    student_id = request.args.get("student_id")
+    bill_id = request.args.get("bill_id")
+
+    payments_list = get_all_payments(start_date=start_date, end_date=end_date, student_id=student_id, bill_id=bill_id)
+    students_list = query_db("SELECT id, full_name FROM students ORDER BY full_name ASC")
+
+    selected_bill = None
+    if bill_id:
+        selected_bill = query_db("SELECT * FROM student_bills WHERE id = ?", (bill_id,), one=True)
+
+    return render_template(
+        "admin/payments.html",
+        payments=payments_list,
+        students=students_list,
+        start_date=start_date,
+        end_date=end_date,
+        student_id=student_id,
+        bill_id=bill_id,
+        selected_bill=selected_bill
+    )
+
+@admin_bp.route("/payments/<int:payment_id>/correct", methods=["POST"])
+def admin_correct_payment(payment_id):
+    validate_csrf()
+    new_amount = request.form.get("new_amount")
+    reason = request.form.get("reason", "").strip()
+
+    if not new_amount or not reason:
+        flash("Nominal baru dan alasan koreksi wajib diisi.", "danger")
+        return redirect(request.referrer or url_for("admin.payments"))
+
+    from services.finance_service import correct_bill_payment
+    res = correct_bill_payment(payment_id, new_amount, reason=reason, user_id=session["user_id"])
+    if res["success"]:
+        flash(res["message"], "success")
+    else:
+        flash(res["message"], "danger")
+    return redirect(request.referrer or url_for("admin.payments"))
+
+@admin_bp.route("/payments/<int:payment_id>/cancel", methods=["POST"])
+def admin_cancel_payment(payment_id):
+    validate_csrf()
+    reason = request.form.get("reason", "").strip()
+
+    if not reason:
+        flash("Alasan pembatalan pembayaran wajib diisi.", "danger")
+        return redirect(request.referrer or url_for("admin.payments"))
+
+    from services.finance_service import cancel_bill_payment
+    res = cancel_bill_payment(payment_id, reason=reason, user_id=session["user_id"])
+    if res["success"]:
+        flash(res["message"], "success")
+    else:
+        flash(res["message"], "danger")
+    return redirect(request.referrer or url_for("admin.payments"))
+
+@admin_bp.route("/receipts/<int:payment_id>/print")
+def print_receipt(payment_id):
+    receipt = get_bill_payment_receipt(payment_id)
+    if not receipt:
+        flash("Kuitansi pembayaran tidak ditemukan.", "danger")
+        return redirect(url_for("admin.bills"))
+
+    return render_template("admin/receipt_print.html", receipt=receipt)
+
+# ==========================================
+# 12. MONITORING & REKAP HONOR MENTOR
+# ==========================================
+@admin_bp.route("/mentor-honor")
+def mentor_honor():
+    if session.get("role") != "owner":
+        flash("Halaman Rekap Honor Mentor hanya dapat diakses oleh akun Pemilik (Owner).", "warning")
+        return redirect(url_for("admin.dashboard"))
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+    mentor_id = request.args.get("mentor_id")
+    rate_per_session = request.args.get("rate_per_session")
+
+    honor_list = get_mentor_honor_summary(
+        mentor_id=mentor_id,
+        start_date=start_date,
+        end_date=end_date,
+        rate_per_session=rate_per_session
+    )
+    mentors_list = query_db("SELECT id, full_name FROM mentors ORDER BY full_name ASC")
+
+    return render_template(
+        "admin/mentor_honor.html",
+        honor_list=honor_list,
+        mentors=mentors_list,
+        mentor_id=mentor_id,
+        start_date=start_date,
+        end_date=end_date,
+        rate_per_session=rate_per_session
+    )

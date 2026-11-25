@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Tagihan & Pembayaran (Wali Murid){% endblock %}
+{% block page_title %}Informasi Tagihan & Pembayaran Ananda{% endblock %}
+{% block page_subtitle %}Status pembayaran periode bimbingan belajar, riwayat cicilan, dan kuitansi resmi ananda{% endblock %}
+
+{% block content %}
+<!-- CHILD SELECTOR -->
+{% if children|length > 1 %}
+<div class="card" style="margin-bottom: 20px; background: var(--blue-soft);">
+  <div class="card-body" style="padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+    <span style="font-size: 13px; font-weight: 700; color: var(--navy-dark);">Pilih Ananda:</span>
+    <div style="display: flex; gap: 8px;">
+      {% for ch in children %}
+        <a href="{{ url_for('parent.bills', student_id=ch.id) }}" class="btn btn-sm {% if ch.id == selected_child.id %}btn-primary{% else %}btn-secondary{% endif %}">
+          {{ icon('student') }} {{ ch.full_name }}
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- NOTIFIKASI TAGIHAN SELESAI 8 PERTEMUAN -->
+{% if period_completion_alerts %}
+{% for pca in period_completion_alerts %}
+<div class="card" style="margin-bottom: 20px; background: #f0fdf4; border: 1.5px solid #86efac; border-left: 5px solid #16a34a;">
+  <div class="card-body" style="padding: 16px 20px;">
+    <div style="display: flex; align-items: flex-start; gap: 12px;">
+      <div style="font-size: 26px; color: #16a34a;">{{ icon('bell') }}</div>
+      <div>
+        <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #166534;">
+          Pemberitahuan: Bimbingan 8 Pertemuan Telah Selesai ({{ pca.program_name }})
+        </h4>
+        <p style="margin: 3px 0 0 0; font-size: 12.5px; color: #15803d;">
+          Bimbingan belajar ananda {{ selected_child.full_name }} untuk Periode {{ pca.period_number }} telah selesai (8 pertemuan). Mohon melakukan pembayaran tagihan untuk periode berikutnya agar jadwal mengajar dapat dilanjutkan.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- RINGKASAN SISA TUNGGAKAN CICILAN -->
+{% if total_unpaid and total_unpaid > 0 %}
+<div class="card" style="margin-bottom: 20px; background: #fffbeb; border: 1.5px solid #fde68a; border-left: 5px solid #f59e0b;">
+  <div class="card-body" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+    <div>
+      <div style="font-size: 12px; font-weight: 700; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px;">
+        Total Sisa Tunggakan Belajar Ananda
+      </div>
+      <div style="font-size: 22px; font-weight: 800; color: #b91c1c; margin-top: 2px;">
+        Rp {{ "{:,.0f}".format(total_unpaid).replace(",", ".") }}
+      </div>
+      <p style="margin: 3px 0 0 0; font-size: 12px; color: #b45309;">
+        Harap menyelesaikan sisa tunggakan cicilan ini sebelum siklus pertemuan berikutnya selesai.
+      </p>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="card" style="margin-bottom: 24px;">
+  <div class="card-header">
+    <div class="card-title"><span>{{ icon('credit-card') }}</span> Daftar Tagihan Periode: {{ selected_child.full_name }}</div>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>Kode Tagihan</th>
+            <th>Program &amp; Periode</th>
+            <th>Keterangan</th>
+            <th>Total Tagihan</th>
+            <th>Sudah Dibayar</th>
+            <th>Sisa Tagihan</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in bills %}
+          <tr>
+            <td><strong style="color: var(--navy-dark);">{{ b.bill_code }}</strong></td>
+            <td>
+              <strong>{{ b.program_name }}</strong>
+              <div style="font-size: 11px; color: var(--gray-500);">Periode ke-{{ b.period_number }} (8 Pertemuan)</div>
+            </td>
+            <td>{{ b.title }}</td>
+            <td>Rp {{ "{:,.0f}".format(b.total_amount).replace(",", ".") }}</td>
+            <td style="color: var(--green-success); font-weight: 600;">Rp {{ "{:,.0f}".format(b.paid_amount).replace(",", ".") }}</td>
+            <td style="color: var(--danger-color); font-weight: 600;">Rp {{ "{:,.0f}".format(b.remaining_amount).replace(",", ".") }}</td>
+            <td>
+              {% if b.status == 'lunas' %}
+                <span class="badge badge-success">Lunas</span>
+              {% elif b.status == 'sebagian' %}
+                <span class="badge badge-warning">Sebagian / Cicilan</span>
+              {% else %}
+                <span class="badge badge-danger">Belum Lunas</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 24px; color: var(--gray-500);">
+              Belum ada data tagihan periode yang tercatat untuk ananda {{ selected_child.full_name }}.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><span>{{ icon('receipt') }}</span> Riwayat Pembayaran / Kuitansi</div>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>No. Kuitansi</th>
+            <th>Tanggal Bayar</th>
+            <th>Program</th>
+            <th>Metode Pembayaran</th>
+            <th>Nominal Dibayar</th>
+            <th>Catatan</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in payments %}
+          <tr>
+            <td><strong style="color: var(--blue-brand);">{{ p.receipt_number }}</strong></td>
+            <td>{{ p.payment_date|date_indo }}</td>
+            <td>{{ p.program_name or '-' }}</td>
+            <td>{{ p.payment_method or 'Transfer Bank' }}</td>
+            <td style="font-weight: 700; color: var(--green-success);">Rp {{ "{:,.0f}".format(p.amount).replace(",", ".") }}</td>
+            <td>{{ p.notes or '-' }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 20px; color: var(--gray-500);">
+              Belum ada riwayat pembayaran yang tercatat.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

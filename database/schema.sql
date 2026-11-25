@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
-    role TEXT NOT NULL CHECK(role IN ('admin', 'owner', 'mentor')),
+    role TEXT NOT NULL CHECK(role IN ('admin', 'owner', 'mentor', 'parent')),
     full_name TEXT NOT NULL,
     email TEXT,
     phone TEXT,
@@ -17,9 +17,10 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2. Tabel Data Administratif Orang Tua / Wali (Parents - Tanpa Akun Pengguna)
+-- 2. Tabel Data Administratif Orang Tua / Wali (Parents)
 CREATE TABLE IF NOT EXISTS parents (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE SET NULL,
     full_name TEXT NOT NULL,
     phone TEXT NOT NULL,
     email TEXT,
@@ -38,12 +39,18 @@ CREATE TABLE IF NOT EXISTS students (
     grade TEXT,
     birth_date TEXT,
     address TEXT,
+    latitude REAL,
+    longitude REAL,
     notes TEXT,
     status TEXT NOT NULL DEFAULT 'aktif' CHECK(status IN ('aktif', 'nonaktif', 'berhenti')),
     initial_meeting_offset INTEGER NOT NULL DEFAULT 0,
     initial_offset_notes TEXT,
     initial_offset_set_at DATETIME,
     initial_offset_set_by INTEGER REFERENCES users(id),
+    payment_validated_by INTEGER REFERENCES users(id),
+    payment_validated_at DATETIME,
+    payment_status TEXT DEFAULT 'lunas',
+    meetings_per_period INTEGER DEFAULT 8,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -55,8 +62,13 @@ CREATE TABLE IF NOT EXISTS mentors (
     full_name TEXT NOT NULL,
     phone TEXT NOT NULL,
     email TEXT,
+    address TEXT,
+    latitude REAL,
+    longitude REAL,
     expertise TEXT,
     bio TEXT,
+    fee_per_session REAL DEFAULT 35000.0,
+    fee_per_session_4 REAL DEFAULT NULL,
     status TEXT NOT NULL DEFAULT 'aktif' CHECK(status IN ('aktif', 'nonaktif')),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -68,7 +80,12 @@ CREATE TABLE IF NOT EXISTS programs (
     code TEXT UNIQUE NOT NULL,
     description TEXT,
     level TEXT,
+    service_type TEXT NOT NULL DEFAULT 'Private Tutoring',
     status TEXT NOT NULL DEFAULT 'aktif' CHECK(status IN ('aktif', 'nonaktif', 'diarsipkan')),
+    price_per_session REAL DEFAULT 75000,
+    default_fee_4 REAL DEFAULT 450000,
+    default_fee_8 REAL DEFAULT 800000,
+    default_fee_12 REAL DEFAULT 900000,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -81,6 +98,7 @@ CREATE TABLE IF NOT EXISTS student_programs (
     start_date TEXT,
     end_date TEXT,
     status TEXT NOT NULL DEFAULT 'aktif' CHECK(status IN ('aktif', 'selesai', 'dibatalkan')),
+    meetings_per_period INTEGER DEFAULT 8,
     notes TEXT,
     initial_periods_completed INTEGER NOT NULL DEFAULT 0,
     initial_last_meeting INTEGER NOT NULL DEFAULT 0,
@@ -194,14 +212,33 @@ CREATE TABLE IF NOT EXISTS mentor_replacements (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- 12. Tabel Absensi (Attendance)
+-- 12. Tabel Absensi Mentor Terpisah (Mentor Attendance - Langkah 3)
+CREATE TABLE IF NOT EXISTS mentor_attendance (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    schedule_id INTEGER NOT NULL REFERENCES schedules(id) ON DELETE CASCADE,
+    mentor_id INTEGER NOT NULL REFERENCES mentors(id) ON DELETE CASCADE,
+    status TEXT NOT NULL CHECK(status IN ('hadir', 'tidak_hadir', 'izin')),
+    attendance_date TEXT NOT NULL,
+    notes TEXT,
+    recorded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(schedule_id, mentor_id, attendance_date)
+);
+
+-- 12b. Tabel Absensi Sesi Siswa (Attendance)
 CREATE TABLE IF NOT EXISTS attendance (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     schedule_id INTEGER UNIQUE NOT NULL REFERENCES schedules(id) ON DELETE CASCADE,
     student_id INTEGER NOT NULL REFERENCES students(id),
     mentor_id INTEGER NOT NULL REFERENCES mentors(id),
     program_id INTEGER REFERENCES programs(id),
-    status TEXT NOT NULL CHECK(status IN ('hadir', 'izin', 'tidak_hadir')),
+    status TEXT NOT NULL,
+    mentor_status TEXT DEFAULT NULL,
+    session_status TEXT DEFAULT NULL,
+    documentation_status TEXT DEFAULT 'tidak_ada' CHECK(documentation_status IN ('lengkap', 'menunggu', 'tidak_ada')),
+    documentation_photo TEXT DEFAULT NULL,
+    documentation_pending_reason TEXT DEFAULT NULL,
+    mentor_attendance_id INTEGER REFERENCES mentor_attendance(id) ON DELETE SET NULL,
     topics_covered TEXT,
     progress_notes TEXT,
     meeting_number INTEGER,
@@ -283,6 +320,83 @@ CREATE TABLE IF NOT EXISTS backups (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 18. Tabel Tarif Fee Khusus Mentor per Murid & Program (Detail Fee Tentor)
+CREATE TABLE IF NOT EXISTS mentor_student_program_fees (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    mentor_id INTEGER NOT NULL REFERENCES mentors(id) ON DELETE CASCADE,
+    student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+    program_id INTEGER NOT NULL REFERENCES programs(id) ON DELETE CASCADE,
+    fee_per_session REAL NOT NULL DEFAULT 35000,
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(mentor_id, student_id, program_id)
+);
+
+-- 19. Tabel Aturan Tarif Les Berdasarkan Kategori Layanan & Jenjang Pendidikan
+CREATE TABLE IF NOT EXISTS service_pricing_rules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    service_type TEXT NOT NULL,
+    education_level TEXT NOT NULL,
+    rate_per_session REAL NOT NULL,
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(service_type, education_level)
+);
+
+-- 20. Tabel Tagihan Belajar Siswa (Student Bills / Periode)
+CREATE TABLE IF NOT EXISTS student_bills (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bill_code TEXT UNIQUE NOT NULL,
+    student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+    program_id INTEGER NOT NULL REFERENCES programs(id) ON DELETE CASCADE,
+    period_number INTEGER NOT NULL DEFAULT 1,
+    title TEXT NOT NULL,
+    total_amount REAL NOT NULL DEFAULT 0,
+    paid_amount REAL NOT NULL DEFAULT 0,
+    remaining_amount REAL NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'belum_lunas' CHECK(status IN ('belum_lunas', 'sebagian', 'lunas', 'tunggakan')),
+    due_date TEXT,
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 21. Tabel Pembayaran & Kuitansi Siswa (Bill Payments)
+CREATE TABLE IF NOT EXISTS bill_payments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    receipt_number TEXT UNIQUE NOT NULL,
+    bill_id INTEGER NOT NULL REFERENCES student_bills(id) ON DELETE CASCADE,
+    student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+    program_id INTEGER REFERENCES programs(id) ON DELETE SET NULL,
+    amount REAL NOT NULL,
+    payment_date TEXT NOT NULL,
+    payment_method TEXT DEFAULT 'Transfer Bank',
+    recorded_by INTEGER REFERENCES users(id),
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 22. Tabel Honor Periode Mentor (8 Pertemuan = 1 Periode Fee)
+CREATE TABLE IF NOT EXISTS mentor_period_honor (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    mentor_id INTEGER NOT NULL REFERENCES mentors(id),
+    student_id INTEGER NOT NULL REFERENCES students(id),
+    program_id INTEGER NOT NULL REFERENCES programs(id),
+    period_number INTEGER NOT NULL,
+    completed_meetings INTEGER DEFAULT 8,
+    fee_per_session REAL NOT NULL DEFAULT 50000,
+    total_fee REAL NOT NULL DEFAULT 400000,
+    status TEXT DEFAULT 'siap_ditransfer',
+    transferred_at DATETIME,
+    transferred_by INTEGER REFERENCES users(id),
+    transfer_notes TEXT,
+    billing_alert_active INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indeks Tambahan untuk Optimalisasi Performa Pencarian dan Kalender
 CREATE INDEX IF NOT EXISTS idx_schedules_date ON schedules(schedule_date);
 CREATE INDEX IF NOT EXISTS idx_schedules_mentor ON schedules(mentor_id);
@@ -292,3 +406,11 @@ CREATE INDEX IF NOT EXISTS idx_attendance_schedule ON attendance(schedule_id);
 CREATE INDEX IF NOT EXISTS idx_student_progress_schedule ON student_progress(schedule_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_read);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_mentor_student_program_fees ON mentor_student_program_fees(mentor_id, student_id, program_id);
+CREATE INDEX IF NOT EXISTS idx_student_bills_student ON student_bills(student_id);
+CREATE INDEX IF NOT EXISTS idx_student_bills_status ON student_bills(status);
+CREATE INDEX IF NOT EXISTS idx_bill_payments_bill ON bill_payments(bill_id);
+CREATE INDEX IF NOT EXISTS idx_routine_schedules_mentor ON routine_schedules(mentor_id, day_of_week);
+CREATE INDEX IF NOT EXISTS idx_routine_schedules_student ON routine_schedules(student_id, day_of_week);
+CREATE INDEX IF NOT EXISTS idx_attendance_student_prog ON attendance(student_id, program_id);
+CREATE INDEX IF NOT EXISTS idx_attendance_recorded_at ON attendance(recorded_at);

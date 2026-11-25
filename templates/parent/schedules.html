@@ -20,9 +20,76 @@
 </div>
 {% endif %}
 
+<!-- JADWAL LES RUTIN ANANDA -->
+<div class="card" style="margin-bottom: 24px;">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <div class="card-title">
+      <span>{{ icon('clock') }}</span> Seluruh Jadwal Belajar Mingguan {{ selected_child.full_name }}
+    </div>
+    <span class="badge" style="background: var(--navy-dark, #0f172a); color: #fff; font-size: 11.5px; padding: 5px 10px;">
+      Hari ini: {{ ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu','Minggu'][today_dow] }}
+    </span>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>Program Les</th>
+            <th>Hari & Jam Belajar</th>
+            <th>Status / Keterangan</th>
+            <th>Mentor Pengampu</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sc in student_schedules %}
+          <tr {% if sc.is_today %}style="background: #f0fdf4;"{% endif %}>
+            <td>
+              <strong style="color: var(--navy-dark); font-size: 14px;">{{ sc.program_name }}</strong>
+              {% if sc.subject_info %}
+                <div style="font-size: 11px; color: var(--gray-500);">{{ sc.subject_info }}</div>
+              {% endif %}
+            </td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <strong style="font-size: 13.5px; color: var(--navy-primary);">{{ sc.day_name }}</strong>
+                <span class="badge badge-info" style="font-size: 11px; font-weight: 600;">{{ sc.start_time }} - {{ sc.end_time }}</span>
+              </div>
+            </td>
+            <td>
+              {% if sc.is_today %}
+                <span class="badge badge-success" style="font-size: 11.5px; font-weight: 700; padding: 4px 10px; display: inline-flex; align-items: center; gap: 5px; background: #16a34a; color: #fff; border-radius: 20px;">
+                  {{ icon('clock') }} Hari Ini
+                </span>
+              {% else %}
+                <span class="badge" style="background: #e2e8f0; color: #475569; font-size: 11px; font-weight: 600; border-radius: 20px;">
+                  Jadwal Rutin
+                </span>
+              {% endif %}
+              {% if sc.notes %}
+                <div style="font-size: 11px; color: var(--gray-500); margin-top: 3px;">{{ sc.notes }}</div>
+              {% endif %}
+            </td>
+            <td>
+              <strong style="color: var(--navy-dark);">{{ sc.mentor_name }}</strong>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="4" style="text-align: center; color: var(--gray-500); padding: 24px;">
+              Belum ada jadwal les rutin yang terdaftar untuk ananda ini.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <div class="card">
   <div class="card-header">
-    <div class="card-title"><span>{{ icon('calendar') }}</span> Jadwal Sesi Les untuk {{ selected_child.full_name }}</div>
+    <div class="card-title"><span>{{ icon('calendar') }}</span> Agenda & Riwayat Sesi Kalender</div>
   </div>
   <div class="card-body" style="padding: 0;">
     <div class="table-responsive">

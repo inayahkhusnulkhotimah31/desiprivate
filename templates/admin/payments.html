@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+{% block title %}Riwayat Transaksi Pembayaran{% endblock %}
+{% block page_title %}Riwayat Pembayaran &amp; Transaksi Murid{% endblock %}
+{% block page_subtitle %}Daftar seluruh transaksi penerimaan pembayaran les privat, kuitansi, dan koreksi audit kas{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><span>{{ icon('receipt') }}</span> Riwayat Pembayaran &amp; Kuitansi Transaksi</div>
+    <div style="display: flex; gap: 8px;">
+      {% if is_owner_view or session.role == 'owner' %}
+        <a href="{{ url_for('owner.bills') }}" class="btn btn-secondary btn-sm">
+          {{ icon('arrow-left') }} Kembali ke Tagihan
+        </a>
+      {% else %}
+        <a href="{{ url_for('admin.bills') }}" class="btn btn-secondary btn-sm">
+          {{ icon('arrow-left') }} Kembali ke Tagihan
+        </a>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card-body">
+    {% if selected_bill %}
+      <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-left: 4px solid var(--blue-brand); border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <strong style="color: var(--blue-brand); font-size: 13px;">Filter Aktif Tagihan: {{ selected_bill.bill_code }}</strong>
+          <span style="font-size: 12px; color: var(--navy-dark); margin-left: 8px;">
+            Total: Rp {{ "{:,.0f}".format(selected_bill.total_amount).replace(",", ".") }} | 
+            Terbayar: Rp {{ "{:,.0f}".format(selected_bill.paid_amount).replace(",", ".") }} | 
+            Sisa: Rp {{ "{:,.0f}".format(selected_bill.remaining_amount).replace(",", ".") }}
+          </span>
+        </div>
+        <a href="{{ url_for('owner.payments' if (is_owner_view or session.role == 'owner') else 'admin.payments') }}" class="btn btn-sm btn-secondary" style="font-size: 11px;">
+          Tampilkan Semua Tagihan
+        </a>
+      </div>
+    {% endif %}
+
+    <!-- FILTER -->
+    <form method="GET" action="{{ url_for('owner.payments' if (is_owner_view or session.role == 'owner') else 'admin.payments') }}" class="filter-bar">
+      {% if bill_id %}
+        <input type="hidden" name="bill_id" value="{{ bill_id }}">
+      {% endif %}
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <label style="font-size: 12px; font-weight: 600; color: var(--navy-dark);">Dari:</label>
+        <input type="date" name="start_date" value="{{ start_date }}" class="form-control" style="max-width: 160px;">
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <label style="font-size: 12px; font-weight: 600; color: var(--navy-dark);">Sampai:</label>
+        <input type="date" name="end_date" value="{{ end_date }}" class="form-control" style="max-width: 160px;">
+      </div>
+      <select name="student_id" class="form-select" style="max-width: 220px;">
+        <option value="">-- Semua Siswa --</option>
+        {% for s in students %}
+          <option value="{{ s.id }}" {% if student_id == s.id|string %}selected{% endif %}>{{ s.full_name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-secondary">Filter</button>
+      {% if start_date or end_date or student_id or bill_id %}
+        <a href="{{ url_for('owner.payments' if (is_owner_view or session.role == 'owner') else 'admin.payments') }}" class="btn btn-secondary">Reset</a>
+      {% endif %}
+    </form>
+
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>No. Kuitansi</th>
+            <th>Tanggal Bayar</th>
+            <th>Siswa &amp; Program</th>
+            <th>Wali Murid</th>
+            <th>Nominal Dibayar</th>
+            <th>Metode</th>
+            <th>Catatan &amp; Koreksi</th>
+            <th>Petugas</th>
+            <th style="min-width: 190px;">Aksi &amp; Koreksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in payments %}
+          <tr>
+            <td>
+              <strong style="color: var(--blue-brand); font-size: 13.5px;">{{ p.receipt_number }}</strong>
+              <div style="font-size: 11px; color: var(--gray-500);">Tagihan: {{ p.bill_code }}</div>
+            </td>
+            <td><strong>{{ p.payment_date|date_indo }}</strong></td>
+            <td>
+              <strong style="color: var(--navy-dark);">{{ p.student_name }}</strong>
+              <div style="font-size: 11.5px; color: var(--gray-600);">{{ p.program_name or '-' }} (Periode {{ p.period_number }})</div>
+            </td>
+            <td>{{ p.parent_name or '-' }}</td>
+            <td style="color: var(--green-success); font-weight: 700; font-size: 14px;">
+              Rp {{ "{:,.0f}".format(p.amount).replace(",", ".") }}
+            </td>
+            <td><span class="badge badge-info">{{ p.payment_method }}</span></td>
+            <td>
+              <div style="font-size: 11.5px; color: var(--text-body); max-width: 220px; word-break: break-word;">
+                {{ p.notes or '-' }}
+              </div>
+            </td>
+            <td>{{ p.recorder_name or 'Admin' }}</td>
+            <td>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+                <a href="{{ url_for('admin.print_receipt', payment_id=p.id) }}" target="_blank" class="btn btn-secondary btn-sm" title="Cetak Kuitansi Resmi / PDF">
+                  {{ icon('printer') }} Kuitansi
+                </a>
+                <button
+                  type="button"
+                  class="btn btn-warning btn-sm"
+                  onclick="openCorrectPaymentModal({{ p.id }}, '{{ p.receipt_number }}', {{ p.amount }}, '{{ p.student_name }}')"
+                  title="Koreksi Nominal (Salah Input)"
+                >
+                  {{ icon('edit') }} Ubah Nominal
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-danger btn-sm"
+                  onclick="openCancelPaymentModal({{ p.id }}, '{{ p.receipt_number }}', {{ p.amount }}, '{{ p.student_name }}')"
+                  title="Batalkan Transaksi Ini"
+                >
+                  {{ icon('trash') }} Batalkan
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="9" style="text-align: center; padding: 28px; color: var(--gray-500);">
+              Belum ada riwayat transaksi pembayaran pada filter ini.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================= -->
+<!-- MODAL KOREKSI NOMINAL PEMBAYARAN -->
+<!-- ======================================================= -->
+<div class="modal-overlay" id="correctPaymentModal">
+  <div class="modal-dialog" style="max-width: 480px;">
+    <div class="modal-header">
+      <div class="modal-title">{{ icon('edit') }} Koreksi Nominal Pembayaran</div>
+      <button class="modal-close-btn" onclick="closeModal('correctPaymentModal')">&times;</button>
+    </div>
+    <form method="POST" id="correctPaymentForm" action="">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <div style="background: #fefce8; border: 1px solid #fef08a; border-radius: 6px; padding: 10px 12px; margin-bottom: 14px; font-size: 12px; color: #854d0e;">
+          <strong>Perhatian:</strong> Perubahan nominal akan otomatis memperbarui saldo penerimaan dan sisa tunggakan tagihan siswa terkait secara akurat.
+        </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label">Siswa &amp; No. Kuitansi</label>
+          <div style="font-weight: 600; color: var(--navy-dark); font-size: 13.5px;" id="correctStudentAndReceipt">-</div>
+        </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label">Nominal Saat Ini</label>
+          <div style="font-weight: 700; color: var(--text-muted); font-size: 13.5px;" id="correctCurrentAmount">Rp 0</div>
+        </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label">Nominal Baru yang Benar (Rp) <span style="color: red;">*</span></label>
+          <input type="number" step="1000" min="1000" class="form-control" name="new_amount" id="correctNewAmount" required placeholder="Contoh: 600000">
+        </div>
+        <div class="form-group" style="margin-bottom: 8px;">
+          <label class="form-label">Alasan Koreksi <span style="color: red;">*</span></label>
+          <input type="text" class="form-control" name="reason" required placeholder="Contoh: Salah ketik kelebihan nol, revisi transfer..." style="font-size: 12.5px;">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('correctPaymentModal')">Batal</button>
+        <button type="submit" class="btn btn-primary">Simpan Koreksi Nominal</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ======================================================= -->
+<!-- MODAL PEMBATALAN TRANSAKSI PEMBAYARAN -->
+<!-- ======================================================= -->
+<div class="modal-overlay" id="cancelPaymentModal">
+  <div class="modal-dialog" style="max-width: 480px;">
+    <div class="modal-header">
+      <div class="modal-title" style="color: var(--red-danger);">{{ icon('alert') }} Batalkan Pembayaran (Rollback)</div>
+      <button class="modal-close-btn" onclick="closeModal('cancelPaymentModal')">&times;</button>
+    </div>
+    <form method="POST" id="cancelPaymentForm" action="">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 10px 12px; margin-bottom: 14px; font-size: 12px; color: #b91c1c;">
+          <strong>Peringatan Pembatalan:</strong> Transaksi pembayaran ini akan dibatalkan/dihapus dari riwayat kuitansi. Saldo tagihan siswa akan dikembalikan sebagai sisa belum terbayar.
+        </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label">Siswa &amp; Kuitansi yang Dibatalkan</label>
+          <div style="font-weight: 600; color: var(--navy-dark); font-size: 13.5px;" id="cancelStudentAndReceipt">-</div>
+        </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label">Nominal yang Dibatalkan</label>
+          <div style="font-weight: 700; color: var(--red-danger); font-size: 14px;" id="cancelAmount">Rp 0</div>
+        </div>
+        <div class="form-group" style="margin-bottom: 8px;">
+          <label class="form-label">Alasan Pembatalan <span style="color: red;">*</span></label>
+          <input type="text" class="form-control" name="reason" required placeholder="Contoh: Transaksi salah/dibatalkan bank, duplikasi input..." style="font-size: 12.5px;">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('cancelPaymentModal')">Batal</button>
+        <button type="submit" class="btn btn-danger">Ya, Batalkan Pembayaran Ini</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function formatRupiah(num) {
+    return 'Rp ' + Number(num).toLocaleString('id-ID');
+  }
+
+  const isOwner = {{ 'true' if (is_owner_view or session.role == 'owner') else 'false' }};
+  const basePaymentUrl = isOwner ? '/owner/payments/' : '/admin/payments/';
+
+  function openCorrectPaymentModal(paymentId, receiptNum, currentAmount, studentName) {
+    document.getElementById('correctStudentAndReceipt').innerText = studentName + ' (' + receiptNum + ')';
+    document.getElementById('correctCurrentAmount').innerText = formatRupiah(currentAmount);
+    document.getElementById('correctNewAmount').value = currentAmount;
+    document.getElementById('correctPaymentForm').action = basePaymentUrl + paymentId + '/correct';
+    openModal('correctPaymentModal');
+  }
+
+  function openCancelPaymentModal(paymentId, receiptNum, amount, studentName) {
+    document.getElementById('cancelStudentAndReceipt').innerText = studentName + ' (' + receiptNum + ')';
+    document.getElementById('cancelAmount').innerText = formatRupiah(amount);
+    document.getElementById('cancelPaymentForm').action = basePaymentUrl + paymentId + '/cancel';
+    openModal('cancelPaymentModal');
+  }
+</script>
+{% endblock %}

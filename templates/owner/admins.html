@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Data Admin (Pemilik){% endblock %}
+{% block page_title %}Data Administrator Operasional{% endblock %}
+{% block page_subtitle %}Pengawasan akun staf pengelola dan administrator operasional bimbingan belajar (Akses Pemilik){% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <div class="card-title"><span>{{ icon('settings') }}</span> Daftar Administrator Terdaftar</div>
+    <div style="font-size: 12px; color: var(--text-muted);">
+      Total Admin: <strong>{{ admins|length }}</strong> Akun
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>Nama Lengkap</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>No. Telepon / Kontak</th>
+            <th>Status Akun</th>
+            <th>Terdaftar Sejak</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in admins %}
+          <tr>
+            <td>
+              <strong style="color: var(--navy-dark); font-size: 14px;">{{ a.full_name or a.username }}</strong>
+              <div style="font-size: 11px; color: var(--text-muted);">ID: #{{ a.id }}</div>
+            </td>
+            <td>
+              <span class="badge" style="background: #e2e8f0; color: #1e293b; font-size: 11.5px; font-weight: 600;">
+                @{{ a.username }}
+              </span>
+            </td>
+            <td>{{ a.email or '-' }}</td>
+            <td>
+              {% if a.phone %}
+                <span style="font-size: 12.5px; color: var(--blue-brand); font-weight: 600;">
+                  {{ icon('phone') }} <a href="tel:{{ a.phone }}" style="color: inherit; text-decoration: none;">{{ a.phone }}</a>
+                </span>
+              {% else %}
+                <span style="color: var(--gray-400);">-</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if a.is_active %}
+                <span class="badge badge-success">Aktif</span>
+              {% else %}
+                <span class="badge badge-danger">Nonaktif</span>
+              {% endif %}
+            </td>
+            <td>
+              <span style="font-size: 12px; color: var(--text-muted);">
+                {{ a.created_at|date_indo if a.created_at else '-' }}
+              </span>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 32px; color: var(--gray-500);">
+              Tidak ada akun administrator terdaftar.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+{% block title %}Tagihan & Pembayaran Murid{% endblock %}
+{% block page_title %}Tagihan & Pembayaran Siswa{% endblock %}
+{% block page_subtitle %}Pencatatan tagihan periode belajar, pembayaran bertahap/cicilan, dan kuitansi resmi{% endblock %}
+
+{% block content %}
+<!-- RINGKASAN METRIK KEUANGAN -->
+<div class="stats-grid" style="margin-bottom: 24px;">
+  <div class="stat-card">
+    <div class="stat-icon" style="background: rgba(37, 99, 235, 0.1); color: var(--blue-brand);">
+      {{ icon('credit-card') }}
+    </div>
+    <div class="stat-info">
+      <div class="stat-value">Rp {{ "{:,.0f}".format(overview.total_billed).replace(",", ".") }}</div>
+      <div class="stat-label">Total Tagihan Dibuat ({{ overview.total_bills_count }} Periode)</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--green-success);">
+      {{ icon('check-circle') }}
+    </div>
+    <div class="stat-info">
+      <div class="stat-value" style="color: var(--green-success);">Rp {{ "{:,.0f}".format(overview.total_collected).replace(",", ".") }}</div>
+      <div class="stat-label">Total Dana Diterima ({{ overview.fully_paid_count }} Lunas)</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: var(--danger-color);">
+      {{ icon('alert-circle') }}
+    </div>
+    <div class="stat-info">
+      <div class="stat-value" style="color: var(--danger-color);">Rp {{ "{:,.0f}".format(overview.total_outstanding).replace(",", ".") }}</div>
+      <div class="stat-label">Sisa Tagihan / Tunggakan ({{ overview.unpaid_count }} Siswa)</div>
+    </div>
+  </div>
+</div>
+
+<!-- PERINGATAN 1: SISWA BARU MENUNGGU VALIDASI PEMILIK -->
+{% if pending_new_students %}
+<div class="card" style="margin-bottom: 20px; background: #fffbeb; border: 1.5px solid #fde68a; border-left: 5px solid #f59e0b;">
+  <div class="card-body" style="padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="font-size: 24px; color: #d97706;">{{ icon('alert-circle') }}</div>
+      <div>
+        <div style="font-size: 14px; font-weight: 700; color: #92400e;">
+          Perhatian: {{ pending_new_students|length }} Siswa Baru Menunggu Validasi Pembayaran oleh Pemilik
+        </div>
+        <p style="margin: 2px 0 0 0; font-size: 12px; color: #b45309;">
+          Pembelajaran dan penjadwalan belum dapat dimulai sebelum Pemilik memvalidasi pembayaran awal siswa baru tersebut.
+        </p>
+      </div>
+    </div>
+    <span class="badge badge-warning" style="font-size: 11px;">Menunggu Validasi Pemilik</span>
+  </div>
+</div>
+{% endif %}
+
+<!-- PERINGATAN 2: PENAGIHAN KE WALI MURID (FEE TELAH DITRANSFER PEMILIK) -->
+{% if billing_alerts %}
+<div class="card" style="margin-bottom: 20px; background: #f0fdf4; border: 1.5px solid #bbf7d0; border-left: 5px solid #16a34a;">
+  <div class="card-body" style="padding: 14px 20px;">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+      <div style="font-size: 24px; color: #16a34a;">{{ icon('bell') }}</div>
+      <div>
+        <div style="font-size: 14.5px; font-weight: 700; color: #166534;">
+          Peringatan Penagihan: Fee Mentor Telah Dibagikan, Segera Tagih Wali Murid!
+        </div>
+        <p style="margin: 2px 0 0 0; font-size: 12px; color: #15803d;">
+          Pemilik telah menyelesaikan transfer fee mentor untuk siklus 8 pertemuan sebelumnya. Tagihan periode berikutnya perlu segera dikonfirmasi ke wali murid:
+        </p>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      {% for ba in billing_alerts %}
+        <div style="background: #ffffff; border: 1px solid #dcfce7; border-radius: 6px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <strong style="color: var(--navy-dark); font-size: 13px;">{{ ba.student_name }}</strong> ({{ ba.program_name }})
+            <span style="font-size: 11.5px; color: var(--text-muted); margin-left: 6px;">Wali: {{ ba.parent_name or '-' }} ({{ ba.parent_phone or '-' }})</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="badge badge-info" style="font-size: 11px;">Periode {{ ba.period_number + 1 }}</span>
+            <span class="badge badge-warning" style="font-size: 11px; background: #fef08a; color: #854d0e;">Siap Ditagihkan</span>
+            {% if ba.parent_phone %}
+              <a href="{{ wa_billing_url(ba.parent_phone, ba.student_name, ba.total_amount or 800000) }}" target="_blank" class="btn btn-sm btn-success" style="background: #22c55e; border-color: #22c55e; font-size: 11.5px; padding: 4px 10px; color: #fff; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-weight: 600;" title="Kirim Pesan Penagihan ke WhatsApp Wali Murid">
+                {{ icon('phone') }} Tagih via WA
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><span>{{ icon('clipboard') }}</span> Daftar Tagihan Periode Belajar Siswa</div>
+    <div style="display: flex; gap: 8px;">
+      <a href="{{ url_for('admin.payments') }}" class="btn btn-secondary btn-sm">
+        {{ icon('receipt') }} Riwayat Pembayaran
+      </a>
+      <button type="button" class="btn btn-primary btn-sm" onclick="openModal('addBillModal')">
+        {{ icon('plus') }} Buat Tagihan Baru
+      </button>
+    </div>
+  </div>
+  <div class="card-body">
+    <!-- FILTER -->
+    <form method="GET" action="{{ url_for('admin.bills') }}" class="filter-bar">
+      <input
+        type="text"
+        name="q"
+        value="{{ search }}"
+        placeholder="Cari nama siswa, kode, atau wali..."
+        class="form-control"
+        style="max-width: 260px;"
+      >
+      <select name="status" class="form-select" style="max-width: 170px;">
+        <option value="">-- Semua Status --</option>
+        <option value="belum_lunas" {% if status_filter == 'belum_lunas' %}selected{% endif %}>Belum Lunas</option>
+        <option value="sebagian" {% if status_filter == 'sebagian' %}selected{% endif %}>Sebagian / Cicilan</option>
+        <option value="lunas" {% if status_filter == 'lunas' %}selected{% endif %}>Lunas</option>
+      </select>
+      <select name="student_id" class="form-select" style="max-width: 200px;">
+        <option value="">-- Semua Siswa --</option>
+        {% for s in students %}
+          <option value="{{ s.id }}" {% if student_filter == s.id|string %}selected{% endif %}>{{ s.full_name }}</option>
+        {% endfor %}
+      </select>
+      <select name="program_id" class="form-select" style="max-width: 180px;">
+        <option value="">-- Semua Program --</option>
+        {% for pr in programs %}
+          <option value="{{ pr.id }}" {% if program_filter == pr.id|string %}selected{% endif %}>{{ pr.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-secondary">Filter</button>
+      {% if search or status_filter or student_filter or program_filter %}
+        <a href="{{ url_for('admin.bills') }}" class="btn btn-secondary">Reset</a>
+      {% endif %}
+    </form>
+
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>Kode Tagihan</th>
+            <th>Siswa &amp; Program</th>
+            <th>Wali Murid</th>
+            <th>Total Tagihan</th>
+            <th>Sudah Dibayar</th>
+            <th>Sisa Tagihan</th>
+            <th>Status</th>
+            <th>Aksi Pembayaran</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in bills %}
+          <tr>
+            <td>
+              <strong style="color: var(--navy-dark); font-size: 13px;">{{ b.bill_code }}</strong>
+              <div style="font-size: 11px; color: var(--gray-500);">Periode ke-{{ b.period_number }}</div>
+            </td>
+            <td>
+              <strong style="color: var(--blue-brand);">{{ b.student_name }}</strong>
+              <div style="font-size: 11.5px; color: var(--gray-600);">{{ b.program_name }}</div>
+            </td>
+            <td>
+              <div>{{ b.parent_name or '-' }}</div>
+              <div style="font-size: 11px; color: var(--gray-500);">{{ b.parent_phone or '-' }}</div>
+            </td>
+            <td>Rp {{ "{:,.0f}".format(b.total_amount).replace(",", ".") }}</td>
+            <td style="color: var(--green-success); font-weight: 600;">Rp {{ "{:,.0f}".format(b.paid_amount).replace(",", ".") }}</td>
+            <td style="color: var(--danger-color); font-weight: 700;">Rp {{ "{:,.0f}".format(b.remaining_amount).replace(",", ".") }}</td>
+            <td>
+              {% if b.status == 'lunas' %}
+                <span class="badge badge-success">Lunas</span>
+              {% elif b.status == 'sebagian' %}
+                <span class="badge badge-warning">Sebagian / Cicilan</span>
+              {% else %}
+                <span class="badge badge-danger">Belum Lunas</span>
+              {% endif %}
+            </td>
+            <td>
+              <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;">
+                <a href="{{ url_for('admin.payments', bill_id=b.id) }}" class="btn btn-secondary btn-sm" title="Lihat Riwayat Pembayaran, Kuitansi & Koreksi Nominal">
+                  {{ icon('receipt') }} Kuitansi
+                </a>
+              {% if b.status != 'lunas' %}
+                <button
+                  type="button"
+                  class="btn btn-primary btn-sm"
+                  onclick="openPayModal({{ b.id }}, '{{ b.bill_code }}', '{{ b.student_name }}', {{ b.remaining_amount }})"
+                >
+                  {{ icon('plus') }} Catat Bayar
+                </button>
+                {% if b.parent_phone %}
+                  <a href="{{ wa_billing_url(b.parent_phone, b.student_name, b.remaining_amount or b.total_amount) }}" target="_blank" class="btn btn-sm btn-success" style="background: #22c55e; border-color: #22c55e; font-size: 11.5px; padding: 4px 10px; color: #fff; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-weight: 600;" title="Kirim Pesan Penagihan ke WhatsApp Wali Murid">
+                    {{ icon('phone') }} Tagih WA
+                  </a>
+                {% endif %}
+              {% else %}
+                <span style="font-size: 12px; color: var(--green-success); font-weight: 600;">{{ icon('check-circle') }} Lunas</span>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 24px; color: var(--gray-500);">
+              Belum ada data tagihan. Klik "Buat Tagihan Baru" untuk membuat tagihan periode siswa.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL BUAT TAGIHAN -->
+<div class="modal-overlay" id="addBillModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">Buat Tagihan Periode Baru</div>
+      <button type="button" class="modal-close-btn" onclick="closeModal('addBillModal')">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('admin.create_bill') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <div class="grid-form-2">
+          <div class="form-group">
+            <label class="form-label">Pilih Siswa</label>
+            <select class="form-select" name="student_id" required>
+              <option value="">-- Pilih Siswa --</option>
+              {% for s in students %}
+                <option value="{{ s.id }}">{{ s.full_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Program Les</label>
+            <select class="form-select" name="program_id" required>
+              <option value="">-- Pilih Program --</option>
+              {% for pr in programs %}
+                <option value="{{ pr.id }}">{{ pr.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="grid-form-2">
+          <div class="form-group">
+            <label class="form-label">Periode ke-</label>
+            <input type="number" class="form-control" name="period_number" value="1" min="1" required>
+            <small style="font-size: 11px; color: var(--gray-500);">1 periode = 8 pertemuan terlaksana.</small>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Total Tagihan (Rp)</label>
+            <input type="number" class="form-control" name="total_amount" placeholder="Nominal tagihan sesuai kesepakatan" min="1000" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Judul / Keterangan Tagihan</label>
+          <input type="text" class="form-control" name="title" placeholder="Contoh: Biaya Les Periode 1 (8 Pertemuan)" required>
+        </div>
+
+        <div class="grid-form-2">
+          <div class="form-group">
+            <label class="form-label">Jatuh Tempo (Opsional)</label>
+            <input type="date" class="form-control" name="due_date">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Catatan Tambahan</label>
+            <input type="text" class="form-control" name="notes" placeholder="Catatan internal...">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('addBillModal')">Batal</button>
+        <button type="submit" class="btn btn-primary">Simpan Tagihan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL CATAT PEMBAYARAN / CICILAN -->
+<div class="modal-overlay" id="payModal">
+  <div class="modal-content" style="max-width: 480px;">
+    <div class="modal-header">
+      <div class="modal-title">{{ icon('credit-card') }} Catat Pembayaran / Cicilan</div>
+      <button type="button" class="modal-close-btn" onclick="closeModal('payModal')">&times;</button>
+    </div>
+    <form method="POST" id="payForm" action="">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <div style="background: var(--blue-soft); padding: 12px 16px; border-radius: 8px; margin-bottom: 16px;">
+          <div style="font-size: 12px; color: var(--gray-600);">Tagihan: <strong id="payBillCode" style="color: var(--navy-dark);"></strong></div>
+          <div style="font-size: 13px; font-weight: 700; color: var(--navy-dark);" id="payStudentName"></div>
+          <div style="font-size: 13px; color: var(--danger-color); font-weight: 700; margin-top: 4px;">
+            Sisa Tagihan: <span id="payRemainingText"></span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Nominal Pembayaran (Rp)</label>
+          <input type="number" class="form-control" id="payAmountInput" name="amount" min="1000" required>
+          <small style="font-size: 11px; color: var(--gray-500);">Bisa dibayar penuh atau dicicil sebagian.</small>
+        </div>
+
+        <div class="grid-form-2">
+          <div class="form-group">
+            <label class="form-label">Tanggal Bayar</label>
+            <input type="date" class="form-control" name="payment_date" value="{{ date_today }}" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Metode</label>
+            <select class="form-select" name="payment_method">
+              <option value="Transfer Bank">Transfer Bank</option>
+              <option value="Tunai">Tunai / Cash</option>
+              <option value="QRIS">QRIS</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Catatan Transaksi</label>
+          <input type="text" class="form-control" name="notes" placeholder="Contoh: Cicilan ke-1 via BCA">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('payModal')">Batal</button>
+        <button type="submit" class="btn btn-primary">Simpan &amp; Terbitkan Kuitansi</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openPayModal(billId, billCode, studentName, remainingAmount) {
+    document.getElementById("payForm").action = "/admin/bills/" + billId + "/pay";
+    document.getElementById("payBillCode").innerText = billCode;
+    document.getElementById("payStudentName").innerText = studentName;
+    document.getElementById("payRemainingText").innerText = "Rp " + Number(remainingAmount).toLocaleString("id-ID");
+    document.getElementById("payAmountInput").value = remainingAmount;
+    document.getElementById("payAmountInput").max = remainingAmount;
+    openModal("payModal");
+  }
+</script>
+{% endblock %}

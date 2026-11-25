@@ -29,31 +29,67 @@
       <table class="table-desi">
         <thead>
           <tr>
-            <th>Tanggal Sesi</th>
-            <th>Waktu</th>
-            <th>Program Les</th>
-            <th>Mentor Pengampu</th>
+            <th>Tanggal & Waktu Sesi</th>
+            <th>Sesi & Siklus Periode</th>
+            <th>Program & Mentor</th>
             <th>Status Kehadiran</th>
-            <th>Catatan Mentor</th>
+            <th>Materi & Catatan Mentor</th>
           </tr>
         </thead>
         <tbody>
           {% for a in attendance_list %}
           <tr>
-            <td><strong>{{ a.schedule_date|date_indo }}</strong></td>
-            <td>{{ a.start_time }} - {{ a.end_time }} WIB</td>
-            <td><strong>{{ a.program_name }}</strong></td>
-            <td>{{ a.mentor_name }}</td>
-            <td>{{ a.status|status_badge|safe }}</td>
             <td>
-              <div style="font-size: 12.5px; color: var(--gray-700);">
-                {{ a.notes or 'Hadir sesuai jadwal' }}
+              <strong style="color: var(--navy-dark); font-size: 13.5px;">{{ a.schedule_date|date_indo }}</strong>
+              <div style="font-size: 11.5px; color: var(--blue-brand); margin-top: 2px;">{{ a.start_time }} - {{ a.end_time }}</div>
+            </td>
+            <td>
+              {% if a.meeting_number and a.period_number %}
+                <span class="badge" style="background: #e0f2fe; color: #0369a1; font-size: 11px; font-weight: 700; border-radius: 4px;">
+                  Periode {{ a.period_number }} &bull; Pertemuan {{ a.meeting_number }}
+                </span>
+                {% if a.cumulative_meeting %}
+                  <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 3px;">
+                    Total Pertemuan Ke-{{ a.cumulative_meeting }}
+                  </div>
+                {% endif %}
+              {% else %}
+                <span style="font-size: 11.5px; color: var(--gray-500);">-</span>
+              {% endif %}
+            </td>
+            <td>
+              <strong style="color: var(--navy-primary); font-size: 13.5px;">{{ a.program_name }}</strong>
+              <div style="font-size: 11.5px; color: var(--gray-600); margin-top: 2px;">
+                Mentor: <strong>{{ a.mentor_name }}</strong>
               </div>
+            </td>
+            <td>
+              {% if a.status == 'hadir' and (a.session_status == 'terlaksana' or not a.session_status) %}
+                <span class="badge badge-success" style="font-size: 11px;">Hadir (Terlaksana)</span>
+              {% elif a.session_status == 'siswa_berhalangan' or a.status == 'izin' %}
+                <span class="badge badge-warning" style="font-size: 11px;">Siswa Berhalangan</span>
+              {% else %}
+                <span class="badge badge-danger" style="font-size: 11px;">{{ a.status|capitalize }}</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if a.topics_covered %}
+                <div style="font-size: 12.5px; font-weight: 600; color: var(--navy-dark);">
+                  {{ a.topics_covered }}
+                </div>
+              {% endif %}
+              {% if a.progress_notes or a.notes %}
+                <div style="font-size: 11.5px; color: var(--gray-600); margin-top: 3px;">
+                  {{ a.progress_notes or a.notes }}
+                </div>
+              {% elif not a.topics_covered %}
+                <span style="font-size: 11.5px; color: var(--gray-500); font-style: italic;">Sesi bimbingan berjalan lancar</span>
+              {% endif %}
             </td>
           </tr>
           {% else %}
           <tr>
-            <td colspan="6" style="text-align: center; color: var(--gray-500); padding: 24px;">
+            <td colspan="5" style="text-align: center; color: var(--gray-500); padding: 32px;">
               Belum ada riwayat absensi kehadiran untuk ananda ini.
             </td>
           </tr>

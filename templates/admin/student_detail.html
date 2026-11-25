@@ -92,6 +92,9 @@
                     <span class="badge badge-period" style="font-size: 12px; padding: 4px 8px;">
                       {{ pr.meeting_stats.next_meeting_bracket }}
                     </span>
+                    <span class="badge" style="background: #e0f2fe; color: #0369a1; font-size: 11px; padding: 3px 7px; font-weight: 600;">
+                      {{ pr.meetings_per_period or 8 }} Pertemuan / Periode
+                    </span>
                   </div>
                   <div style="font-size: 11.5px; color: var(--gray-600); margin-top: 4px;">
                     Total: <strong>{{ pr.meeting_stats.total_completed }} sesi</strong>
@@ -113,7 +116,13 @@
                       class="btn btn-primary btn-sm"
                       style="padding: 4px 8px; font-size: 11.5px; white-space: nowrap;"
                       title="Atur Riwayat Periode Awal Program Ini (Siswa Lama)"
-                      onclick="openProgramInitialModal({{ pr.id }}, {{ pr.program_id }}, '{{ pr.program_name }}', {{ pr.meeting_stats.initial_period or 1 }}, {{ pr.meeting_stats.initial_meeting or 0 }}, {{ (pr.meeting_stats.offset_notes or '')|tojson }})"
+                      data-sp-id="{{ pr.id }}"
+                      data-program-id="{{ pr.program_id }}"
+                      data-program-name="{{ pr.program_name }}"
+                      data-period="{{ pr.meeting_stats.initial_period or 1 }}"
+                      data-meeting="{{ pr.meeting_stats.initial_meeting or 0 }}"
+                      data-notes="{{ pr.meeting_stats.offset_notes or '' }}"
+                      onclick="btnOpenProgramInitialModal(this)"
                     >
                       {{ icon('settings') }} Periode
                     </button>
@@ -121,7 +130,15 @@
                       type="button"
                       class="btn btn-secondary btn-sm"
                       style="padding: 4px 8px; font-size: 11.5px; white-space: nowrap;"
-                      onclick="openEditStudentProgramModal({{ pr.id }}, {{ pr.program_id }}, '{{ pr.mentor_id or '' }}', '{{ pr.status }}', '{{ pr.start_date or '' }}', '{{ pr.end_date or '' }}', {{ (pr.notes or '')|tojson }})"
+                      data-sp-id="{{ pr.id }}"
+                      data-program-id="{{ pr.program_id }}"
+                      data-mentor-id="{{ pr.mentor_id or '' }}"
+                      data-status="{{ pr.status }}"
+                      data-start-date="{{ pr.start_date or '' }}"
+                      data-end-date="{{ pr.end_date or '' }}"
+                      data-notes="{{ pr.notes or '' }}"
+                      data-mpp="{{ pr.meetings_per_period or 8 }}"
+                      onclick="btnOpenEditStudentProgramModal(this)"
                     >
                       {{ icon('edit') }} Edit
                     </button>
@@ -160,11 +177,18 @@
       <div class="card-body">
         {% for prog in progress_list %}
         <div class="progress-card">
-          <div class="progress-header">
+          <div class="progress-header" style="display: flex; justify-content: space-between; align-items: center;">
             <div>
               <strong style="color: var(--navy-primary); font-size: 15px;">{{ prog.program_name }}</strong>
               <div style="font-size: 12px; color: var(--gray-500);">Mentor: {{ prog.mentor_name }} &bull; Tanggal Sesi: {{ prog.session_date|date_indo }}</div>
             </div>
+            {% if prog.documentation_photo %}
+              <a href="{{ url_for('serve_session_photo', filename=prog.documentation_photo) }}" target="_blank" class="btn btn-sm btn-outline-primary" style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 4px 8px;">
+                {{ icon('camera') }} Lihat Dokumentasi Foto
+              </a>
+            {% elif prog.documentation_status == 'menunggu' %}
+              <span class="badge badge-warning" style="font-size: 11px;">{{ icon('alert') }} Foto Menunggu Verifikasi</span>
+            {% endif %}
           </div>
           <div class="progress-grid">
             <div class="progress-item-box">
@@ -501,12 +525,29 @@
       <div class="modal-body">
         <div class="form-group">
           <label class="form-label">Pilih Program Les <span style="color:red">*</span></label>
-          <select name="program_id" class="form-control" required>
+          <select name="program_id" id="addProgProgramSelect" class="form-control" required>
             <option value="">-- Pilih Program Les --</option>
             {% for p in all_programs %}
-              <option value="{{ p.id }}">{{ p.name }} ({{ p.code }}) - {{ p.level }}</option>
+              <option value="{{ p.id }}" data-service="{{ p.service_type or 'Private Tutoring' }}" data-level="{{ p.level or 'SD' }}" data-name="{{ p.name }}">
+                {{ p.name }} ({{ p.level or 'Umum' }} &bull; {{ p.service_type or 'Private Tutoring' }})
+              </option>
             {% endfor %}
           </select>
+          <small style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 3px;">
+            Tarif dihitung otomatis sesuai kategori layanan &amp; jenjang pendidikan siswa.
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Paket Jumlah Pertemuan <span style="color:red">*</span></label>
+          <select name="meetings_per_period" id="addProgMppSelect" class="form-control" required style="font-weight: 600;">
+            <option value="4">4 Pertemuan per Periode (4 Sesi)</option>
+            <option value="8" selected>8 Pertemuan per Periode (Standar - 8 Sesi)</option>
+            <option value="12">12 Pertemuan per Periode (Intensif - 12 Sesi)</option>
+          </select>
+          <small style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 3px;">
+            Siklus periode &amp; evaluasi pencairan honor.
+          </small>
         </div>
 
         <div class="form-group">
@@ -579,6 +620,18 @@
             {% endfor %}
           </select>
           <small style="color: var(--gray-500);">Pilih program lain jika siswa ingin beralih / berganti program les.</small>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Paket Jumlah Pertemuan per Periode <span style="color:red">*</span></label>
+          <select name="meetings_per_period" id="editSpMeetingsPerPeriod" class="form-control" required style="font-weight: 600;">
+            <option value="8">8 Pertemuan per Periode (Standar - 8 Sesi)</option>
+            <option value="4">4 Pertemuan per Periode (Paket Khusus - 4 Sesi)</option>
+            <option value="12">12 Pertemuan per Periode (Paket Intensif - 12 Sesi)</option>
+          </select>
+          <small style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 3px;">
+            Menentukan kapan periode baru dimulai dan fee tentor dicairkan (setiap 4, 8, atau 12 pertemuan).
+          </small>
         </div>
 
         <div class="form-group">
@@ -858,7 +911,7 @@
 {% block extra_js %}
 <!-- MODAL TAMBAH JADWAL RUTIN SISWA -->
 <div class="modal-overlay" id="addStudentRoutineModal">
-  <div class="modal-dialog" style="max-width: 560px;">
+  <div class="modal-dialog" style="max-width: 720px;">
     <div class="modal-header">
       <div class="modal-title">{{ icon('calendar') }} Tambah Jadwal Rutin untuk {{ student.full_name }}</div>
       <button class="modal-close-btn" onclick="closeModal('addStudentRoutineModal')">&times;</button>
@@ -869,45 +922,83 @@
       <div class="modal-body">
         <div class="grid-form-2">
           <div class="form-group">
-            <label class="form-label">Program Les <span style="color: var(--danger);">*</span></label>
+            <label class="form-label">Program Les yang Diambil Siswa <span style="color: var(--danger);">*</span></label>
             <select class="form-select" name="program_id" required>
-              <option value="">-- Pilih Program --</option>
-              {% for pr in all_programs %}
-                <option value="{{ pr.id }}">{{ pr.name }}</option>
+              <option value="">-- Pilih Program yang Diambil Siswa --</option>
+              {% for pr in programs %}
+                <option value="{{ pr.program_id }}">{{ pr.program_name }}</option>
               {% endfor %}
             </select>
+            <small style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 3px;">
+              Hanya menampilkan program aktif yang diambil oleh {{ student.full_name }}.
+            </small>
           </div>
           <div class="form-group">
-            <label class="form-label">Mentor Pengampu <span style="color: var(--danger);">*</span></label>
-            <select class="form-select" name="mentor_id" required>
-              <option value="">-- Pilih Mentor --</option>
-              {% for m in all_mentors %}
-                <option value="{{ m.id }}">{{ m.full_name }}</option>
-              {% endfor %}
-            </select>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label class="form-label" style="margin: 0; font-size: 13px; font-weight: 600;">
+                Mentor Pengampu <span style="color: var(--danger);">*</span>
+              </label>
+              <button type="button" class="btn btn-outline-primary btn-sm" onclick="addStudentDetailMentorSelect()" style="font-size: 11px; padding: 2px 8px; font-weight: 600;" title="Tambahkan mentor jika 1 anak diajar 2 mentor bergantian">
+                {{ icon('plus') }} Tambah Mentor
+              </button>
+            </div>
+            <div id="stDetailMentorContainer" style="display: flex; flex-direction: column; gap: 6px;">
+              <div class="st-mentor-row" style="display: flex; gap: 6px; align-items: center;">
+                <select class="form-select form-select-sm st-mentor-select" name="mentor_ids[]" required style="flex: 1;">
+                  <option value="">-- Pilih Mentor --</option>
+                  {% for m in all_mentors %}
+                    <option value="{{ m.id }}">{{ m.full_name }}</option>
+                  {% endfor %}
+                </select>
+                <button type="button" class="btn btn-outline-danger btn-sm btn-remove-st-mentor" onclick="removeStudentDetailMentorSelect(this)" style="display: none; padding: 6px 10px;" title="Hapus Mentor">
+                  {{ icon('trash') }}
+                </button>
+              </div>
+            </div>
+            <small style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 3px;">
+              Jika 1 siswa diajar 2 mentor (misal bergantian di Gowa &amp; Makassar), klik <strong>+ Tambah Mentor</strong>.
+            </small>
           </div>
         </div>
 
-        <div class="grid-form-3">
-          <div class="form-group">
-            <label class="form-label">Hari Les <span style="color: var(--danger);">*</span></label>
-            <select class="form-select" name="day_of_week" required>
-              <option value="0">Senin</option>
-              <option value="1">Selasa</option>
-              <option value="2">Rabu</option>
-              <option value="3">Kamis</option>
-              <option value="4">Jumat</option>
-              <option value="5" selected>Sabtu</option>
-              <option value="6">Minggu</option>
-            </select>
+        <!-- Dynamic Slots Container -->
+        <div style="margin-top: 16px; margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <label class="form-label" style="font-weight: 600; margin: 0;">Jadwal Hari & Jam Les <span style="color: var(--danger);">*</span></label>
+            <button type="button" class="btn btn-outline-primary btn-sm" onclick="addStudentDetailRoutineSlotRow()" style="font-size: 11px; padding: 4px 10px;">
+              {{ icon('plus') }} Tambah Hari / Jadwal Lain
+            </button>
           </div>
-          <div class="form-group">
-            <label class="form-label">Jam Mulai <span style="color: var(--danger);">*</span></label>
-            <input type="time" class="form-control" name="start_time" value="09:00" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Jam Selesai <span style="color: var(--danger);">*</span></label>
-            <input type="time" class="form-control" name="end_time" value="10:30" required>
+          <div id="studentRoutineSlotsContainer" style="display: flex; flex-direction: column; gap: 10px;">
+            <div class="st-routine-slot-row" style="background: var(--bg-surface, #f8f9fa); border: 1px solid var(--border-color, #e2e8f0); border-radius: 8px; padding: 10px;">
+              <div style="display: grid; grid-template-columns: 2fr 1.5fr 1.5fr auto; gap: 8px; align-items: end;">
+                <div>
+                  <label style="font-size: 11px; font-weight: 500; display: block; margin-bottom: 3px;">Hari <span style="color: var(--danger);">*</span></label>
+                  <select class="form-select form-select-sm" name="day_of_week[]" required>
+                    <option value="0">Senin</option>
+                    <option value="1">Selasa</option>
+                    <option value="2">Rabu</option>
+                    <option value="3">Kamis</option>
+                    <option value="4">Jumat</option>
+                    <option value="5" selected>Sabtu</option>
+                    <option value="6">Minggu</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size: 11px; font-weight: 500; display: block; margin-bottom: 3px;">Jam Mulai <span style="color: var(--danger);">*</span></label>
+                  <input type="time" class="form-control form-control-sm" name="start_time[]" value="09:00" required>
+                </div>
+                <div>
+                  <label style="font-size: 11px; font-weight: 500; display: block; margin-bottom: 3px;">Jam Selesai <span style="color: var(--danger);">*</span></label>
+                  <input type="time" class="form-control form-control-sm" name="end_time[]" value="10:30" required>
+                </div>
+                <div>
+                  <button type="button" class="btn btn-outline-danger btn-sm btn-remove-slot" onclick="removeStudentDetailRoutineSlotRow(this)" style="display: none; padding: 4px 8px;" title="Hapus slot">
+                    {{ icon('trash') }}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1059,7 +1150,20 @@ function recalculateDetailPreview() {
   document.getElementById("detailPreviewNext").innerText = "Pertemuan " + nextM + " (" + nextP + ")";
 }
 
-function openEditStudentProgramModal(spId, programId, mentorId, status, startDate, endDate, notes) {
+function btnOpenEditStudentProgramModal(btn) {
+  openEditStudentProgramModal(
+    btn.dataset.spId,
+    btn.dataset.programId,
+    btn.dataset.mentorId,
+    btn.dataset.status,
+    btn.dataset.startDate,
+    btn.dataset.endDate,
+    btn.dataset.notes,
+    btn.dataset.mpp
+  );
+}
+
+function openEditStudentProgramModal(spId, programId, mentorId, status, startDate, endDate, notes, mpp) {
   const form = document.getElementById("editStudentProgramForm");
   form.action = "{{ url_for('admin.student_detail', student_id=student.id) }}/programs/" + spId + "/edit";
   document.getElementById("editSpProgramId").value = programId;
@@ -1068,7 +1172,21 @@ function openEditStudentProgramModal(spId, programId, mentorId, status, startDat
   document.getElementById("editSpStartDate").value = startDate || "";
   document.getElementById("editSpEndDate").value = endDate || "";
   document.getElementById("editSpNotes").value = notes || "";
+  if (document.getElementById("editSpMeetingsPerPeriod")) {
+    document.getElementById("editSpMeetingsPerPeriod").value = mpp || 8;
+  }
   openModal("editStudentProgramModal");
+}
+
+function btnOpenProgramInitialModal(btn) {
+  openProgramInitialModal(
+    btn.dataset.spId,
+    btn.dataset.programId,
+    btn.dataset.programName,
+    btn.dataset.period,
+    btn.dataset.meeting,
+    btn.dataset.notes
+  );
 }
 
 function openProgramInitialModal(spId, programId, programName, period, meeting, notes) {
@@ -1105,6 +1223,81 @@ function updateProgInitialPreview() {
   const nextM = ((nextTotal - 1) % 8) + 1;
   const nextLabel = (nextP > 1) ? `Pertemuan ${nextM} [${nextP}]` : `Pertemuan ${nextM}`;
   document.getElementById("previewProgNext").innerText = nextLabel;
+}
+
+function addStudentDetailMentorSelect() {
+  const container = document.getElementById("stDetailMentorContainer");
+  if (!container) return;
+  const firstRow = container.querySelector(".st-mentor-row");
+  const newRow = firstRow.cloneNode(true);
+  const select = newRow.querySelector("select");
+  select.value = "";
+  const removeBtn = newRow.querySelector(".btn-remove-st-mentor");
+  if (removeBtn) removeBtn.style.display = "inline-flex";
+  container.appendChild(newRow);
+  updateStudentDetailMentorButtons();
+}
+
+function removeStudentDetailMentorSelect(btn) {
+  const container = document.getElementById("stDetailMentorContainer");
+  if (!container) return;
+  const rows = container.querySelectorAll(".st-mentor-row");
+  if (rows.length > 1) {
+    btn.closest(".st-mentor-row").remove();
+  }
+  updateStudentDetailMentorButtons();
+}
+
+function updateStudentDetailMentorButtons() {
+  const container = document.getElementById("stDetailMentorContainer");
+  if (!container) return;
+  const rows = container.querySelectorAll(".st-mentor-row");
+  rows.forEach((row) => {
+    const btn = row.querySelector(".btn-remove-st-mentor");
+    if (btn) {
+      btn.style.display = (rows.length > 1) ? "inline-flex" : "none";
+    }
+  });
+}
+
+function addStudentDetailRoutineSlotRow() {
+  const container = document.getElementById("studentRoutineSlotsContainer");
+  const firstRow = container.querySelector(".st-routine-slot-row");
+  const newRow = firstRow.cloneNode(true);
+  
+  const daySelect = newRow.querySelector("select[name='day_of_week[]']");
+  if (daySelect) daySelect.value = "0";
+  const startInput = newRow.querySelector("input[name='start_time[]']");
+  if (startInput) startInput.value = "09:00";
+  const endInput = newRow.querySelector("input[name='end_time[]']");
+  if (endInput) endInput.value = "10:30";
+  
+  const removeBtn = newRow.querySelector(".btn-remove-slot");
+  if (removeBtn) {
+    removeBtn.style.display = "inline-flex";
+  }
+  container.appendChild(newRow);
+  updateStudentDetailRemoveButtons();
+}
+
+function removeStudentDetailRoutineSlotRow(btn) {
+  const container = document.getElementById("studentRoutineSlotsContainer");
+  const rows = container.querySelectorAll(".st-routine-slot-row");
+  if (rows.length > 1) {
+    btn.closest(".st-routine-slot-row").remove();
+  }
+  updateStudentDetailRemoveButtons();
+}
+
+function updateStudentDetailRemoveButtons() {
+  const container = document.getElementById("studentRoutineSlotsContainer");
+  const rows = container.querySelectorAll(".st-routine-slot-row");
+  rows.forEach((row) => {
+    const btn = row.querySelector(".btn-remove-slot");
+    if (btn) {
+      btn.style.display = (rows.length > 1) ? "inline-flex" : "none";
+    }
+  });
 }
 </script>
 {% endblock %}

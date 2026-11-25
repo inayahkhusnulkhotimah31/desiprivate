@@ -14,6 +14,7 @@ Layanan perhitungan otomatis siklus periode dan nomor pertemuan les:
 """
 from services.database_service import query_db, execute_db
 from services.audit_service import log_audit
+import datetime
 
 MEETINGS_PER_PERIOD = 8
 
@@ -39,18 +40,28 @@ def format_meeting_label(period_number, meeting_number, style="bracket"):
     else:
         return f"Pertemuan {m} ({p})"
 
-def calculate_period_and_meeting(total_valid_meetings):
+def calculate_period_and_meeting(total_valid_meetings, meetings_per_period=8):
     """
     Menghitung nomor periode dan nomor pertemuan berdasarkan total pertemuan valid.
+    Mendukung paket pertemuan dinamis (4, 8, atau 12 sesi per periode).
     Kompatibel dengan pengujian dan tampilan sistem.
-    Contoh:
+    Contoh (paket 8 sesi):
     1 -> Periode 1, Pertemuan 1 -> 'Pertemuan 1 (1)'
     8 -> Periode 1, Pertemuan 8 -> 'Pertemuan 8 (1)'
     9 -> Periode 2, Pertemuan 1 -> 'Pertemuan 1 (2)'
     16 -> Periode 2, Pertemuan 8 -> 'Pertemuan 8 (2)'
-    17 -> Periode 3, Pertemuan 1 -> 'Pertemuan 1 (3)'
-    41 -> Periode 6, Pertemuan 1 -> 'Pertemuan 1 (6)'
+    Contoh (paket 12 sesi):
+    8 -> Periode 1, Pertemuan 8
+    12 -> Periode 1, Pertemuan 12
+    13 -> Periode 2, Pertemuan 1
     """
+    try:
+        mpp = int(meetings_per_period) if meetings_per_period else 8
+        if mpp <= 0:
+            mpp = 8
+    except (TypeError, ValueError):
+        mpp = 8
+
     try:
         total = int(total_valid_meetings)
     except (TypeError, ValueError):
@@ -59,21 +70,23 @@ def calculate_period_and_meeting(total_valid_meetings):
     if total <= 0:
         return 0, 0, "-"
 
-    period_number = ((total - 1) // MEETINGS_PER_PERIOD) + 1
-    meeting_number = ((total - 1) % MEETINGS_PER_PERIOD) + 1
+    period_number = ((total - 1) // mpp) + 1
+    meeting_number = ((total - 1) % mpp) + 1
     formatted = f"Pertemuan {meeting_number} ({period_number})"
     return period_number, meeting_number, formatted
 
-def calculate_total_from_period_and_meeting(period_number, meeting_number):
+def calculate_total_from_period_and_meeting(period_number, meeting_number, meetings_per_period=8):
     """
     Menghitung total pertemuan kumulatif dari kombinasi periode dan nomor pertemuan terakhir.
-    Contoh:
-    Periode 1, Pertemuan 1 -> Total 1
-    Periode 1, Pertemuan 8 -> Total 8
-    Periode 2, Pertemuan 1 -> Total 9
-    Periode 4, Pertemuan 3 -> Total (4 - 1) * 8 + 3 = 27
-    Periode 6, Pertemuan 0 -> Total (6 - 1) * 8 = 40
+    Mendukung paket pertemuan dinamis (4, 8, atau 12 sesi per periode).
     """
+    try:
+        mpp = int(meetings_per_period) if meetings_per_period else 8
+        if mpp <= 0:
+            mpp = 8
+    except (TypeError, ValueError):
+        mpp = 8
+
     try:
         p = int(period_number)
         m = int(meeting_number)
@@ -83,8 +96,8 @@ def calculate_total_from_period_and_meeting(period_number, meeting_number):
     if p <= 0 or m < 0:
         return 0
     if m == 0:
-        return (p - 1) * MEETINGS_PER_PERIOD
-    return ((p - 1) * MEETINGS_PER_PERIOD) + m
+        return (p - 1) * mpp
+    return ((p - 1) * mpp) + m
 
 def get_student_program_meeting_stats(student_id, program_id, db_path=None):
     """
@@ -115,7 +128,8 @@ def get_student_program_meeting_stats(student_id, program_id, db_path=None):
     sp = query_db(
         """
         SELECT id, initial_periods_completed, initial_last_meeting, initial_offset_total,
-               initial_offset_notes, initial_offset_set_at, initial_offset_set_by
+               initial_offset_notes, initial_offset_set_at, initial_offset_set_by,
+               meetings_per_period
         FROM student_programs
         WHERE student_id = ? AND program_id = ?
         """,
@@ -123,6 +137,9 @@ def get_student_program_meeting_stats(student_id, program_id, db_path=None):
         one=True,
         db_path=db_path
     )
+    mpp = int(sp["meetings_per_period"]) if (sp and sp["meetings_per_period"]) else 8
+    if mpp not in (4, 8, 12):
+        mpp = 8
 
     if sp and (sp["initial_offset_total"] is not None and sp["initial_offset_total"] > 0):
         initial_offset = sp["initial_offset_total"]
@@ -133,26 +150,27 @@ def get_student_program_meeting_stats(student_id, program_id, db_path=None):
     elif sp and (sp["initial_periods_completed"] or sp["initial_last_meeting"]):
         initial_period = sp["initial_periods_completed"] or 0
         initial_meeting = sp["initial_last_meeting"] or 0
-        initial_offset = calculate_total_from_period_and_meeting(initial_period, initial_meeting)
+        initial_offset = calculate_total_from_period_and_meeting(initial_period, initial_meeting, mpp)
         offset_notes = sp["initial_offset_notes"] or ""
         offset_set_at = sp["initial_offset_set_at"]
     else:
         # Fallback kompatibilitas mundur ke initial_meeting_offset pada siswa jika hanya ada 1 program
         initial_offset = student["initial_meeting_offset"] or 0
         if initial_offset > 0:
-            initial_period, initial_meeting, _ = calculate_period_and_meeting(initial_offset)
+            initial_period, initial_meeting, _ = calculate_period_and_meeting(initial_offset, mpp)
         else:
             initial_period, initial_meeting = 0, 0
         offset_notes = student["initial_offset_notes"] or ""
         offset_set_at = student["initial_offset_set_at"]
 
-    # Ambil jumlah absensi valid (status = hadir) KHUSUS program ini
+    # Ambil jumlah absensi valid (status = hadir dan sesi terlaksana) KHUSUS program ini
     att_row = query_db(
         """
         SELECT COUNT(a.id) as valid_count
         FROM attendance a
         JOIN schedules s ON a.schedule_id = s.id
         WHERE a.student_id = ? AND s.program_id = ? AND a.status = 'hadir'
+          AND (a.session_status IS NULL OR a.session_status = 'terlaksana')
         """,
         (student_id, program_id),
         one=True,
@@ -162,12 +180,12 @@ def get_student_program_meeting_stats(student_id, program_id, db_path=None):
     total_completed = initial_offset + valid_count
 
     if total_completed > 0:
-        last_p, last_m, last_str = calculate_period_and_meeting(total_completed)
+        last_p, last_m, last_str = calculate_period_and_meeting(total_completed, mpp)
         last_bracket = format_meeting_label(last_p, last_m, style="bracket")
     else:
         last_p, last_m, last_str, last_bracket = 0, 0, "Belum ada", "Belum ada"
 
-    next_p, next_m, next_str = calculate_period_and_meeting(total_completed + 1)
+    next_p, next_m, next_str = calculate_period_and_meeting(total_completed + 1, mpp)
     next_bracket = format_meeting_label(next_p, next_m, style="bracket")
 
     return {
@@ -176,6 +194,7 @@ def get_student_program_meeting_stats(student_id, program_id, db_path=None):
         "program_id": program_id,
         "program_name": program_name,
         "student_program_id": sp["id"] if sp else None,
+        "meetings_per_period": mpp,
         "initial_offset": initial_offset,
         "initial_period": initial_period,
         "initial_meeting": initial_meeting,
@@ -294,17 +313,25 @@ def get_student_meeting_stats(student_id, program_id=None, db_path=None):
     }
 
 def record_or_update_attendance(
-    schedule_id, student_id, mentor_id, status,
+    schedule_id, student_id, mentor_id, status="hadir",
     notes="", topics_covered="", progress_notes="",
     skills_mastered="", difficulties="", recommendations="",
+    mentor_status=None, session_status=None,
+    documentation_status="tidak_ada", documentation_photo=None,
+    documentation_pending_reason=None, attendance_date=None,
     db_path=None
 ):
     """
-    Mencatat atau memperbarui absensi dengan perhitungan nomor pertemuan & periode independen per program.
-    - Status 'hadir': dihitung sebagai pertemuan valid pada program terkait.
-    - Status 'izin' / 'tidak_hadir': TIDAK dihitung sebagai pertemuan valid.
-    - Edit absensi yang sudah 'hadir': nomor pertemuan & periode dipertahankan (tidak bertambah).
-    - Mencegah absensi ganda pada schedule_id yang sama.
+    Mencatat atau memperbarui absensi dengan pemisahan absensi mentor dan sesi belajar siswa (Langkah 3):
+    - Kondisi 1 (Mentor Hadir & Sesi Terlaksana):
+      mentor_status='hadir', session_status='terlaksana', status='hadir'.
+      Dihitung sebagai pertemuan valid (+1), dokumentasi foto wajib (lengkap) atau tertunda (menunggu).
+    - Kondisi 2 (Mentor Hadir, Siswa Berhalangan):
+      mentor_status='hadir', session_status='siswa_berhalangan', status='izin'.
+      Absensi mentor tercatat hadir, tetapi sesi siswa TIDAK dihitung selesai (pertemuan +0, periode +0).
+    - Kondisi 3 (Mentor Tidak Hadir):
+      mentor_status='tidak_hadir', session_status='mentor_berhalangan', status='tidak_hadir'.
+      Absensi mentor tercatat tidak hadir, sesi siswa TIDAK selesai (pertemuan +0, periode +0).
     """
     sched = query_db(
         "SELECT program_id, schedule_date FROM schedules WHERE id = ?",
@@ -313,11 +340,71 @@ def record_or_update_attendance(
         db_path=db_path
     )
     program_id = sched["program_id"] if sched else None
+    att_date = attendance_date or (sched["schedule_date"] if sched and sched["schedule_date"] else datetime.date.today().strftime("%Y-%m-%d"))
+
+    # Normalisasi status jika caller belum memberikan mentor_status/session_status spesifik
+    if mentor_status is None:
+        mentor_status = "hadir" if status == "hadir" else "hadir"
+    if session_status is None:
+        session_status = "terlaksana" if status == "hadir" else "siswa_berhalangan"
+
+    is_session_conducted = (mentor_status == "hadir" and session_status == "terlaksana")
+
+    if is_session_conducted:
+        student_status = "hadir"
+    elif session_status in ("siswa_berhalangan", "izin"):
+        student_status = status if status in ("izin", "tidak_hadir") else "izin"
+    else:
+        student_status = "tidak_hadir"
+
+    # Penentuan status dokumentasi foto
+    if is_session_conducted:
+        if documentation_photo:
+            doc_status = "lengkap"
+        elif documentation_pending_reason:
+            doc_status = "menunggu"
+        else:
+            doc_status = documentation_status or "tidak_ada"
+    else:
+        doc_status = "tidak_ada"
+        documentation_photo = None
+        documentation_pending_reason = None
+
+    # Catat absensi mandiri mentor pada tabel mentor_attendance
+    # Constraint unik: (schedule_id, mentor_id, attendance_date)
+    existing_ma = query_db(
+        "SELECT id FROM mentor_attendance WHERE schedule_id = ? AND mentor_id = ? AND attendance_date = ?",
+        (schedule_id, mentor_id, att_date),
+        one=True,
+        db_path=db_path
+    )
+    if existing_ma:
+        execute_db(
+            """
+            UPDATE mentor_attendance
+            SET status = ?, notes = ?, recorded_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (mentor_status, notes, existing_ma["id"]),
+            db_path=db_path
+        )
+        mentor_att_id = existing_ma["id"]
+    else:
+        mentor_att_id = execute_db(
+            """
+            INSERT INTO mentor_attendance (schedule_id, mentor_id, status, attendance_date, notes)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (schedule_id, mentor_id, mentor_status, att_date, notes),
+            db_path=db_path
+        )
 
     # Ambil statistik khusus program dari jadwal ini
     stats = get_student_program_meeting_stats(student_id, program_id, db_path=db_path) if program_id else get_student_meeting_stats(student_id, db_path=db_path)
     if not stats:
         return {"success": False, "message": "Data siswa atau program tidak ditemukan."}
+
+    mpp = stats.get("meetings_per_period", 8)
 
     existing = query_db(
         "SELECT * FROM attendance WHERE schedule_id = ?",
@@ -328,42 +415,55 @@ def record_or_update_attendance(
 
     if existing:
         # Sedang mengedit absensi yang sudah ada
-        old_status = existing["status"]
-        if status == "hadir":
-            if old_status == "hadir" and existing["cumulative_meeting"]:
+        existing_dict = dict(existing)
+        old_conducted = (existing_dict.get("status") == "hadir" and (existing_dict.get("session_status") is None or existing_dict.get("session_status") == "terlaksana"))
+        if is_session_conducted:
+            if old_conducted and existing_dict.get("cumulative_meeting"):
                 # Pertahankan nomor lama yang sudah tersimpan
-                cum_num = existing["cumulative_meeting"]
-                p_num = existing["period_number"]
-                m_num = existing["meeting_number"]
+                cum_num = existing_dict["cumulative_meeting"]
+                p_num = existing_dict["period_number"]
+                m_num = existing_dict["meeting_number"]
             else:
-                # Baru diubah menjadi 'hadir'
+                # Baru diubah menjadi terlaksana
                 cum_num = stats["total_completed"] + 1
-                p_num, m_num, _ = calculate_period_and_meeting(cum_num)
+                p_num, m_num, _ = calculate_period_and_meeting(cum_num, mpp)
         else:
-            # Diubah menjadi izin / tidak hadir
+            # Tidak terlaksana
             cum_num = None
             p_num = None
             m_num = None
 
+        # Jika foto baru tidak diunggah tetapi sesi sebelumnya sudah punya foto dan tetap terlaksana, pertahankan foto lama
+        final_photo = documentation_photo if documentation_photo is not None else (existing_dict.get("documentation_photo") if is_session_conducted else None)
+        if final_photo and doc_status == "tidak_ada" and is_session_conducted:
+            doc_status = "lengkap"
+
         execute_db(
             """
             UPDATE attendance
-            SET status = ?, notes = ?, topics_covered = ?, progress_notes = ?,
+            SET status = ?, mentor_status = ?, session_status = ?,
+                documentation_status = ?, documentation_photo = ?, documentation_pending_reason = ?,
+                mentor_attendance_id = ?, notes = ?, topics_covered = ?, progress_notes = ?,
                 meeting_number = ?, period_number = ?, cumulative_meeting = ?,
                 program_id = COALESCE(?, program_id),
                 recorded_at = CURRENT_TIMESTAMP
             WHERE id = ?
             """,
-            (status, notes, topics_covered, progress_notes, m_num, p_num, cum_num, program_id, existing["id"]),
+            (
+                student_status, mentor_status, session_status,
+                doc_status, final_photo, documentation_pending_reason,
+                mentor_att_id, notes, topics_covered, progress_notes,
+                m_num, p_num, cum_num, program_id, existing_dict["id"]
+            ),
             db_path=db_path
         )
-        att_id = existing["id"]
+        att_id = existing_dict["id"]
         is_update = True
     else:
         # Absensi baru
-        if status == "hadir":
+        if is_session_conducted:
             cum_num = stats["total_completed"] + 1
-            p_num, m_num, _ = calculate_period_and_meeting(cum_num)
+            p_num, m_num, _ = calculate_period_and_meeting(cum_num, mpp)
         else:
             cum_num = None
             p_num = None
@@ -372,26 +472,32 @@ def record_or_update_attendance(
         att_id = execute_db(
             """
             INSERT INTO attendance (
-                schedule_id, student_id, mentor_id, program_id, status, notes,
+                schedule_id, student_id, mentor_id, program_id, status,
+                mentor_status, session_status, documentation_status, documentation_photo,
+                documentation_pending_reason, mentor_attendance_id, notes,
                 topics_covered, progress_notes, meeting_number, period_number, cumulative_meeting
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (schedule_id, student_id, mentor_id, program_id, status, notes,
-             topics_covered, progress_notes, m_num, p_num, cum_num),
+            (
+                schedule_id, student_id, mentor_id, program_id, student_status,
+                mentor_status, session_status, doc_status, documentation_photo,
+                documentation_pending_reason, mentor_att_id, notes,
+                topics_covered, progress_notes, m_num, p_num, cum_num
+            ),
             db_path=db_path
         )
         is_update = False
 
-    # Tandai jadwal sebagai disetujui / selesai jika hadir
-    if status == "hadir":
+    # Tandai jadwal sebagai disetujui jika terlaksana
+    if is_session_conducted:
         execute_db(
             "UPDATE schedules SET status = 'disetujui' WHERE id = ?",
             (schedule_id,),
             db_path=db_path
         )
 
-    # Sinkronisasi ke tabel student_progress jika ada materi/catatan
-    if sched and (topics_covered or progress_notes or skills_mastered):
+    # Sinkronisasi ke tabel student_progress jika ada materi/catatan dan sesi terlaksana
+    if is_session_conducted and sched and (topics_covered or progress_notes or skills_mastered):
         prog_id = sched["program_id"]
         s_date = sched["schedule_date"]
         existing_sp = query_db(
@@ -424,14 +530,19 @@ def record_or_update_attendance(
                 db_path=db_path
             )
 
-    meeting_label = f"Pertemuan {m_num} ({p_num})" if (status == "hadir" and m_num) else "-"
-    meeting_label_bracket = format_meeting_label(p_num, m_num, style="bracket") if (status == "hadir" and m_num) else "-"
+    meeting_label = f"Pertemuan {m_num} ({p_num})" if (is_session_conducted and m_num) else "-"
+    meeting_label_bracket = format_meeting_label(p_num, m_num, style="bracket") if (is_session_conducted and m_num) else "-"
 
     return {
         "success": True,
         "is_update": is_update,
         "attendance_id": att_id,
-        "status": status,
+        "mentor_attendance_id": mentor_att_id,
+        "status": student_status,
+        "mentor_status": mentor_status,
+        "session_status": session_status,
+        "documentation_status": doc_status,
+        "documentation_photo": documentation_photo,
         "meeting_number": m_num,
         "period_number": p_num,
         "cumulative_meeting": cum_num,
@@ -456,22 +567,25 @@ def set_student_program_initial_history(student_id, program_id, last_period, las
     if not program:
         return {"success": False, "message": "Program les tidak ditemukan."}
 
-    try:
-        p_val = max(1, int(last_period))
-        m_val = max(0, min(8, int(last_meeting)))
-    except (TypeError, ValueError):
-        p_val = 1
-        m_val = 0
-
-    total_offset = calculate_total_from_period_and_meeting(p_val, m_val)
-
     # Cek apakah pendaftaran student_programs ada
     sp = query_db(
-        "SELECT id FROM student_programs WHERE student_id = ? AND program_id = ?",
+        "SELECT id, meetings_per_period FROM student_programs WHERE student_id = ? AND program_id = ?",
         (student_id, program_id),
         one=True,
         db_path=db_path
     )
+    mpp = int(sp["meetings_per_period"]) if (sp and sp["meetings_per_period"]) else 8
+    if mpp not in (4, 8, 12):
+        mpp = 8
+
+    try:
+        p_val = max(1, int(last_period))
+        m_val = max(0, min(mpp, int(last_meeting)))
+    except (TypeError, ValueError):
+        p_val = 1
+        m_val = 0
+
+    total_offset = calculate_total_from_period_and_meeting(p_val, m_val, mpp)
 
     if sp:
         execute_db(
@@ -620,14 +734,18 @@ def resequence_student_program_attendances(student_id, program_id, db_path=None)
     """
     Menata ulang penomoran kumulatif, periode, dan nomor pertemuan untuk
     seluruh absensi 'hadir' siswa ini KHUSUS pada program tertentu.
+    Mendukung paket pertemuan dinamis (4, 8, atau 12 sesi).
     """
     sp = query_db(
-        "SELECT initial_offset_total FROM student_programs WHERE student_id = ? AND program_id = ?",
+        "SELECT initial_offset_total, meetings_per_period FROM student_programs WHERE student_id = ? AND program_id = ?",
         (student_id, program_id),
         one=True,
         db_path=db_path
     )
     offset = (sp["initial_offset_total"] or 0) if sp else 0
+    mpp = int(sp["meetings_per_period"]) if (sp and sp["meetings_per_period"]) else 8
+    if mpp not in (4, 8, 12):
+        mpp = 8
 
     records = query_db(
         """
@@ -635,6 +753,7 @@ def resequence_student_program_attendances(student_id, program_id, db_path=None)
         FROM attendance a
         JOIN schedules s ON a.schedule_id = s.id
         WHERE a.student_id = ? AND s.program_id = ? AND a.status = 'hadir'
+          AND (a.session_status IS NULL OR a.session_status = 'terlaksana')
         ORDER BY a.recorded_at ASC, a.id ASC
         """,
         (student_id, program_id),
@@ -644,7 +763,7 @@ def resequence_student_program_attendances(student_id, program_id, db_path=None)
     current_cum = offset
     for r in records:
         current_cum += 1
-        p_num, m_num, _ = calculate_period_and_meeting(current_cum)
+        p_num, m_num, _ = calculate_period_and_meeting(current_cum, mpp)
         execute_db(
             """
             UPDATE attendance
@@ -671,6 +790,7 @@ def resequence_student_attendances(student_id, db_path=None):
         SELECT id
         FROM attendance
         WHERE student_id = ? AND status = 'hadir'
+          AND (session_status IS NULL OR session_status = 'terlaksana')
         ORDER BY recorded_at ASC, id ASC
         """,
         (student_id,),
@@ -690,3 +810,7 @@ def resequence_student_attendances(student_id, db_path=None):
             (current_cum, p_num, m_num, r["id"]),
             db_path=db_path
         )
+
+# Aliases for backwards compatibility
+recalculate_cumulative_meetings_for_student_program = resequence_student_program_attendances
+recalculate_cumulative_meetings = resequence_student_attendances

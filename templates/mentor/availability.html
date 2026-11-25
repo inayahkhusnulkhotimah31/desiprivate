@@ -1,51 +1,132 @@
 {% extends "base.html" %}
 {% block title %}Ketersediaan Waktu (Mentor){% endblock %}
 {% block page_title %}Pengaturan Ketersediaan Waktu Mengajar{% endblock %}
-{% block page_subtitle %}Atur hari dan jam kosong Anda agar Admin dan sistem dapat menjadwalkan les secara optimal{% endblock %}
+{% block page_subtitle %}Atur hari dan rentang jam kosong Anda secara fleksibel (bisa multi-jam di hari yang sama maupun hari berbeda){% endblock %}
 
 {% block content %}
-<div class="grid-profile-layout">
+<style>
+  .avail-layout-container {
+    display: grid;
+    grid-template-columns: minmax(340px, 440px) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+  .avail-slot-card {
+    background: var(--bg-soft, #f8fafc);
+    border: 1.5px solid var(--border-subtle, #e2e8f0);
+    border-radius: 10px;
+    padding: 14px;
+    transition: all 0.2s ease;
+  }
+  .avail-slot-card:hover {
+    border-color: var(--blue-brand, #0284c7);
+  }
+  .avail-time-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  @media (max-width: 900px) {
+    .avail-layout-container {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+  }
+  @media (max-width: 576px) {
+    .avail-action-bar {
+      flex-direction: column;
+    }
+    .avail-action-bar > button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+  @media (max-width: 360px) {
+    .avail-time-grid {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+  }
+</style>
+
+<div class="avail-layout-container">
   <!-- FORM TAMBAH KETERSEDIAAN -->
   <div class="card">
     <div class="card-header">
-      <div class="card-title"><span>{{ icon('clock') }}</span> Tambah Waktu Luang</div>
+      <div class="card-title"><span>{{ icon('clock') }}</span> Atur Jadwal Jam Kosong</div>
     </div>
     <div class="card-body">
-      <form method="POST" action="{{ url_for('mentor.availability') }}">
+      <form method="POST" action="{{ url_for('mentor.availability') }}" id="availForm">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-        <div class="form-group">
-          <label class="form-label">Hari dalam Seminggu</label>
-          <select class="form-select" name="day_of_week" required>
-            <option value="0">Senin</option>
-            <option value="1">Selasa</option>
-            <option value="2">Rabu</option>
-            <option value="3">Kamis</option>
-            <option value="4">Jumat</option>
-            <option value="5">Sabtu</option>
-            <option value="6">Minggu</option>
-          </select>
-        </div>
+        <p style="font-size: 12.5px; color: var(--text-muted, #64748b); margin-top: 0; margin-bottom: 14px; line-height: 1.5;">
+          Pilih hari dan masukkan rentang jam kosong Anda. Anda dapat menambahkan beberapa rentang jam pada hari yang sama (misal <strong>Senin 07.00–09.00</strong> dan <strong>Senin 16.00–19.00</strong>), maupun untuk hari-hari lainnya.
+        </p>
 
-        <div class="grid-form-2">
-          <div class="form-group">
-            <label class="form-label">Jam Mulai</label>
-            <input type="time" class="form-control" name="start_time" required>
+        <div id="availSlotsContainer" style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 18px;">
+          <!-- Slot 1 (Default) -->
+          <div class="avail-slot-card avail-slot-row">
+            <!-- Header baris slot: Nomor Slot & Tombol Hapus -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <span class="slot-badge" style="font-size: 12px; font-weight: 700; color: var(--navy-primary, #1e3a8a); display: inline-flex; align-items: center; gap: 5px;">
+                {{ icon('clock') }} Slot Jam <span class="slot-number">1</span>
+              </span>
+              <button type="button" class="btn btn-outline-danger btn-sm btn-remove-avail-slot" onclick="removeAvailSlotRow(this)" style="display: none; padding: 3px 8px; font-size: 11px; align-items: center; gap: 4px;" title="Hapus Slot Ini">
+                {{ icon('trash') }} Hapus
+              </button>
+            </div>
+
+            <!-- Baris Hari -->
+            <div style="margin-bottom: 10px;">
+              <label class="form-label" style="font-size: 12px; font-weight: 600; margin-bottom: 4px; display: block; color: var(--text-main, #1e293b);">
+                Hari Kosong <span style="color: #ef4444;">*</span>
+              </label>
+              <select class="form-select slot-day" name="day_of_week[]" required style="width: 100%; font-size: 13.5px; height: 38px;">
+                <option value="0" selected>Senin</option>
+                <option value="1">Selasa</option>
+                <option value="2">Rabu</option>
+                <option value="3">Kamis</option>
+                <option value="4">Jumat</option>
+                <option value="5">Sabtu</option>
+                <option value="6">Minggu</option>
+              </select>
+            </div>
+
+            <!-- Baris Jam Mulai & Jam Selesai (2 Kolom Responsif 50% / 50%) -->
+            <div class="avail-time-grid">
+              <div>
+                <label class="form-label" style="font-size: 12px; font-weight: 600; margin-bottom: 4px; display: block; color: var(--text-main, #1e293b);">
+                  Jam Mulai <span style="color: #ef4444;">*</span>
+                </label>
+                <input type="time" class="form-control slot-start" name="start_time[]" value="07:00" required style="width: 100%; font-size: 13px; height: 38px;">
+              </div>
+              <div>
+                <label class="form-label" style="font-size: 12px; font-weight: 600; margin-bottom: 4px; display: block; color: var(--text-main, #1e293b);">
+                  Jam Selesai <span style="color: #ef4444;">*</span>
+                </label>
+                <input type="time" class="form-control slot-end" name="end_time[]" value="09:00" required style="width: 100%; font-size: 13px; height: 38px;">
+              </div>
+            </div>
+
+            <!-- Baris Keterangan Opsional -->
+            <div>
+              <label class="form-label" style="font-size: 11px; color: var(--text-muted, #64748b); margin-bottom: 3px; display: block;">
+                Keterangan Tambahan (Opsional)
+              </label>
+              <input type="text" class="form-control form-control-sm slot-note" name="slot_notes[]" placeholder="Contoh: Bisa di lokasi Gowa / Makassar / Online" style="width: 100%; font-size: 12.5px;">
+            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label">Jam Selesai</label>
-            <input type="time" class="form-control" name="end_time" required>
-          </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Keterangan Tambahan</label>
-          <input type="text" class="form-control" name="notes" placeholder="Contoh: Khusus Matematika atau Sains">
+        <div class="avail-action-bar" style="display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 6px;">
+          <button type="button" class="btn btn-outline-primary" onclick="addAvailSlotRow()" style="font-size: 12.5px; padding: 8px 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+            {{ icon('plus') }} Tambah Jam / Hari Lain
+          </button>
+          <button type="submit" class="btn btn-primary" style="font-size: 13px; padding: 8px 18px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+            {{ icon('backup') }} Simpan Ketersediaan
+          </button>
         </div>
-
-        <button type="submit" class="btn btn-primary" style="width: 100%;">
-          {{ icon('plus') }} Simpan Ketersediaan
-        </button>
       </form>
     </div>
   </div>
@@ -63,7 +144,7 @@
               <th>Hari</th>
               <th>Rentang Jam</th>
               <th>Catatan</th>
-              <th>Aksi</th>
+              <th style="text-align: right;">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -71,18 +152,20 @@
             {% for av in availabilities %}
             <tr>
               <td>
-                <strong style="color: var(--navy-primary); font-size: 14px;">
+                <strong style="color: var(--navy-primary); font-size: 13.5px;">
                   {{ day_names[av.day_of_week] }}
                 </strong>
               </td>
               <td>
-                <span class="badge badge-info">{{ av.start_time }} - {{ av.end_time }} WIB</span>
+                <span class="badge badge-info" style="font-size: 11.5px; font-weight: 600;">{{ av.start_time }} - {{ av.end_time }}</span>
               </td>
-              <td>{{ av.notes or '-' }}</td>
               <td>
-                <form method="POST" action="{{ url_for('mentor.delete_availability', avail_id=av.id) }}" onsubmit="return confirm('Hapus slot ketersediaan ini?');">
+                <span style="font-size: 11.5px; color: var(--text-muted);">{{ av.notes or '-' }}</span>
+              </td>
+              <td style="text-align: right;">
+                <form method="POST" action="{{ url_for('mentor.delete_availability', avail_id=av.id) }}" onsubmit="return confirm('Hapus slot ketersediaan {{ day_names[av.day_of_week] }} ({{ av.start_time }}-{{ av.end_time }}) ini?');" style="display: inline; margin: 0;">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                  <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
+                  <button type="submit" class="btn btn-danger btn-sm" style="padding: 3px 8px; font-size: 11px;">Hapus</button>
                 </form>
               </td>
             </tr>
@@ -99,4 +182,64 @@
     </div>
   </div>
 </div>
+
+<script>
+  function addAvailSlotRow() {
+    const container = document.getElementById("availSlotsContainer");
+    if (!container) return;
+
+    const rows = container.querySelectorAll(".avail-slot-row");
+    const lastRow = rows[rows.length - 1];
+    const newRow = lastRow.cloneNode(true);
+
+    // Dapatkan hari dari baris terakhir agar mudah menambahkan jam kedua di hari yang sama
+    const lastDay = lastRow.querySelector(".slot-day").value;
+    const daySelect = newRow.querySelector(".slot-day");
+    if (daySelect) daySelect.value = lastDay;
+
+    // Reset default waktu untuk slot tambahan berikutnya (misal sore 16:00 - 19:00)
+    const startInput = newRow.querySelector(".slot-start");
+    const endInput = newRow.querySelector(".slot-end");
+    if (startInput && endInput) {
+      if (lastRow.querySelector(".slot-start").value === "07:00") {
+        startInput.value = "16:00";
+        endInput.value = "19:00";
+      } else {
+        startInput.value = "13:00";
+        endInput.value = "15:00";
+      }
+    }
+
+    const noteInput = newRow.querySelector("input[name='slot_notes[]']");
+    if (noteInput) noteInput.value = "";
+
+    container.appendChild(newRow);
+    updateAvailSlotsUI();
+  }
+
+  function removeAvailSlotRow(btn) {
+    const container = document.getElementById("availSlotsContainer");
+    if (!container) return;
+    const rows = container.querySelectorAll(".avail-slot-row");
+    if (rows.length > 1) {
+      btn.closest(".avail-slot-row").remove();
+    }
+    updateAvailSlotsUI();
+  }
+
+  function updateAvailSlotsUI() {
+    const container = document.getElementById("availSlotsContainer");
+    if (!container) return;
+    const rows = container.querySelectorAll(".avail-slot-row");
+    rows.forEach((r, idx) => {
+      // Update nomor slot
+      const numSpan = r.querySelector(".slot-number");
+      if (numSpan) numSpan.textContent = (idx + 1);
+
+      // Tampilkan tombol hapus jika lebih dari 1 baris
+      const btn = r.querySelector(".btn-remove-avail-slot");
+      if (btn) btn.style.display = (rows.length > 1) ? "inline-flex" : "none";
+    });
+  }
+</script>
 {% endblock %}

@@ -1,22 +1,38 @@
 {% extends "base.html" %}
-{% block title %}Daftar Mentor (Pemilik){% endblock %}
-{% block page_title %}Pengawasan Data Mentor{% endblock %}
-{% block page_subtitle %}Spesialisasi keahlian, status ketersediaan, dan beban mengajar (Akses Baca Pemilik){% endblock %}
+{% block title %}Data Mentor (Pemilik){% endblock %}
+{% block page_title %}Data Mentor Pengajar{% endblock %}
+{% block page_subtitle %}Pengawasan profil tentor/mentor, spesialisasi keahlian, nomor telepon, dan status mengajar (Akses Pemilik){% endblock %}
 
 {% block content %}
 <div class="card">
-  <div class="card-header">
-    <div class="card-title"><span>{{ icon('mentor') }}</span> Daftar Mentor Pengajar</div>
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <div class="card-title"><span>{{ icon('mentor') }}</span> Data Seluruh Mentor Pengajar</div>
+    <div style="font-size: 12px; color: var(--text-muted);">
+      Total Mentor: <strong>{{ mentors|length }}</strong> Orang
+    </div>
   </div>
   <div class="card-body">
+    <form method="GET" action="{{ url_for('owner.mentors') }}" class="filter-bar" style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+      <input type="text" name="q" value="{{ search or '' }}" placeholder="Cari nama mentor, keahlian..." class="form-control" style="max-width: 320px;">
+      <select name="status" class="form-select" style="max-width: 180px;">
+        <option value="">-- Semua Status --</option>
+        <option value="aktif" {% if status_filter == 'aktif' %}selected{% endif %}>Aktif</option>
+        <option value="nonaktif" {% if status_filter == 'nonaktif' %}selected{% endif %}>Nonaktif</option>
+      </select>
+      <button type="submit" class="btn btn-secondary">Cari &amp; Filter</button>
+      {% if search or status_filter %}
+        <a href="{{ url_for('owner.mentors') }}" class="btn btn-secondary">Reset</a>
+      {% endif %}
+    </form>
+
     <div class="table-responsive">
       <table class="table-desi">
         <thead>
           <tr>
-            <th>ID</th>
             <th>Nama Mentor</th>
-            <th>Kontak</th>
+            <th>Kontak Telepon / WhatsApp</th>
             <th>Bidang Keahlian</th>
+            <th>Detail Fee &amp; Murid</th>
             <th>Beban Mengajar Aktif</th>
             <th>Status</th>
           </tr>
@@ -24,21 +40,380 @@
         <tbody>
           {% for m in mentors %}
           <tr>
-            <td>#{{ m.id }}</td>
-            <td><strong>{{ m.full_name }}</strong></td>
-            <td>{{ m.phone }}<br><small>{{ m.email or '-' }}</small></td>
-            <td>{{ m.expertise }}</td>
             <td>
-              <span class="badge badge-info">{{ m.active_schedules_count }} Sesi Mendatang</span>
+              <strong style="color: var(--navy-dark); font-size: 14px;">{{ m.full_name }}</strong>
+              <div style="font-size: 11px; color: var(--text-muted);">ID: #{{ m.id }}</div>
+            </td>
+            <td>
+              {% if m.phone %}
+                <span style="font-size: 12.5px; color: var(--blue-brand); font-weight: 600;">
+                  {{ icon('phone') }} <a href="tel:{{ m.phone }}" style="color: inherit; text-decoration: none;">{{ m.phone }}</a>
+                </span>
+              {% else %}
+                <span style="color: var(--gray-400);">-</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge" style="background: #f1f5f9; color: var(--navy-primary); font-size: 11.5px; font-weight: 600;">
+                {{ m.expertise or 'Umum' }}
+              </span>
+            </td>
+            <td>
+              <button type="button" class="btn btn-primary btn-sm" onclick="openMentorFeeModal({{ m.id }}, '{{ m.full_name|escape }}')" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; padding: 6px 14px; font-size: 12px; border-radius: var(--radius-sm);">
+                {{ icon('credit-card') }} Detail Fee
+              </button>
+              {% if m.custom_fees_count and m.custom_fees_count > 0 %}
+                <div style="font-size: 11px; color: #16a34a; font-weight: 600; margin-top: 4px; display: flex; align-items: center; gap: 3px;">
+                  <span>✓</span> {{ m.custom_fees_count }} Program Diatur
+                </div>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge badge-info">{{ m.active_schedules_count or 0 }} Sesi Terjadwal</span>
             </td>
             <td>{{ m.status|status_badge|safe }}</td>
           </tr>
           {% else %}
-          <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--gray-500);">Tidak ada data mentor.</td></tr>
+          <tr><td colspan="6" style="text-align:center; padding:32px; color:var(--gray-500);">Tidak ada data mentor yang sesuai.</td></tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
   </div>
 </div>
+
+<!-- MODAL DETAIL FEE TENTOR PER MURID & PROGRAM -->
+<div class="modal-overlay" id="mentorFeeModal">
+  <div class="modal-content" style="max-width: 900px; width: 95%;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <span>{{ icon('credit-card') }}</span> Detail Fee Tentor: <span id="modalMentorName" style="color: var(--blue-brand); font-weight: 700;">-</span>
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
+          Pengaturan tarif fee mengajar per sesi untuk setiap murid &amp; program bimbingan privat.
+        </div>
+      </div>
+      <button class="modal-close-btn" onclick="closeModal('mentorFeeModal')">&times;</button>
+    </div>
+    
+    <div class="modal-body" style="padding: 20px;">
+      <!-- PETUNJUK PENETAPAN FEE PER MURID & PROGRAM -->
+      <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="font-size: 12.5px; color: var(--navy-dark); line-height: 1.5;">
+          💡 <strong>Penetapan Fee Per Program:</strong> Tarif fee diatur spesifik untuk setiap kombinasi murid dan program les. Jika 1 murid mengambil 2 program berbeda (misalnya Matematika &amp; Bahasa Inggris), tarif fee masing-masing program dapat ditentukan secara terpisah oleh Pemilik.
+        </div>
+      </div>
+
+      <!-- NOTIFIKASI AJAX -->
+      <div id="modalAlertBox" style="display: none; padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 14px; font-size: 13px; font-weight: 600;"></div>
+
+      <!-- TABEL DAFTAR MURID & PROGRAM -->
+      <div style="margin-bottom: 24px;">
+        <h4 style="font-size: 14px; font-weight: 700; color: var(--navy-dark); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+          <span>Daftar Murid &amp; Program Bimbingan</span>
+          <span id="modalTableCount" class="badge badge-info" style="font-size: 11px;">0 Program</span>
+        </h4>
+        <div class="table-responsive" style="max-height: 280px; overflow-y: auto; border: 1px solid var(--gray-200); border-radius: var(--radius-sm);">
+          <table class="table-desi" style="margin: 0; font-size: 12px;">
+            <thead style="position: sticky; top: 0; background: var(--gray-50); z-index: 2;">
+              <tr>
+                <th style="width: 35px; text-align: center;">No</th>
+                <th>Nama Murid</th>
+                <th>Program Les</th>
+                <th style="text-align: center;">Paket</th>
+                <th style="min-width: 140px;">Tarif Fee / Sesi</th>
+                <th style="min-width: 130px; text-align: right;">Estimasi 1 Periode</th>
+                <th style="text-align: center; width: 140px;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="modalFeeTableBody">
+              <tr>
+                <td colspan="7" style="text-align: center; padding: 24px; color: var(--gray-500);">
+                  Memuat data murid &amp; program mentor...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- KARTU TAMBAH / TETAPKAN MURID & PROGRAM BARU -->
+      <div style="background: var(--blue-soft); border: 1px dashed var(--blue-brand); border-radius: var(--radius-md); padding: 16px;">
+        <h4 style="font-size: 13px; font-weight: 700; color: var(--navy-primary); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+          <span>{{ icon('plus') }}</span> Tetapkan Fee Murid &amp; Program Baru untuk Mentor Ini
+        </h4>
+        <form id="addStudentFeeForm" onsubmit="submitNewStudentFee(event)" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) 120px; gap: 10px; align-items: flex-end;">
+          <div>
+            <label class="form-label" style="font-size: 11px; margin-bottom: 3px;">Pilih Siswa</label>
+            <select id="newFeeStudentSelect" required class="form-select form-select-sm" style="font-size: 12px;">
+              <option value="">-- Pilih Siswa --</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label" style="font-size: 11px; margin-bottom: 3px;">Pilih Program Les</label>
+            <select id="newFeeProgramSelect" required class="form-select form-select-sm" style="font-size: 12px;">
+              <option value="">-- Pilih Program --</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label" style="font-size: 11px; margin-bottom: 3px;">Tarif Fee / Sesi (Rp)</label>
+            <input type="number" id="newFeeRateInput" step="1000" min="0" required placeholder="Contoh: 40000" class="form-control form-control-sm" style="font-size: 12px; font-weight: 700;">
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm" style="height: 31px; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 4px;">
+            Simpan Fee
+          </button>
+        </form>
+      </div>
+    </div>
+    
+    <div class="modal-footer" style="padding: 12px 20px; background: var(--gray-50); display: flex; justify-content: space-between; align-items: center;">
+      <span style="font-size: 11.5px; color: var(--text-muted);">
+        Perubahan fee langsung disinkronkan ke kalkulasi pencairan honor mentor yang belum ditransfer.
+      </span>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('mentorFeeModal')">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentMentorId = null;
+let currentMentorName = "";
+let currentDefaultFee = 35000;
+let currentDefaultFee4 = 35000;
+const csrfToken = "{{ csrf_token() }}";
+
+function formatRupiah(num) {
+  if (num === null || num === undefined || isNaN(num)) return "Rp 0";
+  return "Rp " + Math.round(num).toLocaleString("id-ID");
+}
+
+function showModalAlert(msg, type = "success") {
+  const box = document.getElementById("modalAlertBox");
+  box.style.display = "block";
+  if (type === "success") {
+    box.style.background = "#dcfce7";
+    box.style.color = "#15803d";
+    box.style.border = "1px solid #86efac";
+  } else {
+    box.style.background = "#fee2e2";
+    box.style.color = "#b91c1c";
+    box.style.border = "1px solid #fca5a5";
+  }
+  box.innerHTML = msg;
+  setTimeout(() => {
+    box.style.display = "none";
+  }, 4000);
+}
+
+async function openMentorFeeModal(id, name) {
+  currentMentorId = id;
+  currentMentorName = name;
+
+  document.getElementById("modalMentorName").textContent = name;
+  document.getElementById("modalAlertBox").style.display = "none";
+
+  openModal("mentorFeeModal");
+  await loadMentorFeeData(id);
+}
+
+async function loadMentorFeeData(mentorId) {
+  const tbody = document.getElementById("modalFeeTableBody");
+  tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 24px; color: var(--gray-500);">Memuat data murid &amp; program...</td></tr>`;
+
+  try {
+    const res = await fetch(`/owner/mentors/${mentorId}/student-fees-data`);
+    if (!res.ok) throw new Error("Gagal memuat data dari server");
+    const data = await res.json();
+
+    // Populate dropdowns in Add Form
+    const stSelect = document.getElementById("newFeeStudentSelect");
+    stSelect.innerHTML = `<option value="">-- Pilih Siswa --</option>`;
+    (data.all_students || []).forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s.id;
+      opt.textContent = `${s.full_name} (${s.grade || 'Umum'})`;
+      stSelect.appendChild(opt);
+    });
+
+    const prSelect = document.getElementById("newFeeProgramSelect");
+    prSelect.innerHTML = `<option value="">-- Pilih Program --</option>`;
+    (data.all_programs || []).forEach(p => {
+      const opt = document.createElement("option");
+      opt.value = p.id;
+      opt.textContent = p.name;
+      prSelect.appendChild(opt);
+    });
+
+    document.getElementById("newFeeRateInput").value = (data.mentor && data.mentor.fee_per_session) ? Math.round(data.mentor.fee_per_session) : 35000;
+
+    // Render Table Rows
+    const items = data.items || [];
+    document.getElementById("modalTableCount").textContent = `${items.length} Program`;
+
+    if (items.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 24px; color: var(--gray-500);">Belum ada murid atau program yang tercatat untuk mentor ini.<br><span style="font-size: 11px;">Gunakan formulir di bawah untuk menetapkan murid &amp; tarif feenya.</span></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = "";
+    items.forEach((item, index) => {
+      const tr = document.createElement("tr");
+      const mpp = item.meetings_per_period || 8;
+      const effectiveFee = item.effective_fee_per_session || 35000;
+      const isCustom = item.is_custom;
+      const estHonor = effectiveFee * mpp;
+
+      tr.innerHTML = `
+        <td style="text-align: center; font-weight: 600; color: var(--text-muted);">${index + 1}</td>
+        <td>
+          <strong style="color: var(--navy-dark);">${item.student_name}</strong>
+          <div style="font-size: 11px; color: var(--text-muted);">${item.student_grade || '-'}</div>
+        </td>
+        <td>
+          <span class="badge" style="background: #eff6ff; color: #1d4ed8; font-weight: 600;">${item.program_name}</span>
+        </td>
+        <td style="text-align: center;">
+          <span class="badge ${mpp === 4 ? 'badge-warning' : 'badge-info'}" style="font-size: 10.5px;">${mpp} Sesi</span>
+        </td>
+        <td>
+          <div style="position: relative; max-width: 140px;">
+            <span style="position: absolute; left: 6px; top: 50%; transform: translateY(-50%); font-size: 10px; font-weight: 700; color: var(--text-muted);">Rp</span>
+            <input type="number" id="fee_input_${item.student_id}_${item.program_id}"
+                   value="${Math.round(effectiveFee)}"
+                   step="1000" min="0"
+                   class="form-control form-control-sm"
+                   style="padding-left: 24px; font-size: 12px; font-weight: 700; color: var(--navy-dark); height: 28px;"
+                   oninput="updateRowEstimate(${item.student_id}, ${item.program_id}, ${mpp}, this.value)">
+          </div>
+        </td>
+        <td style="text-align: right; font-weight: 700; color: var(--navy-primary);" id="est_cell_${item.student_id}_${item.program_id}">
+          ${formatRupiah(estHonor)}
+        </td>
+        <td style="text-align: center;">
+          <div style="display: flex; gap: 4px; justify-content: center; align-items: center;">
+            <button type="button" class="btn btn-outline-primary btn-sm" style="padding: 2px 8px; font-size: 11px; font-weight: 600;"
+                    onclick="saveSingleFee(${item.student_id}, ${item.program_id})">
+              Simpan
+            </button>
+            ${isCustom ? `
+              <button type="button" class="btn btn-outline-secondary btn-sm" style="padding: 2px 6px; font-size: 11px;"
+                      title="Kembalikan ke tarif default mentor"
+                      onclick="resetSingleFee(${item.student_id}, ${item.program_id})">
+                Reset
+              </button>
+            ` : `
+              <span class="badge badge-secondary" style="font-size: 10px; padding: 2px 5px;" title="Menggunakan tarif default">Default</span>
+            `}
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: #dc2626;">Terjadi kesalahan: ${err.message}</td></tr>`;
+  }
+}
+
+function updateRowEstimate(studentId, programId, mpp, val) {
+  const estCell = document.getElementById(`est_cell_${studentId}_${programId}`);
+  const num = parseFloat(val) || 0;
+  if (estCell) {
+    estCell.textContent = formatRupiah(num * mpp);
+  }
+}
+
+async function saveSingleFee(studentId, programId) {
+  const input = document.getElementById(`fee_input_${studentId}_${programId}`);
+  if (!input) return;
+  const feeVal = input.value;
+
+  const formData = new FormData();
+  formData.append("csrf_token", csrfToken);
+  formData.append("student_id", studentId);
+  formData.append("program_id", programId);
+  formData.append("fee_per_session", feeVal);
+
+  try {
+    const res = await fetch(`/owner/mentors/${currentMentorId}/save-student-fee`, {
+      method: "POST",
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+      body: formData
+    });
+    const result = await res.json();
+    if (res.ok && result.success) {
+      showModalAlert(result.message || "Tarif fee berhasil disimpan!", "success");
+      await loadMentorFeeData(currentMentorId);
+    } else {
+      showModalAlert(result.error || "Gagal menyimpan tarif fee", "danger");
+    }
+  } catch (err) {
+    showModalAlert("Terjadi kesalahan jaringan: " + err.message, "danger");
+  }
+}
+
+async function resetSingleFee(studentId, programId) {
+  if (!confirm("Kembalikan tarif fee siswa & program ini ke tarif default mentor?")) return;
+
+  const formData = new FormData();
+  formData.append("csrf_token", csrfToken);
+  formData.append("student_id", studentId);
+  formData.append("program_id", programId);
+
+  try {
+    const res = await fetch(`/owner/mentors/${currentMentorId}/delete-student-fee`, {
+      method: "POST",
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+      body: formData
+    });
+    const result = await res.json();
+    if (res.ok && result.success) {
+      showModalAlert(result.message || "Tarif dikembalikan ke default mentor.", "success");
+      await loadMentorFeeData(currentMentorId);
+    } else {
+      showModalAlert(result.error || "Gagal mereset tarif", "danger");
+    }
+  } catch (err) {
+    showModalAlert("Terjadi kesalahan jaringan: " + err.message, "danger");
+  }
+}
+
+async function submitNewStudentFee(e) {
+  e.preventDefault();
+  const studentId = document.getElementById("newFeeStudentSelect").value;
+  const programId = document.getElementById("newFeeProgramSelect").value;
+  const feeVal = document.getElementById("newFeeRateInput").value;
+
+  if (!studentId || !programId || !feeVal) {
+    alert("Silakan lengkapi pilihan siswa, program les, dan tarif fee.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("csrf_token", csrfToken);
+  formData.append("student_id", studentId);
+  formData.append("program_id", programId);
+  formData.append("fee_per_session", feeVal);
+
+  try {
+    const res = await fetch(`/owner/mentors/${currentMentorId}/save-student-fee`, {
+      method: "POST",
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+      body: formData
+    });
+    const result = await res.json();
+    if (res.ok && result.success) {
+      showModalAlert(result.message || "Tarif fee murid baru berhasil ditambahkan!", "success");
+      document.getElementById("newFeeStudentSelect").value = "";
+      document.getElementById("newFeeProgramSelect").value = "";
+      await loadMentorFeeData(currentMentorId);
+    } else {
+      showModalAlert(result.error || "Gagal menambahkan tarif fee", "danger");
+    }
+  } catch (err) {
+    showModalAlert("Terjadi kesalahan jaringan: " + err.message, "danger");
+  }
+}
+</script>
 {% endblock %}

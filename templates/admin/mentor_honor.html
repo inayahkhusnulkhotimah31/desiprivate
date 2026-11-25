@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Rekap Honor Mentor{% endblock %}
+{% block page_title %}Monitoring &amp; Rekapitulasi Honor Mentor{% endblock %}
+{% block page_subtitle %}Perhitungan realisasi sesi mengajar terlaksana dan estimasi honor berdasarkan siklus periode{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 24px; background: linear-gradient(135deg, rgba(238, 246, 255, 0.95), rgba(240, 253, 250, 0.9)); border: 1px solid rgba(37, 99, 235, 0.15);">
+  <div class="card-body" style="padding: 16px 20px;">
+    <div style="display: flex; align-items: center; gap: 14px;">
+      <div style="font-size: 28px;">{{ icon('info') }}</div>
+      <div>
+        <h4 style="margin: 0; font-size: 15px; color: var(--navy-dark); font-weight: 700;">
+          Ketentuan Perhitungan Honor Mengajar
+        </h4>
+        <p style="margin: 3px 0 0 0; font-size: 13px; color: var(--navy-muted); line-height: 1.5;">
+          Honor mengajar dihitung <strong>hanya dari sesi yang benar-benar terlaksana</strong>. Sesi di mana siswa berhalangan <em>tidak dianggap sebagai ketidakhadiran mentor</em>, namun belum dihitung sebagai sesi terlaksana. Besaran tarif dasar yang ditampilkan (Rp 60.000/sesi) adalah estimasi standar; formula dan nominal resmi final ditentukan sepenuhnya oleh Pemilik bimbingan belajar.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><span>{{ icon('trending-up') }}</span> Rekapitulasi Sesi &amp; Estimasi Honor Mentor</div>
+  </div>
+  <div class="card-body">
+    <!-- FILTER -->
+    <form method="GET" action="{{ url_for('admin.mentor_honor') }}" class="filter-bar">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <label style="font-size: 12px; font-weight: 600; color: var(--navy-dark);">Dari:</label>
+        <input type="date" name="start_date" value="{{ start_date }}" class="form-control" style="max-width: 160px;">
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <label style="font-size: 12px; font-weight: 600; color: var(--navy-dark);">Sampai:</label>
+        <input type="date" name="end_date" value="{{ end_date }}" class="form-control" style="max-width: 160px;">
+      </div>
+      <select name="mentor_id" class="form-select" style="max-width: 220px;">
+        <option value="">-- Semua Mentor --</option>
+        {% for m in mentors %}
+          <option value="{{ m.id }}" {% if mentor_id == m.id|string %}selected{% endif %}>{{ m.full_name }}</option>
+        {% endfor %}
+      </select>
+      <input type="number" name="rate_per_session" value="{{ rate_per_session or '' }}" placeholder="Tarif simulasi (opsional)" class="form-control" style="max-width: 180px;">
+      <button type="submit" class="btn btn-secondary">Filter</button>
+      {% if start_date or end_date or mentor_id or rate_per_session %}
+        <a href="{{ url_for('admin.mentor_honor') }}" class="btn btn-secondary">Reset</a>
+      {% endif %}
+    </form>
+
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>Nama Mentor</th>
+            <th>Keahlian</th>
+            <th>Sesi Terlaksana</th>
+            <th>Siswa Izin/Batal</th>
+            <th>Mentor Tidak Hadir</th>
+            <th>Periode Penuh (8 Sesi)</th>
+            <th>Estimasi Honor</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for h in honor_list %}
+          <tr>
+            <td>
+              <strong style="color: var(--navy-dark); font-size: 13.5px;">{{ h.mentor_name }}</strong>
+              <div style="font-size: 11px; color: var(--gray-500);">{{ h.mentor_phone }}</div>
+            </td>
+            <td>{{ h.expertise or '-' }}</td>
+            <td>
+              <span class="badge badge-success" style="font-size: 13px;">
+                {{ h.completed_sessions }} Sesi
+              </span>
+            </td>
+            <td>
+              <span class="badge badge-warning" title="Siswa berhalangan, tidak dihitung terlaksana namun bukan salah mentor">
+                {{ h.student_absent_sessions }} Sesi
+              </span>
+            </td>
+            <td>
+              {% if h.mentor_absent_sessions > 0 %}
+                <span class="badge badge-danger">{{ h.mentor_absent_sessions }} Sesi</span>
+              {% else %}
+                <span class="badge badge-secondary">0 Sesi</span>
+              {% endif %}
+            </td>
+            <td>
+              <strong>{{ h.periods_completed }} Periode</strong>
+              {% if h.remaining_in_period > 0 %}
+                <div style="font-size: 11px; color: var(--blue-brand);">+{{ h.remaining_in_period }} sesi berjalan</div>
+              {% endif %}
+            </td>
+            <td>
+              {% if h.estimated_honor is not none %}
+                <strong style="color: var(--green-success); font-size: 14px;">
+                  Rp {{ "{:,.0f}".format(h.estimated_honor).replace(",", ".") }}
+                </strong>
+                <div style="font-size: 10.5px; color: var(--gray-500);">@ Rp {{ "{:,.0f}".format(h.rate_per_session).replace(",", ".") }}</div>
+              {% else %}
+                <span class="badge badge-warning" style="font-size: 11px;" title="Tarif per sesi menunggu keputusan resmi Pemilik">
+                  Menunggu Keputusan Pemilik
+                </span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 24px; color: var(--gray-500);">
+              Tidak ada data mentor atau sesi pembelajaran.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

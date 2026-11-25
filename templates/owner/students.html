@@ -1,23 +1,26 @@
 {% extends "base.html" %}
-{% block title %}Siswa & Program (Pemilik){% endblock %}
-{% block page_title %}Data Siswa & Program Les{% endblock %}
-{% block page_subtitle %}Pengawasan data siswa dan program les privat (Akses Baca Pemilik){% endblock %}
+{% block title %}Data Siswa (Pemilik){% endblock %}
+{% block page_title %}Data Siswa Bimbingan{% endblock %}
+{% block page_subtitle %}Pengawasan profil siswa, asal sekolah, wali murid & no telepon, serta program les yang diikuti (Akses Pemilik){% endblock %}
 
 {% block content %}
 <div class="card">
-  <div class="card-header">
-    <div class="card-title"><span>{{ icon('student') }}</span> Daftar Siswa Terdaftar</div>
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <div class="card-title"><span>{{ icon('student') }}</span> Data Seluruh Siswa Terdaftar</div>
+    <div style="font-size: 12px; color: var(--text-muted);">
+      Total Terdaftar: <strong>{{ students|length }}</strong> Siswa
+    </div>
   </div>
   <div class="card-body">
-    <form method="GET" action="{{ url_for('owner.students') }}" class="filter-bar">
-      <input type="text" name="q" value="{{ search }}" placeholder="Cari nama siswa, sekolah..." class="form-control" style="max-width: 300px;">
+    <form method="GET" action="{{ url_for('owner.students') }}" class="filter-bar" style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+      <input type="text" name="q" value="{{ search }}" placeholder="Cari nama siswa, sekolah, wali..." class="form-control" style="max-width: 320px;">
       <select name="status" class="form-select" style="max-width: 180px;">
         <option value="">-- Semua Status --</option>
         <option value="aktif" {% if status_filter == 'aktif' %}selected{% endif %}>Aktif</option>
         <option value="nonaktif" {% if status_filter == 'nonaktif' %}selected{% endif %}>Nonaktif</option>
         <option value="berhenti" {% if status_filter == 'berhenti' %}selected{% endif %}>Berhenti (Arsip)</option>
       </select>
-      <button type="submit" class="btn btn-secondary">Filter</button>
+      <button type="submit" class="btn btn-secondary">Cari &amp; Filter</button>
       {% if search or status_filter %}
         <a href="{{ url_for('owner.students') }}" class="btn btn-secondary">Reset</a>
       {% endif %}
@@ -27,26 +30,69 @@
       <table class="table-desi">
         <thead>
           <tr>
-            <th>ID</th>
             <th>Nama Siswa</th>
-            <th>Sekolah & Kelas</th>
-            <th>Wali Murid</th>
-            <th>Program Les Diikuti</th>
+            <th>Asal Sekolah &amp; Kelas</th>
+            <th>Wali Murid &amp; No. Telepon</th>
+            <th>Program Les</th>
             <th>Status Siswa</th>
+            <th style="text-align: right;">Aksi</th>
           </tr>
         </thead>
         <tbody>
           {% for st in students %}
           <tr>
-            <td>#{{ st.id }}</td>
-            <td><strong>{{ st.full_name }}</strong></td>
-            <td>{{ st.school or '-' }} ({{ st.grade or '-' }})</td>
-            <td>{{ st.parent_name }} ({{ st.parent_phone }})</td>
-            <td>{{ st.enrolled_programs or '-' }}</td>
+            <td>
+              <strong style="color: var(--navy-dark); font-size: 14px;">{{ st.full_name }}</strong>
+              <div style="font-size: 11px; color: var(--text-muted);">ID: #{{ st.id }}</div>
+            </td>
+            <td>
+              <div style="font-weight: 600; color: var(--navy-primary);">{{ st.school or '-' }}</div>
+              <div style="font-size: 11.5px; color: var(--text-muted);">
+                {% if st.grade %}{{ st.grade }}{% else %}-{% endif %}
+              </div>
+            </td>
+            <td>
+              <strong style="color: var(--navy-dark);">{{ st.parent_name or '-' }}</strong>
+              {% if st.parent_phone %}
+                <div style="font-size: 12px; color: var(--blue-brand); margin-top: 2px;">
+                  {{ icon('phone') }} <a href="tel:{{ st.parent_phone }}" style="color: inherit; text-decoration: none;">{{ st.parent_phone }}</a>
+                </div>
+              {% else %}
+                <div style="font-size: 11px; color: var(--gray-400);">-</div>
+              {% endif %}
+            </td>
+            <td>
+              {% if st.enrolled_programs %}
+                {% for prog in st.enrolled_programs.split(',') %}
+                  <span class="badge badge-info" style="font-size: 11px; margin: 2px 2px 2px 0;">{{ prog.strip() }}</span>
+                {% endfor %}
+              {% else %}
+                <span style="font-size: 11.5px; color: var(--gray-400); italic;">Belum ada program</span>
+              {% endif %}
+            </td>
             <td>{{ st.status|status_badge|safe }}</td>
+            <td style="text-align: right;">
+              <div style="display: inline-flex; gap: 6px; align-items: center;">
+                {% if st.status == 'menunggu_validasi' %}
+                  <form method="POST" action="{{ url_for('owner.validate_student_payment', student_id=st.id) }}" onsubmit="return confirm('Validasi pembayaran {{ st.full_name }} dan izinkan pembelajaran dimulai?');" style="display: inline; margin: 0;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-success btn-sm" style="font-size: 11px; padding: 4px 8px; white-space: nowrap;">
+                      {{ icon('check-circle') }} Validasi Pembayaran
+                    </button>
+                  </form>
+                {% endif %}
+                <a href="{{ url_for('owner.student_attendance_detail', student_id=st.id) }}" class="btn btn-outline-primary btn-sm" style="font-size: 11.5px; padding: 4px 10px;">
+                  {{ icon('clipboard') }} Riwayat Absensi
+                </a>
+              </div>
+            </td>
           </tr>
           {% else %}
-          <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--gray-500);">Tidak ada data siswa.</td></tr>
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 32px; color: var(--gray-500);">
+              Tidak ada data siswa yang sesuai filter pencarian.
+            </td>
+          </tr>
           {% endfor %}
         </tbody>
       </table>

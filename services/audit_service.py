@@ -92,7 +92,7 @@ def compute_field_diff(old_data, new_data, ignored_keys=("created_at", "updated_
     return changed_fields, old_diff, new_diff
 
 def log_audit(
-    user_id, user_name, action_type, target_entity, target_id, details,
+    user_id, user_name, action_type, target_entity, target_id, details="",
     ip_address="127.0.0.1", module_name=None, old_values=None, new_values=None,
     fields_changed=None, status_code=200
 ):
@@ -108,6 +108,17 @@ def log_audit(
     new_str = json.dumps(new_values, ensure_ascii=False) if isinstance(new_values, (dict, list)) else (str(new_values) if new_values else None)
     fields_str = json.dumps(fields_changed, ensure_ascii=False) if isinstance(fields_changed, (list, tuple)) else (str(fields_changed) if fields_changed else None)
 
+    # Pastikan user_id valid terhadap foreign key users(id), fallback None jika user tidak ada
+    valid_user_id = None
+    if user_id:
+        try:
+            from services.database_service import query_db
+            exists = query_db("SELECT id FROM users WHERE id = ?", (user_id,), one=True)
+            if exists:
+                valid_user_id = user_id
+        except Exception:
+            valid_user_id = None
+
     query = """
         INSERT INTO audit_logs (
             user_id, user_name, action_type, module_name, target_entity, target_id,
@@ -115,7 +126,7 @@ def log_audit(
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """
     row_id = execute_db(query, (
-        user_id, user_name, action_type, module_name, target_entity,
+        valid_user_id, user_name, action_type, module_name, target_entity,
         str(target_id) if target_id else None, details,
         old_str, new_str, fields_str, status_code, ip_address
     ))

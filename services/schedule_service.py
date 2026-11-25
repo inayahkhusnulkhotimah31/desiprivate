@@ -497,11 +497,12 @@ def execute_mentor_replacement(schedule_id, replacement_mentor_id, reason, admin
 # ========================================================
 DAY_NAMES = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"]
 
-def check_routine_schedule_conflict(mentor_id, day_of_week, start_time, end_time, exclude_id=None, student_id=None, db_path=None):
+def check_routine_schedule_conflict(mentor_id, day_of_week, start_time, end_time, exclude_id=None, student_id=None, program_id=None, db_path=None):
     """
     Memeriksa apakah ada bentrokan pada jadwal rutin mentor atau siswa:
     - Apakah mentor sudah memiliki jadwal rutin lain di hari dan jam yang bertabrakan?
     - Apakah siswa sudah memiliki jadwal rutin lain di hari dan jam yang bertabrakan?
+    (Mendukung co-mentor pada program yang sama jika program_id diberikan).
     """
     try:
         dow = int(day_of_week)
@@ -536,6 +537,7 @@ def check_routine_schedule_conflict(mentor_id, day_of_week, start_time, end_time
             }
 
     # 2. Cek bentrokan jadwal rutin siswa (jika student_id diberikan)
+    # Jika program_id diberikan, co-mentor pada program yang sama diizinkan dan bukan dianggap bentrok
     if student_id:
         query_s = """
             SELECT rs.id, rs.start_time, rs.end_time, rs.day_of_week,
@@ -551,6 +553,9 @@ def check_routine_schedule_conflict(mentor_id, day_of_week, start_time, end_time
         if exclude_id:
             query_s += " AND rs.id != ?"
             params_s.append(exclude_id)
+        if program_id:
+            query_s += " AND rs.program_id != ?"
+            params_s.append(program_id)
 
         existing_s = query_db(query_s, params_s, db_path=db_path)
         for ex in existing_s:
@@ -567,8 +572,9 @@ def check_routine_schedule_conflict(mentor_id, day_of_week, start_time, end_time
 def create_routine_schedule(student_id, program_id, mentor_id, day_of_week, start_time, end_time, subject_info="", notes="", db_path=None):
     """
     Membuat satu slot jadwal rutin mingguan siswa dengan validasi bentrokan.
+    Mendukung co-mentor pada program yang sama (program_id).
     """
-    conflict = check_routine_schedule_conflict(mentor_id, day_of_week, start_time, end_time, student_id=student_id, db_path=db_path)
+    conflict = check_routine_schedule_conflict(mentor_id, day_of_week, start_time, end_time, student_id=student_id, program_id=program_id, db_path=db_path)
     if conflict["has_conflict"]:
         return {"success": False, "message": conflict["message"]}
 
@@ -611,13 +617,23 @@ def update_routine_schedule(routine_id, day_of_week, start_time, end_time, mento
 def delete_routine_schedule(routine_id, db_path=None):
     """
     Menghapus satu slot jadwal rutin mingguan. Riwayat pertemuan masa lalu tetap terjaga.
+    Jika ada co-mentor pada slot hari dan jam yang sama, ikut dibersihkan secara tuntas.
     """
-    execute_db("DELETE FROM routine_schedules WHERE id = ?", (routine_id,), db_path=db_path)
+    curr = query_db("SELECT student_id, program_id, day_of_week, start_time, end_time FROM routine_schedules WHERE id = ?", (routine_id,), one=True, db_path=db_path)
+    if curr:
+        execute_db(
+            "DELETE FROM routine_schedules WHERE student_id = ? AND program_id = ? AND day_of_week = ? AND start_time = ? AND end_time = ?",
+            (curr["student_id"], curr["program_id"], curr["day_of_week"], curr["start_time"], curr["end_time"]),
+            db_path=db_path
+        )
+    else:
+        execute_db("DELETE FROM routine_schedules WHERE id = ?", (routine_id,), db_path=db_path)
     return {"success": True, "message": "Jadwal rutin berhasil dihapus."}
 
 def get_routine_schedules(student_id=None, mentor_id=None, day_of_week=None, status="aktif", db_path=None):
     """
     Mengambil daftar jadwal rutin mingguan lengkap dengan informasi siswa, mentor, dan program.
+    Jika diakses Admin (mentor_id None), menggabungkan nama mentor jika slot diampu lebih dari 1 tentor.
     """
     conditions = []
     args = []
@@ -635,18 +651,24 @@ def get_routine_schedules(student_id=None, mentor_id=None, day_of_week=None, sta
         args.append(status)
 
     where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+    group_clause = "GROUP BY rs.student_id, rs.program_id, rs.day_of_week, rs.start_time, rs.end_time" if not mentor_id else ""
+    mentor_select = "GROUP_CONCAT(m.full_name, ' & ') as mentor_name" if not mentor_id else "m.full_name as mentor_name"
+    phone_select = "GROUP_CONCAT(COALESCE(m.phone, ''), ', ') as mentor_phone" if not mentor_id else "m.phone as mentor_phone"
+    parent_phone_select = "p.phone as parent_phone" if not mentor_id else "NULL as parent_phone"
+
     query = f"""
         SELECT rs.*,
                st.full_name as student_name, st.school as student_school, st.grade as student_grade,
-               m.full_name as mentor_name, m.phone as mentor_phone,
+               {mentor_select}, {phone_select},
                pr.name as program_name,
-               p.full_name as parent_name, p.phone as parent_phone
+               p.full_name as parent_name, {parent_phone_select}
         FROM routine_schedules rs
         JOIN students st ON rs.student_id = st.id
         JOIN mentors m ON rs.mentor_id = m.id
         JOIN programs pr ON rs.program_id = pr.id
         LEFT JOIN parents p ON st.parent_id = p.id
         {where_clause}
+        {group_clause}
         ORDER BY rs.day_of_week ASC, rs.start_time ASC
     """
     rows = query_db(query, args, db_path=db_path)

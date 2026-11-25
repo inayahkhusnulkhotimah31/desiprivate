@@ -19,7 +19,7 @@
       </button>
     </div>
     <div class="card-body">
-      <form method="POST" action="{{ url_for('mentor.attendance') }}" id="mentorAttendanceForm">
+      <form method="POST" action="{{ url_for('mentor.attendance') }}" id="mentorAttendanceForm" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <!-- MODE 1: INPUT LANGSUNG (PILIH SISWA, HARI, TANGGAL, JAM) - DEFAULT -->
@@ -159,29 +159,50 @@
           </div>
         </div>
 
-        <!-- STATUS KEHADIRAN SISWA -->
-        <div class="form-group">
-          <label class="form-label">Status Kehadiran Siswa</label>
-          <div style="display: flex; gap: 14px; margin-top: 6px; flex-wrap: wrap;">
-            <label style="cursor: pointer; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 5px;">
-              <input type="radio" name="status" value="hadir" id="attHadir" checked onchange="toggleAttendanceFields('hadir')">
-              <span class="badge badge-success">Hadir (Mengajar)</span>
+        <!-- PEMISAHAN ABSENSI MENTOR & STATUS SESI BELAJAR (LANGKAH 3) -->
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
+          <!-- 1. STATUS KEHADIRAN MENTOR -->
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label" style="font-weight: 700; color: var(--text-heading); display: flex; align-items: center; gap: 6px;">
+              {{ icon('user') }} 1. Status Kehadiran Mentor
             </label>
-            <label style="cursor: pointer; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 5px;">
-              <input type="radio" name="status" value="izin" id="attIzin" onchange="toggleAttendanceFields('izin')">
-              <span class="badge badge-warning">Izin</span>
-            </label>
-            <label style="cursor: pointer; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 5px;">
-              <input type="radio" name="status" value="tidak_hadir" id="attAlpa" onchange="toggleAttendanceFields('tidak_hadir')">
-              <span class="badge badge-danger">Tidak Hadir (Alpa)</span>
-            </label>
+            <div style="display: flex; gap: 14px; margin-top: 6px; flex-wrap: wrap;">
+              <label style="cursor: pointer; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 5px;">
+                <input type="radio" name="mentor_status" value="hadir" id="mentorHadir" checked onchange="updateAttendanceState()">
+                <span class="badge badge-success">Mentor Hadir / Siap Mengajar</span>
+              </label>
+              <label style="cursor: pointer; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 5px;">
+                <input type="radio" name="mentor_status" value="tidak_hadir" id="mentorTidakHadir" onchange="updateAttendanceState()">
+                <span class="badge badge-danger">Mentor Tidak Hadir (Berhalangan)</span>
+              </label>
+            </div>
           </div>
-          <small id="statusHintText" style="color: var(--blue-brand); font-size: 11.5px; display: block; margin-top: 6px;">
-            {{ icon('lightbulb') }} Status Hadir akan otomatis dihitung ke dalam siklus periode belajar (8 pertemuan = 1 periode).
+
+          <!-- 2. STATUS SESI BELAJAR SISWA (MUNCUL JIKA MENTOR HADIR) -->
+          <div id="studentSessionContainer" class="form-group" style="margin-bottom: 6px; border-top: 1px dashed var(--border-subtle); padding-top: 10px;">
+            <label class="form-label" style="font-weight: 700; color: var(--text-heading); display: flex; align-items: center; gap: 6px;">
+              {{ icon('book') }} 2. Status Sesi Belajar Siswa
+            </label>
+            <div style="display: flex; gap: 14px; margin-top: 6px; flex-wrap: wrap;">
+              <label style="cursor: pointer; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 5px;">
+                <input type="radio" name="session_status" value="terlaksana" id="sessionTerlaksana" checked onchange="updateAttendanceState()">
+                <span class="badge badge-primary">Sesi Terlaksana (Siswa Hadir &amp; Belajar)</span>
+              </label>
+              <label style="cursor: pointer; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 5px;">
+                <input type="radio" name="session_status" value="siswa_berhalangan" id="sessionSiswaIzin" onchange="updateAttendanceState()">
+                <span class="badge badge-warning">Siswa Berhalangan (Izin / Sakit / Dibatalkan Siswa)</span>
+              </label>
+            </div>
+            <!-- Input status tersembunyi untuk fallback kompatibilitas -->
+            <input type="hidden" name="status" id="legacyStatusInput" value="hadir">
+          </div>
+
+          <small id="statusHintText" style="color: var(--blue-brand); font-size: 11.5px; display: block; margin-top: 8px;">
+            {{ icon('lightbulb') }} Status Hadir &amp; Sesi Terlaksana akan otomatis menambah 1 pertemuan pada siklus periode belajar (8 pertemuan = 1 periode).
           </small>
         </div>
 
-        <!-- FIELD DOKUMENTASI MATERI & PERKEMBANGAN (MUNCUL JIKA STATUS HADIR) -->
+        <!-- FIELD DOKUMENTASI MATERI, FOTO & PERKEMBANGAN (MUNCUL JIKA SESI TERLAKSANA) -->
         <div id="learningDocContainer">
           <div class="form-group">
             <label class="form-label" for="topicsCoveredInput">
@@ -195,6 +216,62 @@
               placeholder="Contoh: Operasi Aljabar, Persamaan Linier Satu Variabel, Latihan Soal 1-15"
               required
             >
+          </div>
+
+          <!-- DOKUMENTASI FOTO SESI BELAJAR (WAJIB SESUAI OPSI B) -->
+          <div class="form-group" style="background: var(--blue-ultra-soft); border: 1px solid var(--border-blue); border-radius: var(--radius-md); padding: 14px; margin-bottom: 14px;">
+            <label class="form-label" for="sessionPhotoInput" style="font-weight: 700; color: var(--text-heading); display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+              <span>{{ icon('camera') }} Foto Dokumentasi Belajar <span id="photoRequiredStar" style="color: var(--danger);">* (Wajib Diunggah)</span></span>
+              <span style="font-size: 11px; font-weight: 400; color: var(--text-muted);">Maks. 5MB (JPG, PNG, WebP)</span>
+            </label>
+            <input
+              type="file"
+              class="form-control"
+              name="session_photo"
+              id="sessionPhotoInput"
+              accept="image/*"
+              capture="environment"
+              onchange="onPhotoFileChange(this)"
+            >
+            <small style="display: block; font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+              Ambil langsung dengan kamera smartphone atau pilih dari galeri. Foto terlindungi aman dan tidak dapat diakses publik.
+            </small>
+
+            <!-- LIVE THUMBNAIL PREVIEW -->
+            <div id="photoPreviewContainer" style="display: none; margin-top: 10px; padding: 8px; background: white; border-radius: 6px; border: 1px solid var(--border-subtle); align-items: center; gap: 12px;">
+              <img id="photoPreviewImg" src="" alt="Pratinjau Foto" style="width: 100px; height: 75px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+              <div style="flex: 1;">
+                <strong id="photoPreviewName" style="font-size: 12px; display: block; color: var(--text-main);"></strong>
+                <span id="photoPreviewSize" style="font-size: 11px; color: var(--text-muted); display: block;"></span>
+                <button type="button" class="btn btn-sm btn-outline-danger" style="margin-top: 4px; padding: 2px 8px; font-size: 11px;" onclick="clearSelectedPhoto()">
+                  Hapus / Ganti Foto
+                </button>
+              </div>
+            </div>
+
+            <!-- MEKANISME DOKUMENTASI TERTUNDA KENDALA KAMERA -->
+            <div style="margin-top: 10px; background: #fff8e6; border: 1px solid #ffe082; padding: 8px 12px; border-radius: 6px;">
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer; color: #856404; margin-bottom: 0;">
+                <input type="checkbox" name="has_tech_issue" id="hasTechIssueCheckbox" value="1" onchange="toggleTechIssue(this.checked)">
+                Ada kendala teknis kamera / unggahan pada sesi ini
+              </label>
+              <div id="techIssueBox" style="display: none; margin-top: 8px;">
+                <label class="form-label" style="font-size: 11.5px; color: #856404;" for="docPendingReasonInput">
+                  Jelaskan Alasan Kendala Kamera <span style="color: var(--danger);">* (Minimal 10 karakter)</span>
+                </label>
+                <textarea
+                  name="documentation_pending_reason"
+                  id="docPendingReasonInput"
+                  class="form-control"
+                  rows="2"
+                  placeholder="Contoh: Kamera smartphone error saat sesi berlangsung, dokumentasi fisik disimpan dan diserahkan ke admin."
+                  style="font-size: 12px;"
+                ></textarea>
+                <small style="font-size: 11px; color: #856404; display: block; margin-top: 3px;">
+                  Sesi tetap dicatat terlaksana dan pertemuan dihitung, dengan status dokumentasi 'Menunggu'. Admin dapat melengkapi foto susulan.
+                </small>
+              </div>
+            </div>
           </div>
 
           <div class="form-group">
@@ -218,7 +295,7 @@
             name="notes"
             id="attendanceNotesInput"
             rows="2"
-            placeholder="Keterangan kehadiran, kendala teknis, dll..."
+            placeholder="Keterangan kehadiran, alasan ketidakhadiran, atau kendala lain..."
           ></textarea>
         </div>
 
@@ -243,6 +320,7 @@
               <th>Siswa &amp; Program</th>
               <th>Pertemuan (Periode)</th>
               <th>Materi &amp; Catatan</th>
+              <th>Dokumentasi Foto</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -279,12 +357,38 @@
                 {% endif %}
               </td>
               <td>
-                {{ a.status|status_badge|safe }}
+                {% if a.documentation_photo %}
+                  <a href="{{ url_for('serve_session_photo', filename=a.documentation_photo) }}" target="_blank" class="badge badge-success" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                    {{ icon('camera') }} Lihat Foto
+                  </a>
+                {% elif a.documentation_status == 'menunggu' %}
+                  <span class="badge badge-warning" style="display: inline-flex; align-items: center; gap: 4px;" title="{{ a.documentation_pending_reason or 'Menunggu verifikasi dokumentasi' }}">
+                    {{ icon('alert') }} Menunggu
+                  </span>
+                {% else %}
+                  <span style="color: var(--text-muted); font-size: 11px;">-</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if a.mentor_status %}
+                  <div style="font-size: 11px; margin-bottom: 2px;">
+                    Mentor: <span class="badge {% if a.mentor_status == 'hadir' %}badge-success{% else %}badge-danger{% endif %}">{{ a.mentor_status|upper }}</span>
+                  </div>
+                {% endif %}
+                {% if a.session_status %}
+                  <div style="font-size: 11px;">
+                    Sesi: <span class="badge {% if a.session_status == 'terlaksana' %}badge-primary{% elif a.session_status == 'siswa_berhalangan' %}badge-warning{% else %}badge-danger{% endif %}">
+                      {{ a.session_status|replace('_', ' ')|upper }}
+                    </span>
+                  </div>
+                {% else %}
+                  {{ a.status|status_badge|safe }}
+                {% endif %}
               </td>
             </tr>
             {% else %}
             <tr>
-              <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 28px;">
+              <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 28px;">
                 Belum ada riwayat absensi yang tercatat untuk siswa bimbingan Anda.
               </td>
             </tr>
@@ -349,12 +453,17 @@
     document.getElementById("infoMeetingLabel").innerText = selected.getAttribute("data-meeting") || "Pertemuan 1 (1)";
 
     // Isi status dan materi jika sudah ada
-    const currentStatus = selected.getAttribute("data-status") || "hadir";
-    const radio = document.querySelector("input[name='status'][value='" + currentStatus + "']");
-    if (radio) {
-      radio.checked = true;
-      toggleAttendanceFields(currentStatus);
-    }
+    const currentMentorStatus = selected.getAttribute("data-mentor-status") || "hadir";
+    const currentSessionStatus = selected.getAttribute("data-session-status") || (selected.getAttribute("data-status") === "hadir" ? "terlaksana" : "siswa_berhalangan");
+
+    const mRadio = document.querySelector("input[name='mentor_status'][value='" + currentMentorStatus + "']");
+    if (mRadio) mRadio.checked = true;
+
+    const sRadio = document.querySelector("input[name='session_status'][value='" + currentSessionStatus + "']");
+    if (sRadio) sRadio.checked = true;
+
+    updateAttendanceState();
+
     document.getElementById("topicsCoveredInput").value = selected.getAttribute("data-topics") || "";
     document.getElementById("progressNotesInput").value = selected.getAttribute("data-progress") || "";
     document.getElementById("attendanceNotesInput").value = selected.getAttribute("data-notes") || "";
@@ -372,33 +481,124 @@
     if (isDirectMode) {
       directSec.style.display = "block";
       schedSec.style.display = "none";
-      btn.innerText = "{{ icon('calendar') }} Pilih Dari Jadwal Terdaftar";
+      btn.innerHTML = {{ (icon('calendar') + ' Pilih Dari Jadwal Terdaftar')|tojson }};
       schedSelect.value = "";
       schedSelect.required = false;
       stSelect.required = true;
     } else {
       directSec.style.display = "none";
       schedSec.style.display = "block";
-      btn.innerText = "{{ icon('edit') }} Input Siswa & Tanggal Langsung";
+      btn.innerHTML = {{ (icon('edit') + ' Input Siswa & Tanggal Langsung')|tojson }};
       schedSelect.required = true;
       stSelect.required = false;
     }
   }
 
-  function toggleAttendanceFields(status) {
+  function updateAttendanceState() {
+    const mentorHadir = document.getElementById("mentorHadir") ? document.getElementById("mentorHadir").checked : true;
+    const sessionContainer = document.getElementById("studentSessionContainer");
+    const sessionTerlaksana = document.getElementById("sessionTerlaksana") ? document.getElementById("sessionTerlaksana").checked : true;
     const docContainer = document.getElementById("learningDocContainer");
     const hint = document.getElementById("statusHintText");
     const topicsInput = document.getElementById("topicsCoveredInput");
+    const photoInput = document.getElementById("sessionPhotoInput");
+    const photoRequiredStar = document.getElementById("photoRequiredStar");
+    const legacyStatus = document.getElementById("legacyStatusInput");
+    const hasTechIssue = document.getElementById("hasTechIssueCheckbox") ? document.getElementById("hasTechIssueCheckbox").checked : false;
 
-    if (status === "hadir") {
-      docContainer.style.display = "block";
-      topicsInput.required = true;
-      hint.innerHTML = "{{ icon('lightbulb') }} Status <strong>Hadir</strong> akan otomatis dihitung ke dalam siklus periode belajar (8 pertemuan = 1 periode).";
-    } else {
-      docContainer.style.display = "none";
-      topicsInput.required = false;
-      hint.innerHTML = "{{ icon('alert') }} Siswa tidak hadir/izin: Tidak ada kegiatan belajar, sesi ini <strong>tidak akan dihitung</strong> ke penambahan nomor pertemuan atau periode.";
+    if (!mentorHadir) {
+      // Mentor tidak hadir
+      if (sessionContainer) sessionContainer.style.display = "none";
+      if (docContainer) docContainer.style.display = "none";
+      if (topicsInput) topicsInput.required = false;
+      if (photoInput) photoInput.required = false;
+      if (legacyStatus) legacyStatus.value = "tidak_hadir";
+      if (hint) {
+        hint.innerHTML = {{ (icon('alert') + ' <strong>Mentor Tidak Hadir:</strong> Sesi belajar tidak terlaksana, kehadiran siswa tidak dihitung, dan siklus periode tidak bertambah.')|tojson }};
+      }
+      return;
     }
+
+    // Mentor hadir
+    if (sessionContainer) sessionContainer.style.display = "block";
+
+    if (sessionTerlaksana) {
+      // Sesi terlaksana
+      if (docContainer) docContainer.style.display = "block";
+      if (topicsInput) topicsInput.required = true;
+      if (legacyStatus) legacyStatus.value = "hadir";
+      
+      // Foto wajib kecuali jika dicentang kendala teknis
+      if (hasTechIssue) {
+        if (photoInput) photoInput.required = false;
+        if (photoRequiredStar) photoRequiredStar.style.display = "none";
+      } else {
+        if (photoInput) photoInput.required = true;
+        if (photoRequiredStar) photoRequiredStar.style.display = "inline";
+      }
+
+      if (hint) {
+        hint.innerHTML = {{ (icon('lightbulb') + ' <strong>Mentor Hadir &amp; Sesi Terlaksana:</strong> Pertemuan valid akan otomatis bertambah 1 pada siklus periode belajar (8 pertemuan = 1 periode). Foto wajib diunggah.')|tojson }};
+      }
+    } else {
+      // Siswa berhalangan
+      if (docContainer) docContainer.style.display = "none";
+      if (topicsInput) topicsInput.required = false;
+      if (photoInput) photoInput.required = false;
+      if (legacyStatus) legacyStatus.value = "izin";
+      if (hint) {
+        hint.innerHTML = {{ (icon('lightbulb') + ' <strong>Mentor Hadir, Siswa Berhalangan:</strong> Kehadiran mentor tetap dicatat HADIR / SIAP MENGAJAR, tetapi pertemuan siswa <strong>tidak bertambah</strong> dan periode tidak berlanjut.')|tojson }};
+      }
+    }
+  }
+
+  function toggleTechIssue(checked) {
+    const techBox = document.getElementById("techIssueBox");
+    const reasonInput = document.getElementById("docPendingReasonInput");
+    if (techBox) techBox.style.display = checked ? "block" : "none";
+    if (reasonInput) reasonInput.required = checked;
+    updateAttendanceState();
+  }
+
+  function onPhotoFileChange(input) {
+    const file = input.files && input.files[0];
+    const previewContainer = document.getElementById("photoPreviewContainer");
+    const previewImg = document.getElementById("photoPreviewImg");
+    const previewName = document.getElementById("photoPreviewName");
+    const previewSize = document.getElementById("photoPreviewSize");
+
+    if (!file) {
+      if (previewContainer) previewContainer.style.display = "none";
+      return;
+    }
+
+    // Validasi ukuran di frontend (maks. 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Ukuran file foto melebihi batas 5MB (" + (file.size / (1024 * 1024)).toFixed(2) + " MB). Silakan pilih foto dengan resolusi lebih kecil.");
+      input.value = "";
+      if (previewContainer) previewContainer.style.display = "none";
+      return;
+    }
+
+    if (previewName) previewName.innerText = file.name;
+    if (previewSize) previewSize.innerText = (file.size / 1024).toFixed(1) + " KB";
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      if (previewImg) previewImg.src = e.target.result;
+      if (previewContainer) previewContainer.style.display = "flex";
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearSelectedPhoto() {
+    const photoInput = document.getElementById("sessionPhotoInput");
+    const previewContainer = document.getElementById("photoPreviewContainer");
+    const previewImg = document.getElementById("photoPreviewImg");
+    if (photoInput) photoInput.value = "";
+    if (previewImg) previewImg.src = "";
+    if (previewContainer) previewContainer.style.display = "none";
+    updateAttendanceState();
   }
 
   // Inisialisasi awal saat halaman dimuat
@@ -411,6 +611,7 @@
     if (stSelect && stSelect.value) {
       onDirectStudentChange(stSelect);
     }
+    updateAttendanceState();
   });
 </script>
 {% endblock %}

@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+{% block title %}Honor &amp; Fee Tentor (Pemilik){% endblock %}
+{% block page_title %}Perhitungan Honor &amp; Fee Mengajar Tentor{% endblock %}
+{% block page_subtitle %}Pengawasan pencairan fee per kelipatan 8 pertemuan terlaksana (1 periode). Perhitungan fee proporsional per sesi diajar dan konfirmasi transfer fee honor.{% endblock %}
+
+{% block content %}
+<style>
+  .stat-card.interactive {
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    border: 1px solid var(--border-subtle, #e2e8f0);
+  }
+  .stat-card.interactive:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 18px -3px rgba(0, 0, 0, 0.1);
+    border-color: var(--blue-brand, #0284c7);
+  }
+  .stat-card.interactive .stat-hint {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--blue-brand, #0284c7);
+    margin-top: 6px;
+    display: inline-block;
+  }
+  .honor-alert-card {
+    background: #fffbeb;
+    border: 1.5px solid #fde68a;
+    border-left: 5px solid #f59e0b;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+</style>
+
+<!-- KARTU STATISTIK RINGKASAN HONOR (INTERAKTIF) -->
+<div class="stats-grid" style="margin-bottom: 24px;">
+  <div class="stat-card interactive {% if ready_count > 0 %}warning{% endif %}" onclick="filterHonorStatus('siap')" title="Klik untuk memfilter fee yang siap ditransfer">
+    <div class="stat-icon">{{ icon('alert-circle') }}</div>
+    <div>
+      <div class="stat-value">{{ ready_count }}</div>
+      <div class="stat-label">Fee Siap Ditransfer (Periode Tuntas)</div>
+      <div class="stat-hint">Lihat Siap Ditransfer &darr;</div>
+    </div>
+  </div>
+
+  <div class="stat-card interactive success" onclick="filterHonorStatus('sudah')" title="Klik untuk memfilter fee yang sudah ditransfer">
+    <div class="stat-icon">{{ icon('check-circle') }}</div>
+    <div>
+      <div class="stat-value">{{ transferred_count }}</div>
+      <div class="stat-label">Fee Sudah Ditransfer ke Mentor</div>
+      <div class="stat-hint">Lihat Sudah Ditransfer &darr;</div>
+    </div>
+  </div>
+
+  <div class="stat-card interactive" onclick="filterHonorStatus('all')" title="Klik untuk melihat seluruh riwayat honor">
+    <div class="stat-icon">{{ icon('mentor') }}</div>
+    <div>
+      <div class="stat-value">{{ honors|length }}</div>
+      <div class="stat-label">Total Riwayat Periode Honor</div>
+      <div class="stat-hint">Lihat Semua Data &darr;</div>
+    </div>
+  </div>
+</div>
+
+<!-- PERINGATAN PEMILIK: FEE SIAP DITRANSFER -->
+{% if ready_count > 0 %}
+<div class="honor-alert-card">
+  <div style="display: flex; align-items: center; gap: 12px;">
+    <div style="font-size: 26px; color: #d97706;">{{ icon('alert-circle') }}</div>
+    <div>
+      <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #92400e;">
+        Peringatan Pemilik: Ada {{ ready_count }} Fee Honor Mentor Siap Diberikan!
+      </h3>
+      <p style="margin: 3px 0 0 0; font-size: 12.5px; color: #b45309;">
+        Mentor telah menyelesaikan siklus periode bimbingan siswa (4 atau 8 pertemuan). Silakan transfer fee honor mentor lalu klik tombol <strong>"Tandai Sudah Ditransfer"</strong> di bawah.
+      </p>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- TABEL UTAMA HONOR MENTOR -->
+<div class="card">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <div class="card-title">
+      <span>{{ icon('credit-card') }}</span> Daftar Perhitungan Fee Tentor Berdasarkan Periode Selesai
+    </div>
+    <div style="font-size: 12.5px; color: var(--text-muted);">
+      Rumus: <strong>Jumlah Sesi Diajar Mentor pada Siklus Periode &times; Tarif Fee / Sesi</strong>
+    </div>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>Nama Tentor</th>
+            <th>Siswa &amp; Program Les</th>
+            <th>Siklus Periode</th>
+            <th>Tarif Fee / Sesi</th>
+            <th>Total Fee Dibayarkan</th>
+            <th>Status Transfer</th>
+            <th style="text-align: right;">Aksi Konfirmasi Transfer</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for h in honors %}
+          <tr class="honor-row" data-status="{{ h.status }}">
+            <td>
+              <strong style="color: var(--navy-dark); font-size: 14px;">{{ h.mentor_name }}</strong>
+              {% if h.mentor_phone %}
+                <div style="font-size: 11.5px; color: var(--blue-brand); margin-top: 2px;">
+                  {{ icon('phone') }} {{ h.mentor_phone }}
+                </div>
+              {% endif %}
+            </td>
+            <td>
+              <strong style="color: var(--navy-primary); font-size: 13.5px;">{{ h.student_name }}</strong>
+              <div style="font-size: 11.5px; color: var(--text-muted);">{{ h.program_name }}</div>
+            </td>
+            <td>
+              <span class="badge" style="background: #e0f2fe; color: #0369a1; font-size: 12px; font-weight: 700;">
+                Periode {{ h.period_number }} ({{ h.completed_meetings }} Sesi Selesai)
+              </span>
+            </td>
+            <td>
+              <span style="font-size: 12.5px; font-weight: 600; color: var(--navy-dark);">
+                Rp {{ "{:,.0f}".format(h.fee_per_session).replace(",", ".") }} / sesi
+              </span>
+            </td>
+            <td>
+              <strong style="font-size: 14px; color: var(--blue-brand);">
+                Rp {{ "{:,.0f}".format(h.total_fee).replace(",", ".") }}
+              </strong>
+              <div style="font-size: 10.5px; color: var(--text-muted);">
+                ({{ h.completed_meetings }} sesi &times; Rp {{ "{:,.0f}".format(h.fee_per_session).replace(",", ".") }})
+              </div>
+              {% if h.initial_periods_completed == h.period_number and h.initial_last_meeting and h.initial_last_meeting > 0 %}
+                <div style="margin-top: 3px;">
+                  <span class="badge" style="background: #e0f2fe; color: #0369a1; font-size: 10px; padding: 2px 6px; font-weight: 500;">
+                    Termasuk {{ h.initial_last_meeting }} sesi pra-sistem
+                  </span>
+                </div>
+              {% endif %}
+              {% if h.status != 'sudah_ditransfer' %}
+                <div style="margin-top: 4px;">
+                  <button type="button" class="btn btn-outline btn-sm" onclick="toggleEditSession('{{ h.id }}')" style="font-size: 10px; padding: 2px 6px; color: var(--navy-primary); border-color: #cbd5e1;">
+                    {{ icon('edit') }} Sesuaikan Sesi
+                  </button>
+                  <form id="edit-session-form-{{ h.id }}" method="POST" action="{{ url_for('owner.update_honor_meetings', honor_id=h.id) }}" style="display: none; margin-top: 6px; align-items: center; gap: 4px;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="number" name="completed_meetings" value="{{ h.completed_meetings }}" min="1" max="8" class="form-control form-control-sm" style="width: 55px; font-size: 11px; padding: 2px 4px; text-align: center;">
+                    <span style="font-size: 11px; color: var(--text-muted);">sesi</span>
+                    <button type="submit" class="btn btn-primary btn-sm" style="font-size: 10.5px; padding: 2px 8px;">Simpan</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="toggleEditSession('{{ h.id }}')" style="font-size: 10.5px; padding: 2px 6px;">Batal</button>
+                  </form>
+                </div>
+              {% endif %}
+            </td>
+            <td>
+              {% if h.status == 'sudah_ditransfer' %}
+                <span class="badge badge-success" style="font-size: 11.5px;">Sudah Ditransfer</span>
+                <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 2px;">
+                  {{ h.transferred_at|date_indo if h.transferred_at else '' }}
+                </div>
+              {% else %}
+                <span class="badge badge-warning" style="font-size: 11.5px; background: #fef08a; color: #854d0e;">
+                  Siap Ditransfer
+                </span>
+              {% endif %}
+            </td>
+            <td style="text-align: right;">
+              {% if h.status == 'sudah_ditransfer' %}
+                <span style="font-size: 11.5px; color: var(--green-success); font-weight: 600;">
+                  {{ icon('check-circle') }} Fee Telah Diberikan
+                </span>
+                {% if h.transfer_notes %}
+                  <div style="font-size: 11px; color: var(--text-muted);">{{ h.transfer_notes }}</div>
+                {% endif %}
+              {% else %}
+                <form method="POST" action="{{ url_for('owner.confirm_honor_transfer', honor_id=h.id) }}" onsubmit="return confirm('Konfirmasi bahwa fee honor Rp {{ "{:,.0f}".format(h.total_fee).replace(",", ".") }} untuk {{ h.mentor_name }} telah selesai ditransfer?');" style="display: inline-flex; align-items: center; gap: 6px; margin: 0;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="text" name="transfer_notes" placeholder="Catatan / No Ref Bank (Opsional)" class="form-control form-control-sm" style="font-size: 11.5px; max-width: 170px;">
+                  <button type="submit" class="btn btn-primary btn-sm" style="font-size: 11.5px; padding: 5px 12px; font-weight: 600; white-space: nowrap;">
+                    {{ icon('check') }} Tandai Sudah Ditransfer
+                  </button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 36px; color: var(--gray-500);">
+              Belum ada siklus 8 pertemuan yang selesai terlaksana untuk perhitungan honor.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleEditSession(id) {
+    const f = document.getElementById('edit-session-form-' + id);
+    if (f) {
+      f.style.display = (f.style.display === 'none' || f.style.display === '') ? 'inline-flex' : 'none';
+    }
+  }
+
+  function filterHonorStatus(status) {
+    const rows = document.querySelectorAll(".honor-row");
+    rows.forEach(r => {
+      const s = r.getAttribute("data-status");
+      if (status === 'all') {
+        r.style.display = "";
+      } else if (status === 'siap' && s === 'siap_ditransfer') {
+        r.style.display = "";
+      } else if (status === 'sudah' && s === 'sudah_ditransfer') {
+        r.style.display = "";
+      } else {
+        r.style.display = "none";
+      }
+    });
+  }
+</script>
+
+{% endblock %}

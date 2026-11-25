@@ -4,6 +4,26 @@
 {% block page_subtitle %}Ikhtisar komprehensif, supervisi operasional, dan pemantauan perkembangan les DESI PRIVAT{% endblock %}
 
 {% block content %}
+<style>
+  .stat-card.interactive {
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    border: 1px solid var(--border-subtle, #e2e8f0);
+  }
+  .stat-card.interactive:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 18px -3px rgba(0, 0, 0, 0.1);
+    border-color: var(--blue-brand, #0284c7);
+  }
+  .stat-card.interactive .stat-hint {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--blue-brand, #0284c7);
+    margin-top: 6px;
+    display: inline-block;
+  }
+</style>
 <!-- BANNER SUPERVISI BACA-SAJA PEMILIK -->
 <div class="card" style="margin-bottom: 24px; background: linear-gradient(135deg, rgba(238, 246, 255, 0.95), rgba(240, 253, 250, 0.9)); border: 1px solid rgba(14, 165, 233, 0.2);">
   <div class="card-body" style="padding: 16px 20px;">
@@ -31,53 +51,175 @@
   </div>
 </div>
 
-<!-- KARTU METRIK EKSEKUTIF -->
+<!-- PERINGATAN 1: SISWA BARU MENUNGGU VALIDASI PEMBAYARAN -->
+{% if pending_new_students %}
+<div class="card" style="margin-bottom: 20px; background: #fffbeb; border: 1.5px solid #fde68a; border-left: 5px solid #f59e0b;">
+  <div class="card-body" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="font-size: 26px; color: #d97706;">{{ icon('alert-circle') }}</div>
+      <div>
+        <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #92400e;">
+          Perhatian Pemilik: {{ pending_new_students|length }} Siswa Baru Menunggu Validasi Pembayaran
+        </h4>
+        <p style="margin: 2px 0 0 0; font-size: 12.5px; color: #b45309;">
+          Pembelajaran tidak dapat dimulai sebelum Pemilik memvalidasi bahwa seluruh pembayaran pendaftaran awal telah lunas.
+        </p>
+      </div>
+    </div>
+    <a href="{{ url_for('owner.bills') }}" class="btn btn-warning btn-sm" style="background: #f59e0b; border-color: #d97706; color: #ffffff; font-weight: 600; font-size: 12px; padding: 6px 14px;">
+      {{ icon('check-circle') }} Periksa &amp; Validasi Siswa Baru
+    </a>
+  </div>
+</div>
+{% endif %}
+
+<!-- PERINGATAN 2: FEE HONOR MENTOR SIAP DITRANSFER (PERIODE SELESAI) -->
+{% if ready_honor_count > 0 %}
+<div class="card" style="margin-bottom: 24px; background: #eff6ff; border: 1.5px solid #bfdbfe; border-left: 5px solid #2563eb;">
+  <div class="card-body" style="padding: 18px 20px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 12px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="font-size: 28px; color: #2563eb;">{{ icon('credit-card') }}</div>
+        <div>
+          <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #1e40af;">
+            Peringatan Pemilik: Ada {{ ready_honor_count }} Fee Honor Tentor Siap Dikirim (Periode Bimbingan Selesai)
+          </h4>
+          <p style="margin: 2px 0 0 0; font-size: 12.5px; color: #1d4ed8;">
+            Mentor di bawah ini telah menuntaskan seluruh pertemuan dalam periode bimbingan (4, 8, atau 12 sesi). Silakan kirim / transfer gaji sesuai tarif fee yang telah diatur oleh Pemilik.
+          </p>
+        </div>
+      </div>
+      <a href="{{ url_for('owner.honor') }}" class="btn btn-primary btn-sm" style="font-size: 12px; padding: 6px 14px; font-weight: 600;">
+        {{ icon('credit-card') }} Buka Menu Honorarium
+      </a>
+    </div>
+
+    <!-- TABEL RINGKASAN TENTOR YANG SIAP DIBAYAR -->
+    {% if ready_honors %}
+    <div class="table-responsive" style="margin-top: 10px; background: #ffffff; border-radius: 8px; border: 1px solid #bfdbfe;">
+      <table class="table-desi" style="margin-bottom: 0; font-size: 12.5px;">
+        <thead>
+          <tr style="background: #f8fafc;">
+            <th>Nama Tentor</th>
+            <th>Siswa &amp; Program</th>
+            <th>Selesai Periode</th>
+            <th>Fee / Sesi</th>
+            <th>Total Gaji yang Harus Dikirim</th>
+            <th style="text-align: center;">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for rh in ready_honors %}
+          <tr>
+            <td>
+              <strong style="color: var(--navy-dark);">{{ rh.mentor_name }}</strong>
+              <div style="font-size: 11px; color: var(--gray-500);">{{ rh.expertise or 'Umum' }} &bull; {{ rh.mentor_phone or '-' }}</div>
+            </td>
+            <td>
+              <strong>{{ rh.student_name }}</strong>
+              <div style="font-size: 11px; color: var(--navy-primary);">{{ rh.program_name }}</div>
+            </td>
+            <td>
+              <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 700;">
+                Periode {{ rh.period_number }} &bull; {{ rh.completed_meetings }} Sesi
+              </span>
+            </td>
+            <td>Rp {{ "{:,.0f}".format(rh.fee_per_session or 0).replace(",", ".") }}</td>
+            <td>
+              <strong style="color: #166534; font-size: 13.5px;">
+                Rp {{ "{:,.0f}".format(rh.total_fee or 0).replace(",", ".") }}
+              </strong>
+            </td>
+            <td style="text-align: center;">
+              <a href="{{ url_for('owner.honor') }}" class="btn btn-success btn-sm" style="font-size: 11px; padding: 4px 10px; font-weight: 600;">
+                Kirim Gaji Sekarang
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<!-- PERINGATAN 3: PENAGIHAN KE WALI MURID (FEE TELAH DIBAGIKAN) -->
+{% if billing_alerts %}
+<div class="card" style="margin-bottom: 20px; background: #f0fdf4; border: 1.5px solid #bbf7d0; border-left: 5px solid #16a34a;">
+  <div class="card-body" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="font-size: 26px; color: #16a34a;">{{ icon('bell') }}</div>
+      <div>
+        <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #166534;">
+          Pemberitahuan: {{ billing_alerts|length }} Tagihan Periode Baru Perlu Ditagihkan ke Wali Murid
+        </h4>
+        <p style="margin: 2px 0 0 0; font-size: 12.5px; color: #15803d;">
+          Fee mentor periode sebelumnya telah ditransfer. Tagihan periode berikutnya telah dibuat dan perlu ditagihkan ke wali murid.
+        </p>
+      </div>
+    </div>
+    <a href="{{ url_for('owner.bills') }}" class="btn btn-success btn-sm" style="font-size: 12px; padding: 6px 14px; font-weight: 600;">
+      {{ icon('receipt') }} Lihat Tagihan Wali Murid
+    </a>
+  </div>
+</div>
+{% endif %}
+
+<!-- KARTU METRIK EKSEKUTIF (INTERAKTIF) -->
 <div class="stats-grid">
-  <div class="stat-card">
+  <div class="stat-card interactive" onclick="window.location.href='{{ url_for('owner.students') }}'" title="Klik untuk membuka Data Siswa">
     <div class="stat-icon">{{ icon('student') }}</div>
     <div>
       <div class="stat-value">{{ summary.active_students }}</div>
       <div class="stat-label">Total Siswa Aktif</div>
+      <div class="stat-hint">Lihat Data Siswa &rarr;</div>
     </div>
   </div>
 
-  <div class="stat-card success">
+  <div class="stat-card interactive success" onclick="window.location.href='{{ url_for('owner.mentors') }}'" title="Klik untuk membuka Data Mentor & Tarif Fee">
     <div class="stat-icon">{{ icon('mentor') }}</div>
     <div>
       <div class="stat-value">{{ summary.active_mentors }}</div>
       <div class="stat-label">Total Mentor Aktif</div>
+      <div class="stat-hint">Lihat &amp; Atur Fee &rarr;</div>
     </div>
   </div>
 
-  <div class="stat-card info">
+  <div class="stat-card interactive info" onclick="window.location.href='{{ url_for('owner.attendance') }}'" title="Klik untuk membuka Dashboard Absensi">
     <div class="stat-icon">{{ icon('book') }}</div>
     <div>
       <div class="stat-value">{{ summary.active_programs }}</div>
       <div class="stat-label">Program Les Aktif</div>
+      <div class="stat-hint">Dashboard Absensi &rarr;</div>
     </div>
   </div>
 
-  <div class="stat-card">
+  <div class="stat-card interactive" onclick="window.location.href='{{ url_for('owner.schedules') }}'" title="Klik untuk membuka Jadwal & Kalender">
     <div class="stat-icon">{{ icon('calendar') }}</div>
     <div>
       <div class="stat-value">{{ summary.monthly_sessions or summary.today_schedules }}</div>
       <div class="stat-label">Sesi Bulan Ini</div>
+      <div class="stat-hint">Jadwal Kalender &rarr;</div>
     </div>
   </div>
 
-  <div class="stat-card success">
+  <div class="stat-card interactive success" onclick="window.location.href='{{ url_for('owner.attendance') }}'" title="Klik untuk membuka Riwayat Absensi Pertemuan">
     <div class="stat-icon">{{ icon('check-circle') }}</div>
     <div>
       <div class="stat-value">{{ summary.completed_sessions }}</div>
       <div class="stat-label">Pertemuan Valid Selesai</div>
+      <div class="stat-hint">Riwayat Absensi &rarr;</div>
     </div>
   </div>
 
-  <div class="stat-card danger">
-    <div class="stat-icon">{{ icon('refresh') }}</div>
+  <div class="stat-card interactive" onclick="window.location.href='{{ url_for('owner.parents') }}'" title="Klik untuk membuka Data Orang Tua / Wali">
+    <div class="stat-icon">{{ icon('user') }}</div>
     <div>
-      <div class="stat-value">{{ summary.total_replacements }}</div>
-      <div class="stat-label">Pergantian Mentor</div>
+      <div class="stat-value">{{ summary.total_parents or 0 }}</div>
+      <div class="stat-label">Total Orang Tua / Wali</div>
+      <div class="stat-hint">Data Orang Tua &rarr;</div>
     </div>
   </div>
 </div>
@@ -226,52 +368,6 @@
           <tr>
             <td colspan="6" style="text-align: center; padding: 24px; color: var(--gray-500);">
               Belum ada laporan perkembangan belajar yang diinput oleh mentor.
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<!-- RIWAYAT PERGANTIAN MENTOR -->
-<div class="card">
-  <div class="card-header">
-    <div class="card-title"><span>{{ icon('refresh') }}</span> Riwayat Pergantian Mentor Terkini</div>
-    <a href="{{ url_for('owner.replacements') }}" class="btn btn-secondary btn-sm">Lihat Semua</a>
-  </div>
-  <div class="card-body" style="padding: 0;">
-    <div class="table-responsive">
-      <table class="table-desi">
-        <thead>
-          <tr>
-            <th>Tanggal Penggantian</th>
-            <th>Tanggal Sesi Les</th>
-            <th>Siswa</th>
-            <th>Mentor Asli</th>
-            <th>Mentor Pengganti</th>
-            <th>Alasan Pergantian</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for r in recent_replacements %}
-          <tr>
-            <td><small>{{ r.created_at|date_indo }}</small></td>
-            <td><strong>{{ r.schedule_date|date_indo }}</strong></td>
-            <td><strong style="color: var(--navy-dark);">{{ r.student_name }}</strong></td>
-            <td><span style="color: var(--danger); font-weight: 600;">{{ r.old_mentor }}</span></td>
-            <td><span style="color: var(--success); font-weight: 600;">{{ r.new_mentor }}</span></td>
-            <td>
-              <div style="font-size: 12px; color: var(--gray-700); max-width: 250px;">
-                {{ r.reason }}
-              </div>
-            </td>
-          </tr>
-          {% else %}
-          <tr>
-            <td colspan="6" style="text-align: center; padding: 24px; color: var(--gray-500);">
-              Tidak ada catatan pergantian mentor terkini. Operasional berjalan lancar sesuai jadwal.
             </td>
           </tr>
           {% endfor %}

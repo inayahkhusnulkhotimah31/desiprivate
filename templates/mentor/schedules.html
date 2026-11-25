@@ -5,6 +5,63 @@
 
 {% block content %}
 <!-- ======================================================= -->
+<!-- PERINGATAN / DAFTAR JADWAL MEMERLUKAN KONFIRMASI MENTOR -->
+<!-- ======================================================= -->
+{% if pending_confirmations %}
+<div class="card" style="margin-bottom: 24px; background: #fffbeb; border: 1.5px solid #fde68a; border-left: 5px solid #f59e0b;">
+  <div class="card-body" style="padding: 16px 20px;">
+    <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px;">
+      <div style="font-size: 26px; color: #d97706;">{{ icon('bell') }}</div>
+      <div>
+        <h4 style="margin: 0; font-size: 15.5px; font-weight: 700; color: #92400e;">
+          Konfirmasi Kesanggupan Mengajar Diperlukan ({{ pending_confirmations|length }} Jadwal Sesi)
+        </h4>
+        <p style="margin: 3px 0 0 0; font-size: 12.5px; color: #b45309;">
+          Admin telah menjadwalkan atau menugaskan Anda untuk sesi bimbingan berikut. Mohon segera berikan konfirmasi kesiapan Anda:
+        </p>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      {% for pc in pending_confirmations %}
+        <div style="background: #ffffff; border: 1px solid #fef3c7; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <strong style="color: var(--navy-dark); font-size: 14.5px;">{{ pc.student_name }}</strong>
+              <span class="badge badge-info" style="font-size: 11px;">{{ pc.program_name }}</span>
+              {% if pc.session_notes %}
+                <span class="badge badge-warning" style="font-size: 11px;">{{ pc.session_notes }}</span>
+              {% endif %}
+            </div>
+            <div style="font-size: 12.5px; color: var(--blue-brand); font-weight: 600; margin-top: 4px;">
+              {{ icon('calendar') }} {{ pc.schedule_date|date_indo }} &bull; {{ pc.start_time }} - {{ pc.end_time }} WIB (90 Menit)
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <form method="POST" action="{{ url_for('mentor.respond_schedule', schedule_id=pc.id) }}" style="display: inline;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="response_choice" value="dikonfirmasi">
+              <button type="submit" class="btn btn-success btn-sm" style="font-weight: 600; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                {{ icon('check') }} Siap Mengajar
+              </button>
+            </form>
+            <button
+              type="button"
+              class="btn btn-danger btn-sm"
+              onclick="openRejectModal({{ pc.id }}, '{{ pc.student_name|escape }}', '{{ pc.schedule_date|date_indo }}')"
+              style="font-size: 12px; display: inline-flex; align-items: center; gap: 4px;"
+            >
+              {{ icon('x') }} Berhalangan
+            </button>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ======================================================= -->
 <!-- 1. KARTU JADWAL RUTIN MENGAJAR MINGGUAN (UTAMA) -->
 <!-- ======================================================= -->
 <div class="card" style="margin-bottom: 24px;">
@@ -63,9 +120,6 @@
             </td>
             <td>
               <div>{{ rs.parent_name or '-' }}</div>
-              {% if rs.parent_phone %}
-                <div style="font-size: 11px; color: var(--text-muted);">{{ icon('phone') }} {{ rs.parent_phone }}</div>
-              {% endif %}
             </td>
             <td>
               <div style="font-size: 11.5px; color: var(--text-body);">{{ rs.notes or '-' }}</div>
@@ -125,7 +179,7 @@
         </thead>
         <tbody>
           {% for sc in schedules %}
-          <tr>
+          <tr {% if sc.mentor_response_status == 'menunggu_konfirmasi' %}style="background-color: #fffdf5;"{% endif %}>
             <td><strong>{{ sc.schedule_date|date_indo }}</strong></td>
             <td>
               <span style="color: var(--blue-brand); font-weight: 600;">{{ sc.start_time }} - {{ sc.end_time }} WIB</span>
@@ -139,21 +193,45 @@
               {% endif %}
             </td>
             <td>
-              {% if sc.attendance_id %}
+              {% if sc.mentor_response_status == 'menunggu_konfirmasi' %}
+                <span class="badge badge-warning" style="font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                  {{ icon('bell') }} Butuh Konfirmasi
+                </span>
+              {% elif sc.attendance_id %}
                 <span class="badge badge-success">Sudah Absen</span>
               {% else %}
                 <span class="badge badge-neutral">Belum Absen</span>
               {% endif %}
             </td>
             <td>
-              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                <a href="{{ url_for('mentor.attendance', student_id=sc.student_id, schedule_date=sc.schedule_date) }}" class="btn btn-primary btn-sm">
-                  {{ icon('pencil') }} Catat Absensi
-                </a>
-                <a href="{{ url_for('mentor.progress', schedule_id=sc.id) }}" class="btn btn-secondary btn-sm">
-                  {% if sc.progress_id %}Ubah Laporan{% else %}Tulis Laporan{% endif %}
-                </a>
-              </div>
+              {% if sc.mentor_response_status == 'menunggu_konfirmasi' %}
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <form method="POST" action="{{ url_for('mentor.respond_schedule', schedule_id=sc.id) }}" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="response_choice" value="dikonfirmasi">
+                    <button type="submit" class="btn btn-success btn-sm" style="font-weight: 600; font-size: 11.5px;">
+                      {{ icon('check') }} Siap
+                    </button>
+                  </form>
+                  <button
+                    type="button"
+                    class="btn btn-danger btn-sm"
+                    onclick="openRejectModal({{ sc.id }}, '{{ sc.student_name|escape }}', '{{ sc.schedule_date|date_indo }}')"
+                    style="font-size: 11.5px;"
+                  >
+                    {{ icon('x') }} Berhalangan
+                  </button>
+                </div>
+              {% else %}
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <a href="{{ url_for('mentor.attendance', student_id=sc.student_id, schedule_date=sc.schedule_date) }}" class="btn btn-primary btn-sm">
+                    {{ icon('pencil') }} Catat Absensi
+                  </a>
+                  <a href="{{ url_for('mentor.progress', schedule_id=sc.id) }}" class="btn btn-secondary btn-sm">
+                    {% if sc.progress_id %}Ubah Laporan{% else %}Tulis Laporan{% endif %}
+                  </a>
+                </div>
+              {% endif %}
             </td>
           </tr>
           {% else %}
@@ -168,4 +246,41 @@
     </div>
   </div>
 </div>
+
+<!-- MODAL PENOLAKAN JADWAL MENTOR (DENGAN ALASAN WAJIB) -->
+<div class="modal-overlay" id="rejectModal">
+  <div class="modal-content">
+    <div class="modal-header" style="background: var(--danger-bg);">
+      <div class="modal-title" style="color: #991B1B;">Berhalangan Mengajar</div>
+      <button class="modal-close-btn" onclick="closeModal('rejectModal')">&times;</button>
+    </div>
+    <form method="POST" id="rejectForm" action="">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="response_choice" value="tidak_bisa">
+      <div class="modal-body">
+        <p style="font-size: 13.5px; color: var(--gray-700); margin-bottom: 12px;">
+          Sesi dengan siswa: <strong id="rejectStudentName" style="color: var(--navy-dark);">Siswa</strong> pada <span id="rejectDate"></span>
+        </p>
+        <div class="form-group">
+          <label class="form-label" style="font-weight: 700;">Alasan Berhalangan Mengajar (Wajib Diisi)</label>
+          <textarea class="form-control" name="reason" placeholder="Contoh: Sakit, jadwal ujian mendadak, dinas luar kota..." required rows="4"></textarea>
+          <small style="font-size: 11px; color: var(--danger);">Admin akan menerima notifikasi otomatis untuk menyiapkan mentor pengganti.</small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('rejectModal')">Batal</button>
+        <button type="submit" class="btn btn-danger">Kirim Alasan Berhalangan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openRejectModal(id, studentName, schedDate) {
+    document.getElementById("rejectForm").action = "/mentor/schedules/" + id + "/respond";
+    document.getElementById("rejectStudentName").innerText = studentName;
+    document.getElementById("rejectDate").innerText = schedDate;
+    openModal("rejectModal");
+  }
+</script>
 {% endblock %}

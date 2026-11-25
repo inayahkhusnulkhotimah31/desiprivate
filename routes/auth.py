@@ -28,12 +28,20 @@ def validate_csrf():
         abort(400, description="Token CSRF tidak valid atau telah kedaluwarsa. Silakan muat ulang halaman.")
 
 def login_required(f):
-    """Dekorator untuk memastikan pengguna telah login."""
+    """Dekorator untuk memastikan pengguna telah login dan akun masih valid di database."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if "user_id" not in session:
             flash("Silakan masuk terlebih dahulu untuk mengakses halaman ini.", "warning")
             return redirect(url_for("auth.login", next=request.url))
+
+        # Validasi apakah user di session benar-benar masih ada dan aktif di database
+        user = query_db("SELECT id, is_active FROM users WHERE id = ?", (session["user_id"],), one=True)
+        if not user or not user["is_active"]:
+            session.clear()
+            flash("Sesi login Anda telah kedaluwarsa atau akun tidak ditemukan. Silakan masuk kembali.", "warning")
+            return redirect(url_for("auth.login"))
+
         return f(*args, **kwargs)
     return decorated_function
 
@@ -57,7 +65,8 @@ def get_role_dashboard_url(role):
     mapping = {
         "admin": "admin.dashboard",
         "owner": "owner.dashboard",
-        "mentor": "mentor.dashboard"
+        "mentor": "mentor.dashboard",
+        "parent": "parent.dashboard"
     }
     return url_for(mapping.get(role, "auth.login"))
 
@@ -97,8 +106,8 @@ def login():
             flash("ID Pengguna atau password salah. Silakan periksa kembali.", "danger")
             return render_template("login.html")
 
-        if user["role"] not in ("admin", "owner", "mentor"):
-            flash("Akses sistem hanya tersedia untuk Admin, Pemilik, dan Mentor. Silakan hubungi pengelola.", "warning")
+        if user["role"] not in ("admin", "owner", "mentor", "parent"):
+            flash("Akses sistem tidak dikenali. Silakan hubungi pengelola DESI PRIVAT.", "warning")
             return render_template("login.html")
 
         if not user["is_active"]:
@@ -118,6 +127,10 @@ def login():
             mentor_rec = query_db("SELECT id FROM mentors WHERE user_id = ?", (user["id"],), one=True)
             if mentor_rec:
                 session["mentor_id"] = mentor_rec["id"]
+        elif user["role"] == "parent":
+            parent_rec = query_db("SELECT id FROM parents WHERE user_id = ?", (user["id"],), one=True)
+            if parent_rec:
+                session["parent_id"] = parent_rec["id"]
 
         log_audit(
             user["id"],

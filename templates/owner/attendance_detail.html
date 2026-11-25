@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+{% block title %}Riwayat Absensi: {{ student.full_name }} (Pemilik){% endblock %}
+{% block page_title %}Detail Riwayat Absensi &amp; Bukti Dokumentasi{% endblock %}
+{% block page_subtitle %}Pemeriksaan sesi bimbingan, pencapaian materi, dan verifikasi foto kehadiran mentor untuk {{ student.full_name }}{% endblock %}
+
+{% block content %}
+<style>
+  .doc-thumb {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1.5px solid var(--border-subtle, #cbd5e1);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .doc-thumb:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    border-color: var(--blue-brand);
+  }
+  /* Lightbox Modal */
+  .lightbox-backdrop {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.85);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .lightbox-content {
+    background: #ffffff;
+    border-radius: 12px;
+    max-width: 680px;
+    width: 100%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+    animation: zoomIn 0.2s ease;
+  }
+  @keyframes zoomIn {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+</style>
+
+<!-- PROFIL SISWA & TOMBOL KEMBALI -->
+<div class="card" style="margin-bottom: 20px; border-left: 4px solid var(--blue-brand);">
+  <div class="card-body" style="padding: 18px 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+    <div>
+      <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--blue-brand); letter-spacing: 0.5px;">
+        Profil Siswa Bimbingan
+      </div>
+      <h2 style="margin: 4px 0 0 0; font-size: 20px; color: var(--navy-dark); font-weight: 800;">
+        {{ student.full_name }}
+      </h2>
+      <div style="font-size: 12.5px; color: var(--text-muted); margin-top: 4px;">
+        {{ student.school or 'Sekolah' }} &bull; {{ student.grade or '-' }} &bull; Wali: <strong>{{ student.parent_name or '-' }}</strong>
+        {% if student.parent_phone %}
+          ({{ student.parent_phone }})
+        {% endif %}
+      </div>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <a href="{{ url_for('owner.attendance') }}" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+        {{ icon('arrow-left') }} Kembali ke Dashboard Absensi
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- RIWAYAT ABSENSI DENGAN FITUR FILTER PROGRAM -->
+<div class="card">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+    <div class="card-title">
+      <span>{{ icon('clipboard') }}</span> Riwayat Absensi &amp; Dokumentasi Sesi
+    </div>
+
+    <!-- FITUR FILTER PROGRAM -->
+    <form method="GET" action="{{ url_for('owner.student_attendance_detail', student_id=student.id) }}" style="display: flex; align-items: center; gap: 10px; margin: 0;">
+      <label for="programFilter" style="font-size: 12.5px; font-weight: 600; color: var(--navy-dark); white-space: nowrap;">
+        Filter Program:
+      </label>
+      <select id="programFilter" name="program_id" class="form-select form-select-sm" onchange="this.form.submit()" style="font-size: 12.5px; min-width: 220px; border-radius: 6px;">
+        <option value="">Semua Program Les ({{ all_attendance_count }})</option>
+        {% for pr in student_programs %}
+          <option value="{{ pr.id }}" {% if selected_program_id == pr.id %}selected{% endif %}>
+            {{ pr.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th style="width: 18%;">Tanggal &amp; Waktu</th>
+            <th style="width: 14%;">Program Les</th>
+            <th style="width: 16%;">Sesi &amp; Periode</th>
+            <th style="width: 14%;">Mentor</th>
+            <th style="width: 12%;">Status Kehadiran</th>
+            <th style="width: 16%;">Materi &amp; Catatan</th>
+            <th style="width: 10%; text-align: center;">Dokumentasi Foto</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in attendance_list %}
+          <tr>
+            <td>
+              <strong style="color: var(--navy-dark); font-size: 13.5px;">{{ a.schedule_date|date_indo }}</strong>
+              <div style="font-size: 11.5px; color: var(--blue-brand); margin-top: 2px;">
+                {{ a.start_time }} - {{ a.end_time }}
+              </div>
+            </td>
+            <td>
+              <strong style="color: var(--navy-primary); font-size: 13px;">{{ a.program_name }}</strong>
+            </td>
+            <td>
+              {% if a.meeting_number and a.period_number %}
+                <span class="badge" style="background: #e0f2fe; color: #0369a1; font-size: 11.5px; font-weight: 700; border-radius: 4px;">
+                  Periode {{ a.period_number }} &bull; Pertemuan {{ a.meeting_number }}
+                </span>
+                {% if a.cumulative_meeting %}
+                  <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px;">
+                    Total Pertemuan Ke-{{ a.cumulative_meeting }}
+                  </div>
+                {% endif %}
+              {% else %}
+                <span style="font-size: 12px; color: var(--gray-400);">-</span>
+              {% endif %}
+            </td>
+            <td>
+              <strong style="color: var(--navy-dark); font-size: 13px;">{{ a.mentor_name }}</strong>
+            </td>
+            <td>
+              {% if a.status == 'hadir' and (a.session_status == 'terlaksana' or not a.session_status) %}
+                <span class="badge badge-success" style="font-size: 11px;">Hadir (Terlaksana)</span>
+              {% elif a.session_status == 'siswa_berhalangan' or a.status == 'izin' %}
+                <span class="badge badge-warning" style="font-size: 11px;">Siswa Berhalangan</span>
+              {% else %}
+                <span class="badge badge-danger" style="font-size: 11px;">{{ a.status|capitalize }}</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if a.topics_covered %}
+                <div style="font-size: 12.5px; font-weight: 600; color: var(--navy-dark);">
+                  {{ a.topics_covered }}
+                </div>
+              {% endif %}
+              {% if a.progress_notes or a.notes %}
+                <div style="font-size: 11.5px; color: var(--gray-600); margin-top: 3px;">
+                  {{ a.progress_notes or a.notes }}
+                </div>
+              {% elif not a.topics_covered %}
+                <span style="font-size: 11.5px; color: var(--gray-400); font-style: italic;">Sesi bimbingan selesai</span>
+              {% endif %}
+            </td>
+            <td style="text-align: center;">
+              {% if a.documentation_photo %}
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                  <img
+                    src="{{ url_for('serve_session_photo', filename=a.documentation_photo) }}"
+                    alt="Foto Sesi"
+                    class="doc-thumb"
+                    onclick="openPhotoLightbox('{{ url_for('serve_session_photo', filename=a.documentation_photo) }}', '{{ student.full_name }}', '{{ a.program_name }}', '{{ a.schedule_date|date_indo }}', 'Periode {{ a.period_number }} • Pertemuan {{ a.meeting_number }}')"
+                    title="Klik untuk memperbesar foto bukti"
+                  >
+                  <button
+                    type="button"
+                    class="btn btn-link btn-sm"
+                    style="font-size: 10.5px; padding: 0; color: var(--blue-brand); text-decoration: none;"
+                    onclick="openPhotoLightbox('{{ url_for('serve_session_photo', filename=a.documentation_photo) }}', '{{ student.full_name }}', '{{ a.program_name }}', '{{ a.schedule_date|date_indo }}', 'Periode {{ a.period_number }} • Pertemuan {{ a.meeting_number }}')"
+                  >
+                    Perbesar
+                  </button>
+                </div>
+              {% elif a.documentation_status == 'menunggu' %}
+                <span class="badge badge-warning" style="font-size: 10.5px;" title="{{ a.documentation_pending_reason or 'Menunggu unggahan foto' }}">
+                  Foto Tertunda
+                </span>
+              {% else %}
+                <span style="font-size: 11px; color: var(--gray-400); font-style: italic;">
+                  Tidak ada foto
+                </span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 40px; color: var(--gray-500);">
+              Belum ada riwayat absensi untuk kriteria program yang dipilih.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX MODAL BUKTI DOKUMENTASI FOTO -->
+<div id="photoLightboxModal" class="lightbox-backdrop" onclick="if(event.target === this) closePhotoLightbox()">
+  <div class="lightbox-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--border-subtle, #e2e8f0); background: #f8fafc;">
+      <div>
+        <h4 id="lightboxTitle" style="margin: 0; font-size: 15px; color: var(--navy-dark); font-weight: 700;">
+          Bukti Dokumentasi Sesi Belajar
+        </h4>
+        <div id="lightboxSubtitle" style="font-size: 12px; color: var(--text-muted); margin-top: 2px;"></div>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="closePhotoLightbox()" style="padding: 4px 10px;">
+        Tutup
+      </button>
+    </div>
+    <div style="padding: 16px; background: #0f172a; text-align: center; max-height: 70vh; overflow-y: auto;">
+      <img id="lightboxImage" src="" alt="Bukti Sesi" style="max-width: 100%; max-height: 60vh; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+    </div>
+    <div style="padding: 10px 20px; font-size: 12px; color: var(--text-muted); background: #f8fafc; border-top: 1px solid var(--border-subtle, #e2e8f0); text-align: right;">
+      Dokumentasi hanya dapat diakses oleh Admin &amp; Pemilik (Owner) untuk verifikasi kehadiran.
+    </div>
+  </div>
+</div>
+
+<script>
+  function openPhotoLightbox(photoUrl, studentName, programName, sessionDate, meetingStr) {
+    const modal = document.getElementById("photoLightboxModal");
+    const img = document.getElementById("lightboxImage");
+    const title = document.getElementById("lightboxTitle");
+    const subtitle = document.getElementById("lightboxSubtitle");
+
+    if (modal && img) {
+      img.src = photoUrl;
+      title.textContent = "Bukti Foto: " + studentName + " (" + programName + ")";
+      subtitle.textContent = sessionDate + " &bull; " + meetingStr;
+      modal.style.display = "flex";
+    }
+  }
+
+  function closePhotoLightbox() {
+    const modal = document.getElementById("photoLightboxModal");
+    if (modal) {
+      modal.style.display = "none";
+    }
+  }
+
+  document.addEventListener("keydown", function(e) {
+    if (e.key === "Escape") {
+      closePhotoLightbox();
+    }
+  });
+</script>
+{% endblock %}

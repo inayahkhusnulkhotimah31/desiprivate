@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Absensi (Pemilik){% endblock %}
+{% block page_title %}Dashboard Absensi &amp; Siklus Pertemuan Siswa{% endblock %}
+{% block page_subtitle %}Pengawasan pemenuhan pertemuan belajar (8 pertemuan = 1 periode) dan bukti dokumentasi absensi mentor untuk verifikasi honor{% endblock %}
+
+{% block content %}
+<style>
+  .program-pill {
+    background: #f8fafc;
+    border: 1px solid var(--border-subtle, #e2e8f0);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s ease;
+  }
+  .program-pill:hover {
+    border-color: var(--blue-brand);
+    background: #ffffff;
+  }
+  .photo-thumbnail-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border-subtle, #cbd5e1);
+    background: #ffffff;
+    cursor: pointer;
+    font-size: 11px;
+    color: var(--navy-dark);
+    font-weight: 600;
+    transition: all 0.15s ease;
+  }
+  .photo-thumbnail-btn:hover {
+    border-color: var(--blue-brand);
+    color: var(--blue-brand);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  }
+  /* Lightbox Modal */
+  .lightbox-backdrop {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.75);
+    z-index: 1050;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .lightbox-card {
+    background: #ffffff;
+    border-radius: 12px;
+    max-width: 650px;
+    width: 100%;
+    overflow: hidden;
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3);
+    animation: fadeIn 0.2s ease;
+  }
+</style>
+
+<!-- KARTU METRIK ABSENSI OWNER -->
+<div class="stats-grid" style="margin-bottom: 24px;">
+  <div class="stat-card">
+    <div class="stat-icon">{{ icon('student') }}</div>
+    <div>
+      <div class="stat-value">{{ students|length }}</div>
+      <div class="stat-label">Total Siswa Terdaftar</div>
+    </div>
+  </div>
+
+  <div class="stat-card success">
+    <div class="stat-icon">{{ icon('check-circle') }}</div>
+    <div>
+      <div class="stat-value">{{ total_completed_sessions or 0 }}</div>
+      <div class="stat-label">Total Pertemuan Selesai</div>
+    </div>
+  </div>
+
+  <div class="stat-card info">
+    <div class="stat-icon">{{ icon('clipboard') }}</div>
+    <div>
+      <div class="stat-value">{{ total_documented_sessions or 0 }}</div>
+      <div class="stat-label">Dokumentasi Foto Lengkap</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon">{{ icon('mentor') }}</div>
+    <div>
+      <div class="stat-value">{{ total_mentors or 0 }}</div>
+      <div class="stat-label">Mentor Mengajar</div>
+    </div>
+  </div>
+</div>
+
+<!-- TABEL UTAMA SISWA & POSISI SIKLUS PERTEMUAN -->
+<div class="card">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <div class="card-title">
+      <span>{{ icon('clipboard') }}</span> Daftar Siswa &amp; Posisi Siklus Bimbingan
+    </div>
+    <div style="font-size: 12.5px; color: var(--text-muted);">
+      Aturan: <strong>1 Periode = 8 Pertemuan</strong>
+    </div>
+  </div>
+  <div class="card-body">
+    <form method="GET" action="{{ url_for('owner.attendance') }}" class="filter-bar" style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+      <input type="text" name="q" value="{{ search or '' }}" placeholder="Cari nama siswa atau sekolah..." class="form-control" style="max-width: 320px;">
+      <button type="submit" class="btn btn-secondary">Cari Siswa</button>
+      {% if search %}
+        <a href="{{ url_for('owner.attendance') }}" class="btn btn-secondary">Reset</a>
+      {% endif %}
+    </form>
+
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th style="width: 25%;">Nama Siswa</th>
+            <th style="width: 20%;">Wali Murid &amp; Telepon</th>
+            <th style="width: 35%;">Program Les &amp; Posisi Siklus (Periode &amp; Pertemuan)</th>
+            <th style="width: 20%; text-align: right;">Aksi &amp; Detail</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for st in students %}
+          <tr>
+            <td>
+              <strong style="color: var(--navy-dark); font-size: 14.5px;">{{ st.full_name }}</strong>
+              <div style="font-size: 11.5px; color: var(--navy-muted); margin-top: 2px;">
+                {{ st.school or '-' }} &bull; {{ st.grade or '-' }}
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 600; color: var(--navy-dark);">{{ st.parent_name or '-' }}</div>
+              {% if st.parent_phone %}
+                <div style="font-size: 11.5px; color: var(--blue-brand); margin-top: 2px;">
+                  {{ icon('phone') }} <a href="tel:{{ st.parent_phone }}" style="color: inherit; text-decoration: none;">{{ st.parent_phone }}</a>
+                </div>
+              {% endif %}
+            </td>
+            <td>
+              {% if st.program_stats %}
+                {% for ps in st.program_stats %}
+                <div class="program-pill">
+                  <div>
+                    <strong style="color: var(--navy-primary); font-size: 13px;">{{ ps.program_name }}</strong>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 1px;">
+                      Selesai: <strong>{{ ps.total_meetings }}</strong> pertemuan
+                    </div>
+                  </div>
+                  <div style="text-align: right;">
+                    {% if ps.total_meetings > 0 %}
+                      <span class="badge" style="background: #e0f2fe; color: #0369a1; font-size: 11px; font-weight: 700; border-radius: 4px;">
+                        Periode {{ ps.last_period }} &bull; Pertemuan {{ ps.last_meeting }}
+                      </span>
+                    {% else %}
+                      <span class="badge badge-secondary" style="font-size: 11px;">Baru Mulai (Pertemuan 1)</span>
+                    {% endif %}
+                  </div>
+                </div>
+                {% endfor %}
+              {% else %}
+                <span style="font-size: 12px; color: var(--gray-400); font-style: italic;">Belum ada program aktif</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right;">
+              <a href="{{ url_for('owner.student_attendance_detail', student_id=st.id) }}" class="btn btn-primary btn-sm" style="font-size: 12px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px;">
+                {{ icon('clipboard') }} Detail Absensi &amp; Bukti
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="4" style="text-align: center; padding: 36px; color: var(--gray-500);">
+              Tidak ada data siswa yang sesuai pencarian.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,47 +1,74 @@
 {% extends "base.html" %}
 {% block title %}Program Les{% endblock %}
 {% block page_title %}Kelola Program Les Privat{% endblock %}
-{% block page_subtitle %}Kurikulum, tingkat jenjang, dan status program bimbingan DESI PRIVAT{% endblock %}
+{% block page_subtitle %}Mata pelajaran, jenjang pendidikan, dan kategori layanan bimbingan DESI PRIVAT{% endblock %}
 
 {% block content %}
 <div class="card">
-  <div class="card-header">
-    <div class="card-title"><span>{{ icon('book') }}</span> Daftar Program Les Privat</div>
-    <button class="btn btn-primary btn-sm" onclick="openModal('addProgramModal')">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <div>
+      <div class="card-title"><span>{{ icon('book') }}</span> Daftar Mata Pelajaran &amp; Program Les</div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+        Total: <strong>{{ programs|length }}</strong> Program Terdaftar
+      </div>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="openModal('addProgramModal')" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
       {{ icon('plus') }} Tambah Program Baru
     </button>
   </div>
   <div class="card-body">
+    <!-- INFO BANNER PEMISAHAN TARIF -->
+    <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+      <span style="font-size: 20px;">💡</span>
+      <div style="font-size: 12.5px; color: var(--navy-dark); line-height: 1.45;">
+        <strong>Sistem Tarif Terpusat:</strong> Tarif biaya les ditentukan otomatis berdasarkan <strong>Jenis Layanan</strong> (Private Tutoring / Kelas Online / Program Khusus) dan <strong>Jenjang Pendidikan</strong> (SD, SMP, SMA) saat pendaftaran murid, terpisah dari nama mata pelajaran. Tarif khusus tetap dapat diatur sesuai kesepakatan.
+      </div>
+    </div>
+
     <div class="table-responsive">
       <table class="table-desi">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Nama Program</th>
+            <th style="width: 45px; text-align: center;">No</th>
+            <th>Nama Program / Mapel</th>
+            <th>Jenjang Pendidikan</th>
+            <th>Jenis Layanan</th>
             <th>Kode</th>
-            <th>Tingkat Jenjang</th>
             <th>Siswa Terdaftar</th>
             <th>Deskripsi</th>
             <th>Status</th>
-            <th>Aksi</th>
+            <th style="text-align: center; width: 140px;">Aksi</th>
           </tr>
         </thead>
         <tbody>
           {% for p in programs %}
           <tr>
-            <td>#{{ p.id }}</td>
+            <td style="text-align: center; color: var(--text-muted); font-weight: 600;">{{ loop.index }}</td>
             <td>
               <strong style="color: var(--navy-dark); font-size: 14px;">{{ p.name }}</strong>
             </td>
             <td>
-              <span class="badge badge-info">{{ p.code }}</span>
-            </td>
-            <td>{{ p.level or '-' }}</td>
-            <td>
-              <span class="badge badge-success">{{ p.active_students_count }} Siswa Aktif</span>
+              <span class="badge" style="background: #f1f5f9; color: var(--navy-primary); font-weight: 600; font-size: 11.5px;">
+                {{ p.level or 'Semua Jenjang' }}
+              </span>
             </td>
             <td>
-              <div style="font-size: 12px; color: var(--gray-700); max-width: 280px;">
+              {% if p.service_type == 'Kelas Online' %}
+                <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 600; font-size: 11.5px;">🌐 Kelas Online</span>
+              {% elif p.service_type == 'Program Khusus' %}
+                <span class="badge" style="background: #fef3c7; color: #92400e; font-weight: 600; font-size: 11.5px;">⭐ Program Khusus</span>
+              {% else %}
+                <span class="badge" style="background: #dcfce7; color: #15803d; font-weight: 600; font-size: 11.5px;">🏠 Private Tutoring</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge badge-info" style="font-size: 11px;">{{ p.code }}</span>
+            </td>
+            <td>
+              <span class="badge badge-success" style="font-size: 11px;">{{ p.active_students_count }} Siswa Aktif</span>
+            </td>
+            <td>
+              <div style="font-size: 12px; color: var(--gray-700); max-width: 250px; line-height: 1.35;">
                 {{ p.description or '-' }}
               </div>
             </td>
@@ -49,20 +76,21 @@
               {{ p.status|status_badge|safe }}
             </td>
             <td>
-              <div style="display: flex; gap: 6px;">
+              <div style="display: flex; gap: 6px; justify-content: center;">
                 <button
                   type="button"
                   class="btn btn-secondary btn-sm"
-                  onclick="openEditProgramModal({{ p.id }}, '{{ p.name }}', '{{ p.code }}', '{{ p.level or '' }}', '{{ p.description or '' }}', '{{ p.status }}')"
+                  onclick="openEditProgramModal({{ p.id }}, '{{ p.name|escape }}', '{{ p.code|escape }}', '{{ p.level or '' }}', '{{ p.service_type or 'Private Tutoring' }}', '{{ (p.description or '')|escape }}', '{{ p.status }}')"
+                  style="padding: 3px 8px; font-size: 11px;"
                 >
                   {{ icon('edit') }} Ubah
                 </button>
-                <form method="POST" action="{{ url_for('admin.archive_program', program_id=p.id) }}" onsubmit="return confirm('Ubah status aktif/arsip program ini?');">
+                <form method="POST" action="{{ url_for('admin.archive_program', program_id=p.id) }}" onsubmit="return confirm('Ubah status aktif/arsip program ini?');" style="margin: 0;">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   {% if p.status == 'diarsipkan' %}
-                    <button type="submit" class="btn btn-success btn-sm" title="Aktifkan Kembali">Aktifkan</button>
+                    <button type="submit" class="btn btn-success btn-sm" style="padding: 3px 8px; font-size: 11px;" title="Aktifkan Kembali">Aktifkan</button>
                   {% else %}
-                    <button type="submit" class="btn btn-warning btn-sm" title="Arsipkan">Arsipkan</button>
+                    <button type="submit" class="btn btn-warning btn-sm" style="padding: 3px 8px; font-size: 11px;" title="Arsipkan">Arsipkan</button>
                   {% endif %}
                 </form>
               </div>
@@ -70,8 +98,8 @@
           </tr>
           {% else %}
           <tr>
-            <td colspan="8" style="text-align: center; color: var(--gray-500); padding: 24px;">
-              Belum ada program les yang terdaftar.
+            <td colspan="9" style="text-align: center; color: var(--gray-500); padding: 32px;">
+              Belum ada program les atau mata pelajaran yang terdaftar.
             </td>
           </tr>
           {% endfor %}
@@ -83,33 +111,47 @@
 
 <!-- MODAL TAMBAH PROGRAM -->
 <div class="modal-overlay" id="addProgramModal">
-  <div class="modal-content">
+  <div class="modal-content" style="max-width: 560px;">
     <div class="modal-header">
-      <div class="modal-title">Tambah Program Les Baru</div>
+      <div class="modal-title">Tambah Mata Pelajaran / Program Les</div>
       <button class="modal-close-btn" onclick="closeModal('addProgramModal')">&times;</button>
     </div>
     <form method="POST" action="{{ url_for('admin.create_program') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="modal-body">
         <div class="form-group">
-          <label class="form-label">Nama Program</label>
-          <input type="text" class="form-control" name="name" placeholder="Contoh: Matematika Hebat SMP" required>
+          <label class="form-label">Nama Program / Mata Pelajaran <span style="color:red">*</span></label>
+          <input type="text" class="form-control" name="name" placeholder="Contoh: Matematika, Fisika, PPKn, Sains, Mengaji..." required>
         </div>
 
         <div class="grid-form-2">
           <div class="form-group">
-            <label class="form-label">Kode Singkat (Unik)</label>
-            <input type="text" class="form-control" name="code" placeholder="Contoh: MAT-SMP" required>
+            <label class="form-label">Jenjang Pendidikan <span style="color:red">*</span></label>
+            <select class="form-select" name="level" required>
+              <option value="SD">SD (Sekolah Dasar)</option>
+              <option value="SMP">SMP (Sekolah Menengah Pertama)</option>
+              <option value="SMA">SMA (Sekolah Menengah Atas)</option>
+              <option value="Semua Jenjang" selected>Semua Jenjang / Umum</option>
+            </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Tingkat Jenjang</label>
-            <input type="text" class="form-control" name="level" placeholder="Contoh: SMP Kelas 7-9">
+            <label class="form-label">Jenis Layanan <span style="color:red">*</span></label>
+            <select class="form-select" name="service_type" required>
+              <option value="Private Tutoring" selected>Private Tutoring (Tatap Muka)</option>
+              <option value="Kelas Online">Kelas Online</option>
+              <option value="Program Khusus">Program Khusus (Kedinasan / CPNS / SNBT)</option>
+            </select>
           </div>
         </div>
 
         <div class="form-group">
+          <label class="form-label">Kode Singkat (Unik) <span style="color:red">*</span></label>
+          <input type="text" class="form-control" name="code" placeholder="Contoh: MAT-SD, FIS-SMA, PKN, QUR" required>
+        </div>
+
+        <div class="form-group">
           <label class="form-label">Deskripsi Program</label>
-          <textarea class="form-control" name="description" placeholder="Penjelasan silabus, target pembelajaran, dan metode bimbingan..."></textarea>
+          <textarea class="form-control" name="description" placeholder="Penjelasan silabus materi, target pembelajaran, dan metode bimbingan..." rows="3"></textarea>
         </div>
       </div>
       <div class="modal-footer">
@@ -122,7 +164,7 @@
 
 <!-- MODAL UBAH PROGRAM -->
 <div class="modal-overlay" id="editProgramModal">
-  <div class="modal-content">
+  <div class="modal-content" style="max-width: 560px;">
     <div class="modal-header">
       <div class="modal-title">Ubah Data Program Les</div>
       <button class="modal-close-btn" onclick="closeModal('editProgramModal')">&times;</button>
@@ -131,22 +173,42 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="modal-body">
         <div class="form-group">
-          <label class="form-label">Nama Program</label>
+          <label class="form-label">Nama Program / Mata Pelajaran <span style="color:red">*</span></label>
           <input type="text" class="form-control" id="editProgramName" name="name" required>
         </div>
 
+        <div class="grid-form-2">
+          <div class="form-group">
+            <label class="form-label">Jenjang Pendidikan <span style="color:red">*</span></label>
+            <select class="form-select" id="editProgramLevel" name="level" required>
+              <option value="SD">SD (Sekolah Dasar)</option>
+              <option value="SMP">SMP (Sekolah Menengah Pertama)</option>
+              <option value="SMA">SMA (Sekolah Menengah Atas)</option>
+              <option value="Semua Jenjang">Semua Jenjang / Umum</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Jenis Layanan <span style="color:red">*</span></label>
+            <select class="form-select" id="editProgramServiceType" name="service_type" required>
+              <option value="Private Tutoring">Private Tutoring (Tatap Muka)</option>
+              <option value="Kelas Online">Kelas Online</option>
+              <option value="Program Khusus">Program Khusus (Kedinasan / CPNS / SNBT)</option>
+            </select>
+          </div>
+        </div>
+
         <div class="form-group">
-          <label class="form-label">Tingkat Jenjang</label>
-          <input type="text" class="form-control" id="editProgramLevel" name="level">
+          <label class="form-label">Kode Singkat (Unik)</label>
+          <input type="text" class="form-control" id="editProgramCode" name="code" placeholder="Kode program">
         </div>
 
         <div class="form-group">
           <label class="form-label">Deskripsi</label>
-          <textarea class="form-control" id="editProgramDesc" name="description"></textarea>
+          <textarea class="form-control" id="editProgramDesc" name="description" rows="3"></textarea>
         </div>
 
         <div class="form-group">
-          <label class="form-label">Status</label>
+          <label class="form-label">Status Keaktifan</label>
           <select class="form-select" id="editProgramStatus" name="status">
             <option value="aktif">Aktif</option>
             <option value="nonaktif">Nonaktif</option>
@@ -163,12 +225,14 @@
 </div>
 
 <script>
-  function openEditProgramModal(id, name, code, level, desc, status) {
+  function openEditProgramModal(id, name, code, level, serviceType, desc, status) {
     document.getElementById("editProgramForm").action = "/admin/programs/" + id + "/edit";
     document.getElementById("editProgramName").value = name;
-    document.getElementById("editProgramLevel").value = level;
-    document.getElementById("editProgramDesc").value = desc;
-    document.getElementById("editProgramStatus").value = status;
+    document.getElementById("editProgramCode").value = code;
+    document.getElementById("editProgramLevel").value = level || "Semua Jenjang";
+    document.getElementById("editProgramServiceType").value = serviceType || "Private Tutoring";
+    document.getElementById("editProgramDesc").value = desc || "";
+    document.getElementById("editProgramStatus").value = status || "aktif";
     openModal("editProgramModal");
   }
 </script>

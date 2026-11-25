@@ -33,36 +33,39 @@
           <a href="{{ url_for('admin.dashboard') }}" class="nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
             <span class="nav-icon">{{ icon('dashboard') }}</span> Dashboard Admin
           </a>
-          <a href="{{ url_for('admin.schedules') }}" class="nav-link {% if 'admin.schedules' in request.endpoint %}active{% endif %}">
+          <a href="{{ url_for('admin.schedules') }}" class="nav-link {% if request.endpoint and 'admin.schedules' in request.endpoint %}active{% endif %}">
             <span class="nav-icon">{{ icon('calendar') }}</span> Penjadwalan & Sesi
           </a>
-          <a href="{{ url_for('admin.students') }}" class="nav-link {% if 'admin.student' in request.endpoint %}active{% endif %}">
-            <span class="nav-icon">{{ icon('student') }}</span> Data Siswa & Periode
+          <a href="{{ url_for('admin.students') }}" class="nav-link {% if request.endpoint and 'admin.student' in request.endpoint %}active{% endif %}">
+            <span class="nav-icon">{{ icon('student') }}</span> Data Siswa
           </a>
-          <a href="{{ url_for('admin.parents') }}" class="nav-link {% if 'admin.parents' in request.endpoint %}active{% endif %}">
+          <a href="{{ url_for('admin.parents') }}" class="nav-link {% if request.endpoint and 'admin.parents' in request.endpoint %}active{% endif %}">
             <span class="nav-icon">{{ icon('family') }}</span> Data Orang Tua / Wali
           </a>
-          <a href="{{ url_for('admin.mentors') }}" class="nav-link {% if 'admin.mentors' in request.endpoint %}active{% endif %}">
+          <a href="{{ url_for('admin.mentors') }}" class="nav-link {% if request.endpoint and 'admin.mentors' in request.endpoint %}active{% endif %}">
             <span class="nav-icon">{{ icon('mentor') }}</span> Data Mentor
           </a>
-          <a href="{{ url_for('admin.programs') }}" class="nav-link {% if 'admin.programs' in request.endpoint %}active{% endif %}">
+          <a href="{{ url_for('admin.programs') }}" class="nav-link {% if request.endpoint and 'admin.programs' in request.endpoint %}active{% endif %}">
             <span class="nav-icon">{{ icon('book') }}</span> Program Les
+          </a>
+          <a href="{{ url_for('admin.bills') }}" class="nav-link {% if request.endpoint and 'admin.bills' in request.endpoint %}active{% endif %}">
+            <span class="nav-icon">{{ icon('receipt') }}</span> Tagihan &amp; Cicilan Siswa
           </a>
 
           <div class="nav-section-title">Sistem & Keamanan</div>
-          <a href="{{ url_for('admin.accounts') }}" class="nav-link {% if 'admin.accounts' in request.endpoint %}active{% endif %}">
+          <a href="{{ url_for('admin.accounts') }}" class="nav-link {% if request.endpoint and 'admin.accounts' in request.endpoint %}active{% endif %}">
             <span class="nav-icon">{{ icon('key') }}</span> Manajemen Akun
           </a>
-          <a href="{{ url_for('admin.notifications_center') }}" class="nav-link {% if 'admin.notifications' in request.endpoint %}active{% endif %}">
+          <a href="{{ url_for('admin.notifications_center') }}" class="nav-link {% if request.endpoint and 'admin.notifications' in request.endpoint %}active{% endif %}">
             <span class="nav-icon">{{ icon('bell') }}</span> Pemberitahuan Sistem
           </a>
-          <a href="{{ url_for('admin.reports') }}" class="nav-link {% if 'admin.reports' in request.endpoint %}active{% endif %}">
+          <a href="{{ url_for('admin.reports') }}" class="nav-link {% if request.endpoint and 'admin.reports' in request.endpoint %}active{% endif %}">
             <span class="nav-icon">{{ icon('report') }}</span> Laporan & Ekspor
           </a>
-          <a href="{{ url_for('admin.audit_logs') }}" class="nav-link {% if 'admin.audit_logs' in request.endpoint %}active{% endif %}">
+          <a href="{{ url_for('admin.audit_logs') }}" class="nav-link {% if request.endpoint and 'admin.audit_logs' in request.endpoint %}active{% endif %}">
             <span class="nav-icon">{{ icon('history') }}</span> Riwayat Audit Log
           </a>
-          <a href="{{ url_for('admin.backups') }}" class="nav-link {% if 'admin.backups' in request.endpoint %}active{% endif %}">
+          <a href="{{ url_for('admin.backups') }}" class="nav-link {% if request.endpoint and 'admin.backups' in request.endpoint %}active{% endif %}">
             <span class="nav-icon">{{ icon('backup') }}</span> Backup & Restore
           </a>
 
@@ -71,23 +74,32 @@
           <a href="{{ url_for('owner.dashboard') }}" class="nav-link {% if request.endpoint == 'owner.dashboard' %}active{% endif %}">
             <span class="nav-icon">{{ icon('trending-up') }}</span> Pengawasan Eksekutif
           </a>
-          <a href="{{ url_for('owner.schedules') }}" class="nav-link {% if request.endpoint == 'owner.schedules' %}active{% endif %}">
-            <span class="nav-icon">{{ icon('calendar') }}</span> Rekap Jadwal & Kalender
+          <a href="{{ url_for('owner.attendance') }}" class="nav-link {% if request.endpoint and 'owner.attendance' in request.endpoint %}active{% endif %}">
+            <span class="nav-icon">{{ icon('clipboard') }}</span> Dashboard Absensi
           </a>
           <a href="{{ url_for('owner.students') }}" class="nav-link {% if request.endpoint == 'owner.students' %}active{% endif %}">
-            <span class="nav-icon">{{ icon('student') }}</span> Siswa & Perkembangan
+            <span class="nav-icon">{{ icon('student') }}</span> Data Siswa
           </a>
           <a href="{{ url_for('owner.mentors') }}" class="nav-link {% if request.endpoint == 'owner.mentors' %}active{% endif %}">
-            <span class="nav-icon">{{ icon('mentor') }}</span> Daftar Mentor
+            <span class="nav-icon">{{ icon('mentor') }}</span> Data Mentor
           </a>
-          <a href="{{ url_for('owner.progress') }}" class="nav-link {% if request.endpoint == 'owner.progress' %}active{% endif %}">
-            <span class="nav-icon">{{ icon('pencil') }}</span> Perkembangan Siswa
+          <a href="{{ url_for('owner.parents') }}" class="nav-link {% if request.endpoint == 'owner.parents' %}active{% endif %}">
+            <span class="nav-icon">{{ icon('user') }}</span> Data Orang Tua
           </a>
-          <a href="{{ url_for('owner.replacements') }}" class="nav-link {% if request.endpoint == 'owner.replacements' %}active{% endif %}">
-            <span class="nav-icon">{{ icon('refresh') }}</span> Riwayat Ganti Mentor
+          <a href="{{ url_for('owner.admins') }}" class="nav-link {% if request.endpoint == 'owner.admins' %}active{% endif %}">
+            <span class="nav-icon">{{ icon('settings') }}</span> Data Admin
           </a>
-          <a href="{{ url_for('owner.reports') }}" class="nav-link {% if request.endpoint == 'owner.reports' %}active{% endif %}">
-            <span class="nav-icon">{{ icon('report') }}</span> Rekap Laporan
+          <a href="{{ url_for('owner.honor') }}" class="nav-link {% if request.endpoint and 'owner.honor' in request.endpoint %}active{% endif %}">
+            <span class="nav-icon">{{ icon('credit-card') }}</span> Honor &amp; Fee Tentor
+          </a>
+          <a href="{{ url_for('owner.bills') }}" class="nav-link {% if request.endpoint and 'owner.bills' in request.endpoint %}active{% endif %}">
+            <span class="nav-icon">{{ icon('receipt') }}</span> Tagihan &amp; Cicilan Siswa
+          </a>
+          <a href="{{ url_for('owner.finance_report') }}" class="nav-link {% if request.endpoint and 'owner.finance' in request.endpoint %}active{% endif %}">
+            <span class="nav-icon">{{ icon('credit-card') }}</span> Laporan Keuangan Kas
+          </a>
+          <a href="{{ url_for('owner.schedules') }}" class="nav-link {% if request.endpoint == 'owner.schedules' %}active{% endif %}">
+            <span class="nav-icon">{{ icon('calendar') }}</span> Rekap Jadwal &amp; Kalender
           </a>
           <a href="{{ url_for('owner.audit_logs') }}" class="nav-link {% if request.endpoint == 'owner.audit_logs' %}active{% endif %}">
             <span class="nav-icon">{{ icon('history') }}</span> Riwayat Aktivitas
@@ -113,6 +125,24 @@
           <a href="{{ url_for('mentor.progress') }}" class="nav-link {% if request.endpoint == 'mentor.progress' %}active{% endif %}">
             <span class="nav-icon">{{ icon('pencil') }}</span> Laporan Perkembangan
           </a>
+
+        {% elif current_user.role == 'parent' %}
+          <div class="nav-section-title">Menu Wali Murid</div>
+          <a href="{{ url_for('parent.dashboard') }}" class="nav-link {% if request.endpoint == 'parent.dashboard' %}active{% endif %}">
+            <span class="nav-icon">{{ icon('home') }}</span> Beranda Ananda
+          </a>
+          <a href="{{ url_for('parent.schedules') }}" class="nav-link {% if request.endpoint == 'parent.schedules' %}active{% endif %}">
+            <span class="nav-icon">{{ icon('calendar') }}</span> Jadwal Belajar
+          </a>
+          <a href="{{ url_for('parent.attendance') }}" class="nav-link {% if request.endpoint == 'parent.attendance' %}active{% endif %}">
+            <span class="nav-icon">{{ icon('check-circle') }}</span> Riwayat Kehadiran
+          </a>
+          <a href="{{ url_for('parent.progress') }}" class="nav-link {% if request.endpoint == 'parent.progress' %}active{% endif %}">
+            <span class="nav-icon">{{ icon('pencil') }}</span> Perkembangan Belajar
+          </a>
+          <a href="{{ url_for('parent.bills') }}" class="nav-link {% if request.endpoint == 'parent.bills' %}active{% endif %}">
+            <span class="nav-icon">{{ icon('credit-card') }}</span> Tagihan & Pembayaran
+          </a>
         {% endif %}
       </nav>
 
@@ -126,6 +156,7 @@
               {% if current_user.role == 'admin' %}Admin Pengelola
               {% elif current_user.role == 'owner' %}Pemilik
               {% elif current_user.role == 'mentor' %}Mentor
+              {% elif current_user.role == 'parent' %}Orang Tua / Wali
               {% endif %}
             </div>
           </div>

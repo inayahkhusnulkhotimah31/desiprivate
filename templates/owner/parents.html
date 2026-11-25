@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Data Orang Tua (Pemilik){% endblock %}
+{% block page_title %}Data Orang Tua &amp; Wali Murid{% endblock %}
+{% block page_subtitle %}Pengawasan data wali murid, nomor kontak telepon, dan anak yang terhubung dalam bimbingan (Akses Pemilik){% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <div class="card-title"><span>{{ icon('user') }}</span> Daftar Seluruh Orang Tua / Wali Murid</div>
+    <div style="font-size: 12px; color: var(--text-muted);">
+      Total Wali Murid: <strong>{{ parents|length }}</strong> Orang
+    </div>
+  </div>
+  <div class="card-body">
+    <form method="GET" action="{{ url_for('owner.parents') }}" class="filter-bar" style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+      <input type="text" name="q" value="{{ search or '' }}" placeholder="Cari nama wali, no telepon, anak..." class="form-control" style="max-width: 320px;">
+      <button type="submit" class="btn btn-secondary">Cari</button>
+      {% if search %}
+        <a href="{{ url_for('owner.parents') }}" class="btn btn-secondary">Reset</a>
+      {% endif %}
+    </form>
+
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>Nama Wali Murid</th>
+            <th>No. Telepon / WhatsApp</th>
+            <th>Anak yang Terhubung</th>
+            <th>Alamat &amp; Domisili</th>
+            <th>Hubungan</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in parents %}
+          <tr>
+            <td>
+              <strong style="color: var(--navy-dark); font-size: 14px;">{{ p.full_name }}</strong>
+              <div style="font-size: 11px; color: var(--text-muted);">
+                Username: <code>@{{ p.username or '-' }}</code>
+              </div>
+            </td>
+            <td>
+              {% if p.phone %}
+                <span style="font-size: 12.5px; color: var(--blue-brand); font-weight: 600;">
+                  {{ icon('phone') }} <a href="tel:{{ p.phone }}" style="color: inherit; text-decoration: none;">{{ p.phone }}</a>
+                </span>
+              {% else %}
+                <span style="color: var(--gray-400);">-</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if p.children_list %}
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                  {% for ch in p.children_list %}
+                    <div>
+                      <strong style="color: var(--navy-primary); font-size: 13px;">{{ ch.full_name }}</strong>
+                      <span style="font-size: 11px; color: var(--gray-500);">({{ ch.school or 'Sekolah' }} - {{ ch.grade or '' }})</span>
+                    </div>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <span style="font-size: 11.5px; color: var(--gray-400); font-style: italic;">Belum ada anak terhubung</span>
+              {% endif %}
+            </td>
+            <td>
+              <div style="font-size: 12px; color: var(--gray-700); max-width: 250px;">
+                {{ p.address or '-' }}
+              </div>
+            </td>
+            <td>
+              <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 600;">
+                {{ p.notes or 'Wali' }}
+              </span>
+            </td>
+            <td>{{ p.status|status_badge|safe }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 32px; color: var(--gray-500);">
+              Tidak ada data orang tua yang sesuai pencarian.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

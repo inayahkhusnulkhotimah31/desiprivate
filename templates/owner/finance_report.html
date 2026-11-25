@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% block title %}Laporan Keuangan Kas (Pemilik){% endblock %}
+{% block page_title %}Laporan Keuangan &amp; Arus Kas Bimbel{% endblock %}
+{% block page_subtitle %}Rekapitulasi uang masuk dari pembayaran wali murid dan uang keluar untuk honor mengajar mentor. Tersedia filter bulanan dan ekspor Excel resmi.{% endblock %}
+
+{% block content %}
+<style>
+  .stat-card.interactive {
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    border: 1px solid var(--border-subtle, #e2e8f0);
+  }
+  .stat-card.interactive:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 18px -3px rgba(0, 0, 0, 0.1);
+    border-color: var(--blue-brand, #0284c7);
+  }
+  .stat-card.interactive .stat-hint {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--blue-brand, #0284c7);
+    margin-top: 6px;
+    display: inline-block;
+  }
+  .finance-filter-card {
+    background: #ffffff;
+    border: 1px solid var(--border-subtle, #e2e8f0);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .badge-masuk {
+    background: #dcfce7;
+    color: #15803d;
+    font-weight: 700;
+    font-size: 11.5px;
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+  .badge-keluar {
+    background: #fee2e2;
+    color: #b91c1c;
+    font-weight: 700;
+    font-size: 11.5px;
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+</style>
+
+<!-- FILTER BULAN DAN TOMBOL DOWNLOAD EXCEL -->
+<div class="finance-filter-card">
+  <form method="GET" action="{{ url_for('owner.finance_report') }}" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0;">
+    <label style="font-size: 13px; font-weight: 700; color: var(--navy-dark); display: flex; align-items: center; gap: 6px;">
+      {{ icon('calendar') }} Filter Periode Bulan:
+    </label>
+    <select name="month" class="form-select" style="min-width: 170px; font-size: 13px;" onchange="this.form.submit()">
+      <option value="all" {% if selected_month == 'all' %}selected{% endif %}>Semua Periode (Keseluruhan)</option>
+      {% for ym in available_months %}
+        <option value="{{ ym }}" {% if selected_month == ym %}selected{% endif %}>
+          Bulan {{ ym }}
+        </option>
+      {% endfor %}
+    </select>
+    <noscript>
+      <button type="submit" class="btn btn-secondary btn-sm">Terapkan</button>
+    </noscript>
+  </form>
+
+  <div style="display: flex; gap: 8px;">
+    <a href="{{ url_for('owner.export_finance_excel', month=selected_month) }}" class="btn btn-success" style="font-size: 12.5px; padding: 7px 16px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+      {{ icon('download') }} Download Rekap Excel (.xlsx)
+    </a>
+  </div>
+</div>
+
+<!-- KARTU STATISTIK KEUANGAN KAS (INTERAKTIF) -->
+<div class="stats-grid" style="margin-bottom: 24px;">
+  <!-- Total Uang Masuk -->
+  <div class="stat-card interactive success" onclick="filterFinanceType('masuk')" title="Klik untuk memfilter transaksi uang masuk">
+    <div class="stat-icon" style="background: #dcfce7; color: #16a34a;">{{ icon('trending-up') }}</div>
+    <div>
+      <div class="stat-value" style="color: #16a34a;">
+        Rp {{ "{:,.0f}".format(report.total_income).replace(",", ".") }}
+      </div>
+      <div class="stat-label">Total Uang Masuk (Wali Murid)</div>
+      <div class="stat-hint" style="color: #16a34a;">{{ report.income_records|length }} Transaksi Masuk &darr;</div>
+    </div>
+  </div>
+
+  <!-- Total Uang Keluar -->
+  <div class="stat-card interactive danger" onclick="filterFinanceType('keluar')" title="Klik untuk memfilter transaksi uang keluar">
+    <div class="stat-icon" style="background: #fee2e2; color: #dc2626;">{{ icon('credit-card') }}</div>
+    <div>
+      <div class="stat-value" style="color: #dc2626;">
+        Rp {{ "{:,.0f}".format(report.total_expense).replace(",", ".") }}
+      </div>
+      <div class="stat-label">Total Uang Keluar (Honor Tentor)</div>
+      <div class="stat-hint" style="color: #dc2626;">{{ report.expense_records|length }} Pencairan Honor &darr;</div>
+    </div>
+  </div>
+
+  <!-- Saldo Kas Bersih -->
+  <div class="stat-card interactive info" onclick="filterFinanceType('all')" title="Klik untuk melihat seluruh mutasi arus kas">
+    <div class="stat-icon">{{ icon('dollar-sign') }}</div>
+    <div>
+      <div class="stat-value" style="color: var(--navy-dark);">
+        Rp {{ "{:,.0f}".format(report.net_balance).replace(",", ".") }}
+      </div>
+      <div class="stat-label">Saldo Kas Bersih (Surplus / Net)</div>
+      <div class="stat-hint">Lihat Semua Mutasi &darr;</div>
+    </div>
+  </div>
+</div>
+
+<!-- TABEL REKAPITULASI BUKU KAS (MUTASI TERPADU) -->
+<div class="card">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <div class="card-title">
+      <span>{{ icon('receipt') }}</span> Buku Kas Masuk &amp; Keluar (Periode: {{ selected_month if selected_month != 'all' else 'Seluruh Waktu' }})
+    </div>
+    <div style="display: flex; gap: 6px;">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="filterFinanceType('all')" id="btnTabAll" style="font-weight: 700;">Semua</button>
+      <button type="button" class="btn btn-outline-success btn-sm" onclick="filterFinanceType('masuk')" id="btnTabMasuk">Uang Masuk</button>
+      <button type="button" class="btn btn-outline-danger btn-sm" onclick="filterFinanceType('keluar')" id="btnTabKeluar">Uang Keluar</button>
+    </div>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>Tanggal</th>
+            <th>Jenis Kas</th>
+            <th>Kategori</th>
+            <th>Pihak Terkait</th>
+            <th>Deskripsi / Sesi</th>
+            <th style="text-align: right;">Uang Masuk (Rp)</th>
+            <th style="text-align: right;">Uang Keluar (Rp)</th>
+            <th>Keterangan / Ref</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in report.transactions %}
+          <tr class="tx-row" data-type="{{ t.type }}">
+            <td>
+              <div style="font-weight: 600; color: var(--navy-dark); font-size: 12.5px;">
+                {{ t.date|date_indo if t.date else '-' }}
+              </div>
+            </td>
+            <td>
+              {% if t.type == 'masuk' %}
+                <span class="badge-masuk">{{ icon('check-circle') }} Uang Masuk</span>
+              {% else %}
+                <span class="badge-keluar">{{ icon('credit-card') }} Uang Keluar</span>
+              {% endif %}
+            </td>
+            <td>
+              <span style="font-size: 12px; font-weight: 600; color: var(--navy-primary);">
+                {{ t.category }}
+              </span>
+            </td>
+            <td>
+              <strong style="color: var(--navy-dark); font-size: 13px;">{{ t.party }}</strong>
+            </td>
+            <td>
+              <span style="font-size: 12px; color: var(--text-main);">{{ t.description }}</span>
+            </td>
+            <td style="text-align: right;">
+              {% if t.type == 'masuk' %}
+                <strong style="color: #16a34a; font-size: 13.5px;">
+                  + Rp {{ "{:,.0f}".format(t.amount).replace(",", ".") }}
+                </strong>
+              {% else %}
+                <span style="color: var(--gray-400);">-</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right;">
+              {% if t.type == 'keluar' %}
+                <strong style="color: #dc2626; font-size: 13.5px;">
+                  - Rp {{ "{:,.0f}".format(t.amount).replace(",", ".") }}
+                </strong>
+              {% else %}
+                <span style="color: var(--gray-400);">-</span>
+              {% endif %}
+            </td>
+            <td>
+              <span style="font-size: 11.5px; color: var(--text-muted);">{{ t.notes }}</span>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 40px; color: var(--gray-500);">
+              Belum ada riwayat transaksi keuangan pada periode bulan ini.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        {% if report.transactions %}
+        <tfoot>
+          <tr style="background: #f8fafc; font-weight: 800; border-top: 2px solid #cbd5e1;">
+            <td colspan="5" style="text-align: right; padding: 12px 16px; font-size: 13px;">
+              TOTAL MUTASI KEUANGAN:
+            </td>
+            <td style="text-align: right; color: #16a34a; font-size: 14px; padding: 12px 16px;">
+              Rp {{ "{:,.0f}".format(report.total_income).replace(",", ".") }}
+            </td>
+            <td style="text-align: right; color: #dc2626; font-size: 14px; padding: 12px 16px;">
+              Rp {{ "{:,.0f}".format(report.total_expense).replace(",", ".") }}
+            </td>
+            <td style="padding: 12px 16px; font-size: 12px; color: var(--navy-primary);">
+              Saldo Bersih: <strong>Rp {{ "{:,.0f}".format(report.net_balance).replace(",", ".") }}</strong>
+            </td>
+          </tr>
+        </tfoot>
+        {% endif %}
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  function filterFinanceType(type) {
+    const rows = document.querySelectorAll(".tx-row");
+    rows.forEach(r => {
+      const t = r.getAttribute("data-type");
+      if (type === 'all') {
+        r.style.display = "";
+      } else if (type === t) {
+        r.style.display = "";
+      } else {
+        r.style.display = "none";
+      }
+    });
+
+    // Update active tab buttons
+    const btnAll = document.getElementById("btnTabAll");
+    const btnMasuk = document.getElementById("btnTabMasuk");
+    const btnKeluar = document.getElementById("btnTabKeluar");
+
+    if (btnAll && btnMasuk && btnKeluar) {
+      btnAll.className = (type === 'all') ? "btn btn-secondary btn-sm" : "btn btn-outline-secondary btn-sm";
+      btnMasuk.className = (type === 'masuk') ? "btn btn-success btn-sm" : "btn btn-outline-success btn-sm";
+      btnKeluar.className = (type === 'keluar') ? "btn btn-danger btn-sm" : "btn btn-outline-danger btn-sm";
+    }
+  }
+</script>
+
+{% endblock %}

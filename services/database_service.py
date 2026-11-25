@@ -112,6 +112,10 @@ def get_db(db_path=None):
         conn = sqlite3.connect(path)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON;")
+        conn.execute("PRAGMA journal_mode = WAL;")
+        conn.execute("PRAGMA synchronous = NORMAL;")
+        conn.execute("PRAGMA cache_size = -64000;")
+        conn.execute("PRAGMA temp_store = MEMORY;")
         g.db = conn
         g.db_path = path
         g.is_pg = False
@@ -142,6 +146,10 @@ def get_direct_connection(db_path=None):
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON;")
+    conn.execute("PRAGMA journal_mode = WAL;")
+    conn.execute("PRAGMA synchronous = NORMAL;")
+    conn.execute("PRAGMA cache_size = -64000;")
+    conn.execute("PRAGMA temp_store = MEMORY;")
     return conn
 
 def close_db(e=None):
@@ -298,6 +306,12 @@ def init_db(db_path=None, schema_path=None):
         return True
 
     target_db = db_path or Config.DATABASE_PATH
+    target_abs = os.path.abspath(target_db)
+    prod_abs = os.path.abspath(str(Path(__file__).resolve().parent.parent / "database" / "desi_privat.db"))
+    # Proteksi database produksi: jika file produksi sudah ada, cegah modifikasi otomatis
+    if target_abs == prod_abs and os.path.exists(target_abs) and os.path.getsize(target_abs) > 0:
+        return True
+
     s_path = schema_path or (Path(__file__).resolve().parent.parent / "database" / "schema.sql")
 
     conn = get_direct_connection(target_db)
@@ -312,7 +326,7 @@ def init_db(db_path=None, schema_path=None):
         if "status" not in parent_cols:
             cur.execute("ALTER TABLE parents ADD COLUMN status TEXT NOT NULL DEFAULT 'aktif'")
 
-        # Migrasi kolom riwayat awal pertemuan pada tabel students
+        # Migrasi kolom riwayat awal pertemuan & koordinat pada tabel students
         student_cols = [col[1] for col in cur.execute("PRAGMA table_info(students)").fetchall()]
         if "initial_meeting_offset" not in student_cols:
             cur.execute("ALTER TABLE students ADD COLUMN initial_meeting_offset INTEGER NOT NULL DEFAULT 0")
@@ -322,6 +336,19 @@ def init_db(db_path=None, schema_path=None):
             cur.execute("ALTER TABLE students ADD COLUMN initial_offset_set_at DATETIME")
         if "initial_offset_set_by" not in student_cols:
             cur.execute("ALTER TABLE students ADD COLUMN initial_offset_set_by INTEGER")
+        if "latitude" not in student_cols:
+            cur.execute("ALTER TABLE students ADD COLUMN latitude REAL")
+        if "longitude" not in student_cols:
+            cur.execute("ALTER TABLE students ADD COLUMN longitude REAL")
+
+        # Migrasi kolom alamat & koordinat pada tabel mentors
+        mentor_cols = [col[1] for col in cur.execute("PRAGMA table_info(mentors)").fetchall()]
+        if "address" not in mentor_cols:
+            cur.execute("ALTER TABLE mentors ADD COLUMN address TEXT")
+        if "latitude" not in mentor_cols:
+            cur.execute("ALTER TABLE mentors ADD COLUMN latitude REAL")
+        if "longitude" not in mentor_cols:
+            cur.execute("ALTER TABLE mentors ADD COLUMN longitude REAL")
 
         # Migrasi kolom penomoran pertemuan, periode & dokumentasi belajar pada tabel attendance
         att_cols = [col[1] for col in cur.execute("PRAGMA table_info(attendance)").fetchall()]
@@ -337,6 +364,39 @@ def init_db(db_path=None, schema_path=None):
             cur.execute("ALTER TABLE attendance ADD COLUMN cumulative_meeting INTEGER")
         if "program_id" not in att_cols:
             cur.execute("ALTER TABLE attendance ADD COLUMN program_id INTEGER REFERENCES programs(id)")
+
+        # Tabel absensi mentor mandiri & constraint unik per tanggal sesi (Langkah 3)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS mentor_attendance (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                schedule_id INTEGER NOT NULL,
+                mentor_id INTEGER NOT NULL,
+                status TEXT NOT NULL,
+                attendance_date TEXT NOT NULL,
+                notes TEXT,
+                recorded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(schedule_id, mentor_id, attendance_date)
+            )
+        """)
+
+        # Migrasi kolom absensi terpisah & dokumentasi sesi foto pada tabel attendance (Langkah 3)
+        if "mentor_status" not in att_cols:
+            cur.execute("ALTER TABLE attendance ADD COLUMN mentor_status TEXT DEFAULT NULL")
+        if "session_status" not in att_cols:
+            cur.execute("ALTER TABLE attendance ADD COLUMN session_status TEXT DEFAULT NULL")
+        if "documentation_status" not in att_cols:
+            cur.execute("ALTER TABLE attendance ADD COLUMN documentation_status TEXT DEFAULT 'tidak_ada'")
+        if "documentation_photo" not in att_cols:
+            cur.execute("ALTER TABLE attendance ADD COLUMN documentation_photo TEXT DEFAULT NULL")
+        if "documentation_pending_reason" not in att_cols:
+            cur.execute("ALTER TABLE attendance ADD COLUMN documentation_pending_reason TEXT DEFAULT NULL")
+        if "mentor_attendance_id" not in att_cols:
+            cur.execute("ALTER TABLE attendance ADD COLUMN mentor_attendance_id INTEGER REFERENCES mentor_attendance(id) DEFAULT NULL")
+
+        # Sinkronisasi status sesi historis secara aman tanpa mengasumsikan mentor_status (mentor_status tetap NULL)
+        cur.execute("UPDATE attendance SET session_status = 'terlaksana' WHERE status = 'hadir' AND session_status IS NULL")
+        cur.execute("UPDATE attendance SET session_status = 'siswa_berhalangan' WHERE status IN ('izin', 'tidak_hadir') AND session_status IS NULL")
 
         # Migrasi kolom riwayat periode per program pada tabel student_programs
         sp_cols = [col[1] for col in cur.execute("PRAGMA table_info(student_programs)").fetchall()]
@@ -366,8 +426,140 @@ def init_db(db_path=None, schema_path=None):
         if "status_code" not in audit_cols:
             cur.execute("ALTER TABLE audit_logs ADD COLUMN status_code INTEGER DEFAULT 200")
 
-        # Nonaktifkan akses login untuk semua akun orang tua lama per ketentuan
-        cur.execute("UPDATE users SET is_active = 0 WHERE role = 'parent'")
+        # Migrasi tabel Tagihan Belajar Siswa (Student Bills / Periode)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS student_bills (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                bill_code TEXT UNIQUE NOT NULL,
+                student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+                program_id INTEGER NOT NULL REFERENCES programs(id) ON DELETE CASCADE,
+                period_number INTEGER NOT NULL DEFAULT 1,
+                title TEXT NOT NULL,
+                total_amount REAL NOT NULL DEFAULT 0,
+                paid_amount REAL NOT NULL DEFAULT 0,
+                remaining_amount REAL NOT NULL DEFAULT 0,
+                status TEXT NOT NULL DEFAULT 'belum_lunas' CHECK(status IN ('belum_lunas', 'sebagian', 'lunas', 'tunggakan')),
+                due_date TEXT,
+                notes TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        # Migrasi tabel Pembayaran & Kuitansi Siswa (Bill Payments)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS bill_payments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                receipt_number TEXT UNIQUE NOT NULL,
+                bill_id INTEGER NOT NULL REFERENCES student_bills(id) ON DELETE CASCADE,
+                student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+                program_id INTEGER REFERENCES programs(id) ON DELETE SET NULL,
+                amount REAL NOT NULL,
+                payment_date TEXT NOT NULL,
+                payment_method TEXT DEFAULT 'Transfer Bank',
+                recorded_by INTEGER REFERENCES users(id),
+                notes TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        if "user_id" not in parent_cols:
+            cur.execute("ALTER TABLE parents ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE SET NULL")
+            cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_parents_user_id ON parents(user_id) WHERE user_id IS NOT NULL")
+
+        # Migrasi kolom fee_per_session pada tabel mentors
+        cur.execute("PRAGMA table_info(mentors)")
+        mentor_cols = [c[1] for c in cur.fetchall()]
+        if "fee_per_session" not in mentor_cols:
+            cur.execute("ALTER TABLE mentors ADD COLUMN fee_per_session REAL DEFAULT 50000")
+
+        # Migrasi kolom validasi pembayaran murid baru pada tabel students
+        cur.execute("PRAGMA table_info(students)")
+        student_cols = [c[1] for c in cur.fetchall()]
+        if "payment_validated_by" not in student_cols:
+            cur.execute("ALTER TABLE students ADD COLUMN payment_validated_by INTEGER")
+        if "payment_validated_at" not in student_cols:
+            cur.execute("ALTER TABLE students ADD COLUMN payment_validated_at DATETIME")
+        if "payment_status" not in student_cols:
+            cur.execute("ALTER TABLE students ADD COLUMN payment_status TEXT DEFAULT 'lunas'")
+
+        # Migrasi tabel Honor Periode Mentor (8 Pertemuan = 1 Periode Fee)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS mentor_period_honor (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                mentor_id INTEGER NOT NULL REFERENCES mentors(id),
+                student_id INTEGER NOT NULL REFERENCES students(id),
+                program_id INTEGER NOT NULL REFERENCES programs(id),
+                period_number INTEGER NOT NULL,
+                completed_meetings INTEGER DEFAULT 8,
+                fee_per_session REAL NOT NULL DEFAULT 50000,
+                total_fee REAL NOT NULL DEFAULT 400000,
+                status TEXT DEFAULT 'siap_ditransfer',
+                transferred_at DATETIME,
+                transferred_by INTEGER REFERENCES users(id),
+                transfer_notes TEXT,
+                billing_alert_active INTEGER DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        # Migrasi kolom service_type pada tabel programs
+        cur.execute("PRAGMA table_info(programs)")
+        prog_cols = [c[1] for c in cur.fetchall()]
+        if "service_type" not in prog_cols:
+            cur.execute("ALTER TABLE programs ADD COLUMN service_type TEXT NOT NULL DEFAULT 'Private Tutoring'")
+
+        # Migrasi tabel Aturan Tarif Les Layanan & Jenjang (Service Pricing Rules)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS service_pricing_rules (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                service_type TEXT NOT NULL,
+                education_level TEXT NOT NULL,
+                rate_per_session REAL NOT NULL,
+                notes TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(service_type, education_level)
+            )
+        """)
+
+        # Isi aturan tarif resmi jika tabel masih kosong
+        cur.execute("SELECT COUNT(*) FROM service_pricing_rules")
+        if cur.fetchone()[0] == 0:
+            official_rates = [
+                ("Private Tutoring", "SD", 75000, "Paket Tatap Muka SD"),
+                ("Private Tutoring", "SMP", 90000, "Paket Tatap Muka SMP"),
+                ("Private Tutoring", "SMA", 120000, "Paket Tatap Muka SMA"),
+                ("Private Tutoring", "Semua Jenjang", 90000, "Paket Tatap Muka Umum"),
+                ("Kelas Online", "SD", 50000, "Kelas Online SD (Paket 8 = Rp 400.000)"),
+                ("Kelas Online", "SMP", 65000, "Kelas Online SMP (Paket 8 = Rp 520.000)"),
+                ("Kelas Online", "SMA", 75000, "Kelas Online SMA (Paket 8 = Rp 600.000)"),
+                ("Kelas Online", "Semua Jenjang", 65000, "Kelas Online Umum"),
+                ("Program Khusus", "Psikotes / Akademik Polisi", 150000, "Bimbingan Psikotes & Akademik Polisi"),
+                ("Program Khusus", "Kedinasan / CPNS / SNBT", 200000, "Persiapan SNBT, CPNS, & Kedinasan"),
+                ("Program Khusus", "Bimbingan KTI", 100000, "Bimbingan Karya Tulis Ilmiah"),
+                ("Program Khusus", "Semua Jenjang", 150000, "Program Khusus Standar")
+            ]
+            cur.executemany("""
+                INSERT OR IGNORE INTO service_pricing_rules (service_type, education_level, rate_per_session, notes)
+                VALUES (?, ?, ?, ?)
+            """, official_rates)
+
+        # Migrasi tabel Tarif Fee Khusus Mentor per Murid & Program (Detail Fee Tentor)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS mentor_student_program_fees (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                mentor_id INTEGER NOT NULL REFERENCES mentors(id) ON DELETE CASCADE,
+                student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+                program_id INTEGER NOT NULL REFERENCES programs(id) ON DELETE CASCADE,
+                fee_per_session REAL NOT NULL DEFAULT 35000,
+                notes TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(mentor_id, student_id, program_id)
+            )
+        """)
     except Exception:
         pass
 
@@ -409,7 +601,13 @@ def seed_initial_data(db_path=None):
         return True
 
     # Fallback SQLite
-    conn = get_direct_connection(db_path or Config.DATABASE_PATH)
+    target_db = db_path or Config.DATABASE_PATH
+    target_abs = os.path.abspath(target_db)
+    prod_abs = os.path.abspath(str(Path(__file__).resolve().parent.parent / "database" / "desi_privat.db"))
+    if target_abs == prod_abs and os.path.exists(target_abs) and os.path.getsize(target_abs) > 0:
+        return True
+
+    conn = get_direct_connection(target_db)
     cur = conn.cursor()
 
     # Pastikan akun admin ada

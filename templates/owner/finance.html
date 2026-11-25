@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Laporan Keuangan &amp; Honor (Pemilik){% endblock %}
+{% block page_title %}Laporan Keuangan &amp; Rekap Honor Mentor{% endblock %}
+{% block page_subtitle %}Pengawasan eksekutif tagihan periode, penerimaan pembayaran, tunggakan siswa, dan honor pengajaran mentor (Mode Baca Sahaja){% endblock %}
+
+{% block content %}
+<!-- RINGKASAN KEUANGAN -->
+<div class="stats-grid" style="margin-bottom: 24px;">
+  <div class="stat-card">
+    <div class="stat-icon" style="background: rgba(37, 99, 235, 0.1); color: var(--blue-brand);">
+      {{ icon('credit-card') }}
+    </div>
+    <div class="stat-info">
+      <div class="stat-value">Rp {{ "{:,.0f}".format(overview.total_billed).replace(",", ".") }}</div>
+      <div class="stat-label">Total Tagihan Periode ({{ overview.total_bills_count }} Periode)</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--green-success);">
+      {{ icon('check-circle') }}
+    </div>
+    <div class="stat-info">
+      <div class="stat-value" style="color: var(--green-success);">Rp {{ "{:,.0f}".format(overview.total_collected).replace(",", ".") }}</div>
+      <div class="stat-label">Penerimaan Pembayaran ({{ overview.fully_paid_count }} Lunas)</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: var(--danger-color);">
+      {{ icon('alert-circle') }}
+    </div>
+    <div class="stat-info">
+      <div class="stat-value" style="color: var(--danger-color);">Rp {{ "{:,.0f}".format(overview.total_outstanding).replace(",", ".") }}</div>
+      <div class="stat-label">Sisa Tunggakan ({{ overview.unpaid_count }} Siswa)</div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom: 24px;">
+  <div class="card-header">
+    <div class="card-title"><span>{{ icon('receipt') }}</span> Riwayat Transaksi Pembayaran Siswa</div>
+    <div style="display: flex; gap: 8px;">
+      <a href="{{ url_for('owner.export_report_csv', type='payments') }}" class="btn btn-secondary btn-sm">
+        {{ icon('download') }} Ekspor CSV
+      </a>
+      <button type="button" class="btn btn-primary btn-sm" onclick="window.print()">
+        {{ icon('printer') }} Cetak / PDF
+      </button>
+    </div>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>No. Kuitansi</th>
+            <th>Tanggal</th>
+            <th>Siswa &amp; Program</th>
+            <th>Metode</th>
+            <th>Nominal Dibayar</th>
+            <th>Penerima</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in payments %}
+          <tr>
+            <td><strong style="color: var(--blue-brand);">{{ p.receipt_number }}</strong></td>
+            <td>{{ p.payment_date|date_indo }}</td>
+            <td>
+              <strong>{{ p.student_name }}</strong>
+              <div style="font-size: 11px; color: var(--gray-500);">{{ p.program_name }} (Periode {{ p.period_number }})</div>
+            </td>
+            <td><span class="badge badge-info">{{ p.payment_method }}</span></td>
+            <td style="font-weight: 700; color: var(--green-success);">Rp {{ "{:,.0f}".format(p.amount).replace(",", ".") }}</td>
+            <td>{{ p.recorder_name or 'Admin' }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 20px; color: var(--gray-500);">
+              Belum ada riwayat transaksi pembayaran.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><span>{{ icon('trending-up') }}</span> Rekapitulasi Realisasi Sesi &amp; Estimasi Honor Mentor</div>
+    <a href="{{ url_for('owner.export_report_csv', type='honor') }}" class="btn btn-secondary btn-sm">
+      {{ icon('download') }} Ekspor Honor CSV
+    </a>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>Nama Mentor</th>
+            <th>Keahlian</th>
+            <th>Total Sesi</th>
+            <th>Sesi Terlaksana</th>
+            <th>Siswa Berhalangan</th>
+            <th>Periode Penuh (8 Sesi)</th>
+            <th>Estimasi Honor</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for h in honor_list %}
+          <tr>
+            <td>
+              <strong style="color: var(--navy-dark);">{{ h.mentor_name }}</strong>
+            </td>
+            <td>{{ h.expertise or '-' }}</td>
+            <td>{{ h.total_recorded_sessions }} Sesi</td>
+            <td><span class="badge badge-success">{{ h.completed_sessions }} Sesi</span></td>
+            <td><span class="badge badge-warning">{{ h.student_absent_sessions }} Sesi</span></td>
+            <td>{{ h.periods_completed }} Periode ({{ h.remaining_in_period }} sesi)</td>
+            <td>
+              {% if h.estimated_honor is not none %}
+                <strong style="color: var(--green-success);">
+                  Rp {{ "{:,.0f}".format(h.estimated_honor).replace(",", ".") }}
+                </strong>
+              {% else %}
+                <span class="badge badge-warning" style="font-size: 11px;">Menunggu Keputusan Pemilik</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 20px; color: var(--gray-500);">
+              Belum ada data realisasi sesi mentor.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

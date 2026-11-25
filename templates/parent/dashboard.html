@@ -4,6 +4,32 @@
 {% block page_subtitle %}Informasi lengkap program les, jadwal, kehadiran, dan perkembangan belajar ananda di DESI PRIVAT{% endblock %}
 
 {% block content %}
+<style>
+  .parent-top-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 768px) {
+    .parent-top-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+  }
+  .attendance-item-card {
+    border-bottom: 1px solid var(--border-subtle, #f1f5f9);
+    padding: 14px 0;
+  }
+  .attendance-item-card:last-child {
+    border-bottom: none;
+    padding-bottom: 4px;
+  }
+  .attendance-item-card:first-child {
+    padding-top: 4px;
+  }
+</style>
+
 <!-- PEMILIH ANAK (CHILD SELECTOR JIKA WALI MEMILIKI LEBIH DARI 1 ANAK) -->
 {% if children|length > 1 %}
 <div class="card" style="margin-bottom: 24px; background: linear-gradient(90deg, #EFF6FF 0%, #FFFFFF 100%); border-left: 4px solid var(--blue-brand);">
@@ -27,8 +53,54 @@
 </div>
 {% endif %}
 
+<!-- NOTIFIKASI TAGIHAN SELESAI 8 PERTEMUAN & PERINGATAN PEMBAYARAN -->
+{% if period_completion_alerts %}
+{% for pca in period_completion_alerts %}
+<div class="card" style="margin-bottom: 20px; background: #f0fdf4; border: 1.5px solid #86efac; border-left: 5px solid #16a34a;">
+  <div class="card-body" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="font-size: 26px; color: #16a34a;">{{ icon('bell') }}</div>
+      <div>
+        <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #166534;">
+          Pemberitahuan: Bimbingan 8 Pertemuan Selesai ({{ pca.program_name }})
+        </h4>
+        <p style="margin: 2px 0 0 0; font-size: 12.5px; color: #15803d;">
+          Ananda telah menyelesaikan 8 sesi bimbingan pada Periode {{ pca.period_number }}. Mohon melakukan pembayaran tagihan untuk periode berikutnya agar jadwal bimbingan dapat dilanjutkan secara optimal.
+        </p>
+      </div>
+    </div>
+    <a href="{{ url_for('parent.bills') }}" class="btn btn-success btn-sm" style="font-size: 12px; padding: 7px 16px; font-weight: 600; white-space: nowrap;">
+      {{ icon('receipt') }} Rincian Tagihan &amp; Pembayaran
+    </a>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- NOTIFIKASI SISA TUNGGAKAN CICILAN (JIKA ADA) -->
+{% if total_unpaid and total_unpaid > 0 %}
+<div class="card" style="margin-bottom: 20px; background: #fffbeb; border: 1.5px solid #fde68a; border-left: 5px solid #f59e0b;">
+  <div class="card-body" style="padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="font-size: 22px; color: #d97706;">{{ icon('alert-circle') }}</div>
+      <div>
+        <div style="font-size: 13.5px; font-weight: 700; color: #92400e;">
+          Sisa Tunggakan Les: <span style="color: #b91c1c;">Rp {{ "{:,.0f}".format(total_unpaid).replace(",", ".") }}</span>
+        </div>
+        <p style="margin: 2px 0 0 0; font-size: 12px; color: #b45309;">
+          Harap menyelesaikan pembayaran cicilan/tunggakan ini sebelum siklus 8 pertemuan berikutnya berakhir.
+        </p>
+      </div>
+    </div>
+    <a href="{{ url_for('parent.bills') }}" class="btn btn-warning btn-sm" style="background: #f59e0b; border-color: #d97706; color: #fff; font-size: 11.5px; padding: 5px 14px; font-weight: 600;">
+      Lihat Status Cicilan
+    </a>
+  </div>
+</div>
+{% endif %}
+
 <!-- RINGKASAN PROFIL ANAK & PROGRAM LES -->
-<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px; margin-bottom: 24px;">
+<div class="parent-top-grid">
   <!-- PROFIL ANAK -->
   <div class="card">
     <div class="card-header">
@@ -69,8 +141,8 @@
             <tr>
               <th>Program Les</th>
               <th>Mentor Pembimbing</th>
-              <th>Kontak Mentor</th>
-              <th>Status</th>
+              <th>Status Bimbingan</th>
+              <th>Biaya SPP &amp; Status Pembayaran</th>
             </tr>
           </thead>
           <tbody>
@@ -84,14 +156,23 @@
                 <strong style="color: var(--navy-primary);">{{ pr.mentor_name or 'Dalam Penugasan' }}</strong>
               </td>
               <td>
-                {% if pr.mentor_phone %}
-                  <span style="font-size: 12px; color: var(--blue-brand);">{{ icon('phone') }} {{ pr.mentor_phone }}</span>
-                {% else %}
-                  <span style="color: var(--gray-500);">-</span>
-                {% endif %}
+                {{ pr.status|status_badge|safe }}
               </td>
               <td>
-                {{ pr.status|status_badge|safe }}
+                {% if pr.bill %}
+                  <div style="font-weight: 700; color: var(--navy-dark); font-size: 13px;">
+                    Rp {{ "{:,.0f}".format(pr.bill.total_amount).replace(",", ".") }}
+                  </div>
+                  {% if pr.bill.status == 'lunas' %}
+                    <span class="badge badge-success" style="font-size: 10.5px;">Lunas</span>
+                  {% elif pr.bill.status == 'sebagian' %}
+                    <span class="badge badge-warning" style="font-size: 10.5px;">Cicilan (Sisa Rp {{ "{:,.0f}".format(pr.bill.remaining_amount).replace(",", ".") }})</span>
+                  {% else %}
+                    <span class="badge badge-danger" style="font-size: 10.5px;">Belum Lunas</span>
+                  {% endif %}
+                {% else %}
+                  <span style="font-size: 11.5px; color: var(--text-muted);">-</span>
+                {% endif %}
               </td>
             </tr>
             {% else %}
@@ -108,54 +189,140 @@
   </div>
 </div>
 
-<!-- JADWAL LES MENDATANG & LAPORAN PERKEMBANGAN TERAKHIR -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 24px;">
-  <!-- JADWAL LES MENDATANG -->
-  <div class="card">
-    <div class="card-header">
-      <div class="card-title"><span>{{ icon('calendar') }}</span> Jadwal Sesi Les Mendatang</div>
-      <a href="{{ url_for('parent.schedules', student_id=selected_child.id) }}" class="btn btn-secondary btn-sm">Kalender Lengkap</a>
+<!-- SELURUH JADWAL BELAJAR SISWA -->
+<div class="card" style="margin-bottom: 24px;">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <div class="card-title">
+      <span>{{ icon('calendar') }}</span> Seluruh Jadwal Belajar {{ selected_child.full_name }}
     </div>
-    <div class="card-body" style="padding: 0;">
-      <div class="table-responsive">
-        <table class="table-desi">
-          <thead>
-            <tr>
-              <th>Tanggal & Waktu</th>
-              <th>Program</th>
-              <th>Mentor</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for sc in upcoming_schedules %}
-            <tr>
-              <td>
-                <strong>{{ sc.schedule_date|date_indo }}</strong>
-                <div style="font-size: 11.5px; color: var(--blue-brand);">{{ sc.start_time }} - {{ sc.end_time }} WIB</div>
-              </td>
-              <td>{{ sc.program_name }}</td>
-              <td>{{ sc.mentor_name }}</td>
-              <td>{{ sc.status|status_badge|safe }}</td>
-            </tr>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span class="badge" style="background: var(--navy-dark, #0f172a); color: #fff; font-size: 11.5px; padding: 5px 10px;">
+        Hari ini: {{ ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu','Minggu'][today_dow] }}
+      </span>
+      <a href="{{ url_for('parent.schedules', student_id=selected_child.id) }}" class="btn btn-secondary btn-sm" style="font-size: 11.5px;">
+        Kalender & Agenda Sesi
+      </a>
+    </div>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>Program Les</th>
+            <th>Hari & Jam Belajar</th>
+            <th>Status / Keterangan</th>
+            <th>Mentor Pengampu</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sc in student_schedules %}
+          <tr {% if sc.is_today %}style="background: #f0fdf4;"{% endif %}>
+            <td>
+              <strong style="color: var(--navy-dark); font-size: 14px;">{{ sc.program_name }}</strong>
+              {% if sc.subject_info %}
+                <div style="font-size: 11px; color: var(--gray-500);">{{ sc.subject_info }}</div>
+              {% endif %}
+            </td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <strong style="font-size: 13.5px; color: var(--navy-primary);">{{ sc.day_name }}</strong>
+                <span class="badge badge-info" style="font-size: 11px; font-weight: 600;">{{ sc.start_time }} - {{ sc.end_time }}</span>
+              </div>
+            </td>
+            <td>
+              {% if sc.is_today %}
+                <span class="badge badge-success" style="font-size: 11.5px; font-weight: 700; padding: 4px 10px; display: inline-flex; align-items: center; gap: 5px; background: #16a34a; color: #fff; border-radius: 20px;">
+                  {{ icon('clock') }} Hari Ini
+                </span>
+              {% else %}
+                <span class="badge" style="background: #e2e8f0; color: #475569; font-size: 11px; font-weight: 600; border-radius: 20px;">
+                  Jadwal Rutin
+                </span>
+              {% endif %}
+              {% if sc.notes %}
+                <div style="font-size: 11px; color: var(--gray-500); margin-top: 3px;">{{ sc.notes }}</div>
+              {% endif %}
+            </td>
+            <td>
+              <strong style="color: var(--navy-dark);">{{ sc.mentor_name }}</strong>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="4" style="text-align: center; color: var(--gray-500); padding: 24px;">
+              Belum ada jadwal les rutin yang terdaftar untuk ananda ini.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- RIWAYAT KEHADIRAN & LAPORAN PERKEMBANGAN -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 24px;">
+  <!-- RIWAYAT KEHADIRAN SESUAI ABSENSI MENTOR -->
+  <div class="card">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+      <div class="card-title"><span>{{ icon('clipboard') }}</span> Riwayat Kehadiran Terkini</div>
+      <a href="{{ url_for('parent.attendance', student_id=selected_child.id) }}" class="btn btn-secondary btn-sm" style="font-size: 11.5px;">Lihat Semua Riwayat</a>
+    </div>
+    <div class="card-body" style="padding: 14px 18px;">
+      {% for a in recent_attendance %}
+      <div class="attendance-item-card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
+          <div>
+            <strong style="font-size: 14px; color: var(--navy-dark);">{{ a.program_name }}</strong>
+            <span style="font-size: 12px; color: var(--text-muted); margin-left: 6px;">&bull; Mentor: <strong>{{ a.mentor_name }}</strong></span>
+          </div>
+          <div>
+            {% if a.status == 'hadir' and (a.session_status == 'terlaksana' or not a.session_status) %}
+              <span class="badge badge-success" style="font-size: 11px;">Hadir (Terlaksana)</span>
+            {% elif a.session_status == 'siswa_berhalangan' or a.status == 'izin' %}
+              <span class="badge badge-warning" style="font-size: 11px;">Siswa Berhalangan</span>
             {% else %}
-            <tr>
-              <td colspan="4" style="text-align: center; color: var(--gray-500); padding: 24px;">
-                Belum ada jadwal les mendatang.
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+              <span class="badge badge-danger" style="font-size: 11px;">{{ a.status|capitalize }}</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+          <span style="font-size: 12.5px; font-weight: 600; color: var(--navy-primary);">
+            {{ a.schedule_date|date_indo }} &bull; {{ a.start_time }} - {{ a.end_time }}
+          </span>
+          {% if a.meeting_number and a.period_number %}
+            <span class="badge" style="background: #e0f2fe; color: #0369a1; font-size: 10.5px; font-weight: 700; border-radius: 4px;">
+              Periode {{ a.period_number }} &bull; Pertemuan {{ a.meeting_number }}
+            </span>
+          {% endif %}
+        </div>
+
+        <div style="background: var(--bg-soft, #f8fafc); border: 1px solid var(--border-subtle, #e2e8f0); border-radius: 8px; padding: 10px 12px; font-size: 12.5px;">
+          <div style="color: var(--navy-dark);">
+            <strong style="color: var(--navy-primary); font-size: 11.5px;">Materi:</strong> {{ a.topics_covered or '-' }}
+          </div>
+          {% if a.progress_notes or a.notes %}
+          <div style="color: var(--gray-700); margin-top: 4px; font-size: 12px;">
+            <strong style="color: var(--text-muted); font-size: 11.5px;">Catatan:</strong> {{ a.progress_notes or a.notes }}
+          </div>
+          {% endif %}
+        </div>
       </div>
+      {% else %}
+      <div style="text-align: center; color: var(--gray-500); padding: 24px;">
+        Belum ada catatan kehadiran yang diinputkan mentor untuk ananda ini.
+      </div>
+      {% endfor %}
     </div>
   </div>
 
-  <!-- LAPORAN PERKEMBANGAN TERAKHIR -->
+  <!-- LAPORAN PERKEMBANGAN TERAKHIR (DIPERTAHANKAN SUDAH BENAR) -->
   <div class="card">
-    <div class="card-header">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
       <div class="card-title"><span>{{ icon('trending-up') }}</span> Laporan Perkembangan Terakhir</div>
-      <a href="{{ url_for('parent.progress', student_id=selected_child.id) }}" class="btn btn-secondary btn-sm">Lihat Semua Riwayat</a>
+      <a href="{{ url_for('parent.progress', student_id=selected_child.id) }}" class="btn btn-secondary btn-sm" style="font-size: 11.5px;">Lihat Semua Riwayat</a>
     </div>
     <div class="card-body">
       {% if latest_progress %}

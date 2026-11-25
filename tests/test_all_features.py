@@ -911,7 +911,7 @@ class TestDesiPrivat(unittest.TestCase):
         # Hitung jumlah record di tabel schedules sebelum registrasi
         count_before = query_db("SELECT COUNT(*) as c FROM schedules", one=True)["c"]
 
-        # Admin mendaftarkan siswa baru dengan 2 slot jadwal rutin mingguan
+        # Admin mendaftarkan siswa baru (Form Terpisah tanpa Penjadwalan langsung)
         with c_admin.session_transaction() as sess:
             csrf = sess.get("_csrf_token")
 
@@ -923,12 +923,7 @@ class TestDesiPrivat(unittest.TestCase):
             "new_parent_name": "Ibu Kartika",
             "new_parent_phone": "081255556666",
             "program_id": 1,
-            "mentor_id": 2, # Mentor Budi
-            "subject_info": "Matematika Dasar & Aritmatika",
-            "routine_day[]": ["5", "6"], # Sabtu & Minggu
-            "routine_start[]": ["09:00", "13:00"],
-            "routine_end[]": ["10:30", "14:30"],
-            "initial_meeting_offset": "0"
+            "subject_info": "Matematika Dasar & Aritmatika"
         }, follow_redirects=True)
 
         self.assertEqual(res_reg.status_code, 200)
@@ -936,6 +931,31 @@ class TestDesiPrivat(unittest.TestCase):
         # Ambil siswa yang baru dibuat
         st = query_db("SELECT id FROM students WHERE full_name = 'Siswa Rutin Asli'", one=True)
         self.assertIsNotNone(st)
+
+        # Admin menetapkan jadwal rutin secara mandiri di halaman Penjadwalan (1 input = 1 hari)
+        res_r1 = c_admin.post("/admin/schedules/routine/create", data={
+            "csrf_token": csrf,
+            "student_id": st["id"],
+            "program_id": 1,
+            "mentor_id": 2, # Mentor Budi
+            "day_of_week": 5, # Sabtu
+            "start_time": "09:00",
+            "end_time": "10:30",
+            "subject_info": "Matematika Dasar"
+        }, follow_redirects=True)
+        self.assertEqual(res_r1.status_code, 200)
+
+        res_r2 = c_admin.post("/admin/schedules/routine/create", data={
+            "csrf_token": csrf,
+            "student_id": st["id"],
+            "program_id": 1,
+            "mentor_id": 2, # Mentor Budi
+            "day_of_week": 6, # Minggu
+            "start_time": "13:00",
+            "end_time": "14:30",
+            "subject_info": "Aritmatika"
+        }, follow_redirects=True)
+        self.assertEqual(res_r2.status_code, 200)
 
         # Verifikasi slot jadwal rutin tersimpan di tabel routine_schedules
         routines = query_db("SELECT * FROM routine_schedules WHERE student_id = ?", (st["id"],))
@@ -950,6 +970,7 @@ class TestDesiPrivat(unittest.TestCase):
 
         # Bersihkan data tes
         execute_db("DELETE FROM routine_schedules WHERE student_id = ?", (st["id"],))
+        execute_db("DELETE FROM student_programs WHERE student_id = ?", (st["id"],))
         execute_db("DELETE FROM students WHERE id = ?", (st["id"],))
         execute_db("DELETE FROM parents WHERE full_name = 'Ibu Kartika'")
 

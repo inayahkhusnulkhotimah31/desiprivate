@@ -4,79 +4,84 @@
 {% block page_subtitle %}Ringkasan operasional bimbingan belajar, siklus periode, dan aktivitas hari ini{% endblock %}
 
 {% block content %}
-<!-- KARTU RINGKASAN UTAMA (MODERN SOFT BLUE STATS) -->
+<!-- KARTU RINGKASAN UTAMA (MODERN SOFT BLUE STATS - INTERAKTIF DAPAT DIKLIK) -->
+<style>
+  .stat-card-link {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+  }
+  .stat-card-link:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(2, 132, 199, 0.12);
+    border-color: var(--blue-brand, #0284c7);
+  }
+</style>
 <div class="stats-grid">
-  <div class="stat-card">
+  <a href="{{ url_for('admin.students') }}" class="stat-card stat-card-link" title="Buka Data Siswa">
     <div class="stat-icon blue">{{ icon('student') }}</div>
     <div class="stat-details">
       <div class="stat-value">{{ summary.active_students }}</div>
       <div class="stat-label">Siswa Aktif</div>
-      <div class="stat-subtitle">Terdaftar resmi</div>
+      <div class="stat-subtitle">Terdaftar resmi &rarr;</div>
     </div>
-  </div>
+  </a>
 
-  <div class="stat-card">
+  <a href="{{ url_for('admin.mentors') }}" class="stat-card stat-card-link" title="Buka Data Mentor">
     <div class="stat-icon purple">{{ icon('mentor') }}</div>
     <div class="stat-details">
       <div class="stat-value">{{ summary.active_mentors }}</div>
       <div class="stat-label">Mentor Aktif</div>
-      <div class="stat-subtitle">Tenaga pengajar</div>
+      <div class="stat-subtitle">Tenaga pengajar &rarr;</div>
     </div>
-  </div>
+  </a>
 
-  <div class="stat-card">
+  <a href="{{ url_for('admin.programs') }}" class="stat-card stat-card-link" title="Buka Program Les">
     <div class="stat-icon green">{{ icon('book') }}</div>
     <div class="stat-details">
       <div class="stat-value">{{ summary.active_programs }}</div>
       <div class="stat-label">Program Les</div>
-      <div class="stat-subtitle">Mata pelajaran aktif</div>
+      <div class="stat-subtitle">Mata pelajaran aktif &rarr;</div>
     </div>
-  </div>
+  </a>
 
-  <div class="stat-card">
-    <div class="stat-icon amber">{{ icon('calendar') }}</div>
-    <div class="stat-details">
-      <div class="stat-value">{{ summary.active_schedules }}</div>
-      <div class="stat-label">Jadwal Aktif</div>
-      <div class="stat-subtitle">Sesi mendatang</div>
-    </div>
-  </div>
-
-  <div class="stat-card">
+  <a href="{{ url_for('admin.schedules', status='disetujui') }}" class="stat-card stat-card-link" title="Buka Riwayat Absensi Sesi Terlaksana">
     <div class="stat-icon purple">{{ icon('sparkles') }}</div>
     <div class="stat-details">
       <div class="stat-value">{{ summary.monthly_sessions }}</div>
       <div class="stat-label">Pertemuan Bulan Ini</div>
-      <div class="stat-subtitle">Absensi valid (Hadir)</div>
+      <div class="stat-subtitle">Absensi valid (Hadir) &rarr;</div>
     </div>
-  </div>
+  </a>
 
-  <div class="stat-card">
+  <a href="{{ url_for('admin.schedules', day=today_dow) }}" class="stat-card stat-card-link" title="Buka Agenda Jadwal Hari Ini">
     <div class="stat-icon blue">{{ icon('calendar-check') }}</div>
     <div class="stat-details">
       <div class="stat-value">{{ summary.today_schedules }}</div>
       <div class="stat-label">Sesi Hari Ini</div>
-      <div class="stat-subtitle">Agenda hari ini</div>
+      <div class="stat-subtitle">Agenda hari ini &rarr;</div>
     </div>
-  </div>
+  </a>
 
-  <div class="stat-card">
+  <a href="#actionAttentionSection" class="stat-card stat-card-link" title="Buka Jadwal Memerlukan Perhatian">
     <div class="stat-icon amber">{{ icon('zap') }}</div>
     <div class="stat-details">
-      <div class="stat-value">{{ action_schedules|length }}</div>
+      <div class="stat-value">{{ action_count|default(action_schedules|length) }}</div>
       <div class="stat-label">Perlu Perhatian</div>
-      <div class="stat-subtitle">Kendala / Ganti mentor</div>
+      <div class="stat-subtitle">Kendala / Ganti mentor &rarr;</div>
     </div>
-  </div>
+  </a>
 
-  <div class="stat-card">
+  <a href="{{ url_for('admin.schedules', status='disetujui') }}" class="stat-card stat-card-link" title="Buka Seluruh Riwayat Sesi Terabsen">
     <div class="stat-icon green">{{ icon('check-circle') }}</div>
     <div class="stat-details">
       <div class="stat-value">{{ summary.completed_sessions }}</div>
       <div class="stat-label">Total Sesi Terabsen</div>
-      <div class="stat-subtitle">Riwayat terdokumentasi</div>
+      <div class="stat-subtitle">Riwayat terdokumentasi &rarr;</div>
     </div>
-  </div>
+  </a>
 </div>
 
 <!-- PERINGATAN KETERLAMBATAN RESPONS MENTOR (JIKA ADA) -->
@@ -126,7 +131,7 @@
 <!-- SECTION 2: JADWAL MEMERLUKAN TINDAKAN & JADWAL HARI INI -->
 <div class="grid-2-col" style="margin-top: 8px;">
   <!-- JADWAL MEMERLUKAN TINDAKAN -->
-  <div class="card">
+  <div class="card" id="actionAttentionSection">
     <div class="card-header">
       <div class="card-title"><span class="card-icon">{{ icon('zap') }}</span> Jadwal Memerlukan Perhatian</div>
       <a href="{{ url_for('admin.schedules') }}" class="btn btn-secondary btn-sm">Lihat Semua</a>
@@ -216,7 +221,13 @@
                 <div style="font-size: 11px; color: var(--text-muted);">{{ ts.program_name }}</div>
               </td>
               <td>{{ ts.mentor_name }}</td>
-              <td>{{ ts.status|status_badge|safe }}</td>
+              <td>
+                {% if ts.schedule_type == 'jadwal_rutin' %}
+                  <span class="badge badge-primary">Jadwal Rutin</span>
+                {% else %}
+                  {{ ts.status|status_badge|safe }}
+                {% endif %}
+              </td>
             </tr>
             {% else %}
             <tr>
@@ -228,6 +239,107 @@
           </tbody>
         </table>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 2B: RIWAYAT ABSENSI & SESI TERKINI -->
+<div class="card" style="margin-top: 16px;">
+  <div class="card-header">
+    <div class="card-title">
+      <span class="card-icon">{{ icon('clipboard') }}</span> Riwayat Absensi &amp; Sesi Terkini
+    </div>
+    <a href="{{ url_for('admin.schedules') }}" class="btn btn-secondary btn-sm">Buka Penjadwalan &rarr;</a>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>Tanggal Sesi &amp; Jam</th>
+            <th>Siswa &amp; Program</th>
+            <th>Mentor Pengampu</th>
+            <th>Siklus Pertemuan</th>
+            <th>Status Kehadiran</th>
+            <th style="text-align: right; min-width: 90px;">Detail Sesi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for att in recent_attendances %}
+          <tr>
+            <td>
+              <strong style="color: var(--navy-dark); font-size: 13px;">{{ att.session_date|date_indo }}</strong>
+              <div style="font-size: 11px; color: var(--blue-brand); font-weight: 500;">
+                {{ icon('clock') }} {{ att.start_time }} - {{ att.end_time }} WIB
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 700; color: var(--navy-dark);">{{ att.student_name }}</div>
+              <div style="font-size: 11px; color: var(--text-muted);">{{ att.program_name }}</div>
+            </td>
+            <td>
+              <div style="font-weight: 600;">{{ att.mentor_name }}</div>
+            </td>
+            <td>
+              {% if att.meeting_number and att.period_number %}
+                <span class="badge badge-success" style="font-size: 11.5px; font-weight: 700;">
+                  Pertemuan {{ att.meeting_number }} ({{ att.period_number }})
+                </span>
+                {% if att.cumulative_meeting %}
+                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Kumulatif ke-{{ att.cumulative_meeting }}</div>
+                {% endif %}
+              {% else %}
+                <span class="badge badge-secondary" style="font-size: 11px;">Belum Terhitung</span>
+              {% endif %}
+            </td>
+            <td>
+              {{ att.status|status_badge|safe }}
+              {% if att.documentation_photo %}
+                <span class="badge badge-info" style="font-size: 10px; margin-left: 3px;" title="Dokumentasi foto tersedia">&#128247; Foto</span>
+              {% elif att.documentation_status == 'menunggu' %}
+                <span class="badge badge-warning" style="font-size: 10px; margin-left: 3px;" title="Dokumentasi foto tertunda">&#9203; Tertunda</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right;">
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                data-student="{{ att.student_name }}"
+                data-school="{{ att.student_school or '' }}"
+                data-grade="{{ att.student_grade or '' }}"
+                data-program="{{ att.program_name }}"
+                data-mentor="{{ att.mentor_name }}"
+                data-date="{{ att.session_date|date_indo }}"
+                data-time="{{ att.start_time }} - {{ att.end_time }} WIB"
+                data-status="{{ att.status }}"
+                data-meeting="{{ att.meeting_number or '-' }}"
+                data-period="{{ att.period_number or '-' }}"
+                data-cumulative="{{ att.cumulative_meeting or '-' }}"
+                data-doc-status="{{ att.documentation_status or 'tidak_ada' }}"
+                data-doc-photo="{{ att.documentation_photo or '' }}"
+                data-doc-reason="{{ att.documentation_pending_reason or '' }}"
+                data-topics="{{ att.topics_covered or '' }}"
+                data-skills="{{ att.skills_mastered or '' }}"
+                data-difficulties="{{ att.difficulties or '' }}"
+                data-recommendations="{{ att.recommendations or '' }}"
+                data-notes="{{ att.progress_notes or '' }}"
+                onclick="openAttendanceDetail(this)"
+                style="padding: 4px 10px; font-size: 11.5px; font-weight: 600;"
+                title="Lihat detail absensi, foto dokumentasi, dan laporan perkembangan"
+              >
+                {{ icon('eye') }} Detail
+              </button>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 28px;">
+              Belum ada riwayat absensi pembelajaran yang tercatat di sistem.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
@@ -259,18 +371,13 @@
     </div>
   </div>
 
-  <!-- NOTIFIKASI & WHATSAPP STATUS -->
+  <!-- NOTIFIKASI SISTEM TERBARU -->
   <div class="card">
     <div class="card-header">
-      <div class="card-title"><span class="card-icon">{{ icon('chat') }}</span> Notifikasi & WhatsApp Gateway</div>
+      <div class="card-title"><span class="card-icon">{{ icon('bell') }}</span> Notifikasi Sistem Terbaru</div>
       <a href="{{ url_for('admin.notifications_center') }}" class="btn btn-secondary btn-sm">Pusat Notifikasi</a>
     </div>
     <div class="card-body" style="padding: 16px;">
-      <div class="alert-box alert-info" style="margin-bottom: 14px; font-size: 12.5px;">
-        <div>
-          <strong>WhatsApp Test Mode:</strong> Aktif. Pesan diverifikasi & dicatat aman tanpa pemotongan saldo gateway.
-        </div>
-      </div>
       <div style="display: flex; flex-direction: column; gap: 10px;">
         {% for n in recent_notifs %}
         <div style="padding: 10px 14px; background: {% if not n.is_read %}var(--blue-soft){% else %}rgba(241, 245, 249, 0.6){% endif %}; border-radius: var(--radius-sm); border-left: 3px solid {% if not n.is_read %}var(--blue-brand){% else %}var(--border-subtle){% endif %}; font-size: 12.5px;">
@@ -324,7 +431,205 @@
   </div>
 </div>
 
+<!-- MODAL RINCIAN ABSENSI & LAPORAN PERKEMBANGAN -->
+<div class="modal-overlay" id="attendanceDetailModal">
+  <div class="modal-dialog" style="max-width: 680px;">
+    <div class="modal-header" style="background: linear-gradient(135deg, var(--navy-dark, #0f172a), var(--blue-brand, #2563eb)); color: white;">
+      <div class="modal-title" style="color: white; display: flex; align-items: center; gap: 8px;">
+        {{ icon('book') }} Rincian Sesi &amp; Laporan Perkembangan Belajar
+      </div>
+      <button class="modal-close-btn" onclick="closeModal('attendanceDetailModal')" style="color: white;">&times;</button>
+    </div>
+    <div class="modal-body" style="padding: 20px;">
+      <!-- BAGIAN 1: IDENTITAS PERTEMUAN & SIKLUS -->
+      <div style="background: var(--bg-soft, #f8fafc); border: 1px solid var(--border-subtle, #e2e8f0); border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+          <div>
+            <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px;">Siswa &amp; Program Les</div>
+            <strong id="detStudentName" style="font-size: 15px; color: var(--navy-dark);"></strong>
+            <span id="detStudentMeta" style="font-size: 12px; color: var(--text-muted); margin-left: 4px;"></span>
+            <div id="detProgramName" style="font-size: 13px; color: var(--blue-brand); font-weight: 600; margin-top: 2px;"></div>
+          </div>
+          <div style="text-align: right;">
+            <div id="detMeetingBadge" style="margin-bottom: 4px;"></div>
+            <div id="detStatusBadge"></div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px; border-top: 1px solid var(--border-subtle, #e2e8f0); padding-top: 10px; margin-top: 8px;">
+          <div>
+            <span style="color: var(--text-muted);">Mentor Pengampu:</span><br>
+            <strong id="detMentorName" style="color: var(--text-main);"></strong>
+          </div>
+          <div>
+            <span style="color: var(--text-muted);">Jadwal Sesi:</span><br>
+            <strong id="detDateTime" style="color: var(--text-main);"></strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- BAGIAN 2: DOKUMENTASI FOTO (KHUSUS ADMIN & OWNER) -->
+      <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <label style="font-size: 13px; font-weight: 700; color: var(--navy-dark); margin: 0; display: flex; align-items: center; gap: 6px;">
+            {{ icon('camera') }} Dokumentasi Foto Sesi Belajar
+          </label>
+          <span class="badge badge-info" style="font-size: 10px; padding: 3px 7px;">
+            {{ icon('lock') }} Hak Akses: Khusus Admin &amp; Owner
+          </span>
+        </div>
+
+        <div id="detDocPhotoBox" style="display: none; margin-top: 8px;">
+          <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
+            <a id="detPhotoLink" href="#" target="_blank" title="Klik untuk memperbesar foto">
+              <img id="detPhotoImg" src="" alt="Dokumentasi Sesi" style="max-height: 140px; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: 0 2px 6px rgba(0,0,0,0.06); object-fit: cover;">
+            </a>
+            <div style="font-size: 11.5px; color: var(--text-muted);">
+              <div>Status: <span class="badge badge-success" style="font-size: 10.5px;">✓ Foto Terverifikasi</span></div>
+              <div style="margin-top: 4px;">Foto dokumentasi resmi dari mentor saat mengajar.</div>
+              <div style="margin-top: 6px;">
+                <a id="detPhotoBtnLink" href="#" target="_blank" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 3px 8px;">
+                  Buka Ukuran Penuh &rarr;
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="detDocPendingBox" style="display: none; background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; margin-top: 8px;">
+          <div style="font-size: 12px; color: #b45309; font-weight: 600;">
+            ⚠️ Dokumentasi Foto Tertunda (Kendala Teknis Kamera / Unggahan)
+          </div>
+          <div style="font-size: 11.5px; color: #92400e; margin-top: 4px;">
+            Alasan Mentor: <em id="detDocPendingReason"></em>
+          </div>
+        </div>
+
+        <div id="detDocNoneBox" style="display: none; font-size: 12px; color: var(--text-muted); font-style: italic; margin-top: 6px;">
+          Tidak ada foto dokumentasi untuk sesi belajar ini.
+        </div>
+      </div>
+
+      <!-- BAGIAN 3: LAPORAN PERKEMBANGAN BELAJAR (ADMIN, ORANG TUA, OWNER) -->
+      <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <label style="font-size: 13px; font-weight: 700; color: var(--navy-dark); margin: 0; display: flex; align-items: center; gap: 6px;">
+            {{ icon('trending-up') }} Laporan Perkembangan Belajar
+          </label>
+          <span class="badge badge-primary" style="font-size: 10px; padding: 3px 7px;">
+            {{ icon('users') }} Akses: Admin, Orang Tua &amp; Owner
+          </span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
+          <div style="background: var(--bg-soft, #f8fafc); border-radius: 6px; padding: 10px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--navy-dark); text-transform: uppercase;">Materi yang Diajarkan:</div>
+            <div id="detTopics" style="font-size: 12.5px; color: var(--text-main); margin-top: 3px;">-</div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 10px;">
+              <div style="font-size: 11px; font-weight: 700; color: #065f46; text-transform: uppercase;">Kemampuan Dikuasai:</div>
+              <div id="detSkills" style="font-size: 12px; color: #047857; margin-top: 3px;">-</div>
+            </div>
+            <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px;">
+              <div style="font-size: 11px; font-weight: 700; color: #92400e; text-transform: uppercase;">Kendala / Kesulitan:</div>
+              <div id="detDifficulties" style="font-size: 12px; color: #b45309; margin-top: 3px;">-</div>
+            </div>
+          </div>
+
+          <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 10px;">
+            <div style="font-size: 11px; font-weight: 700; color: #1e40af; text-transform: uppercase;">Rekomendasi dari Mentor:</div>
+            <div id="detRecommendations" style="font-size: 12px; color: #1d4ed8; margin-top: 3px;">-</div>
+          </div>
+
+          <div id="detNotesWrapper" style="display: none; background: #f1f5f9; border-radius: 6px; padding: 10px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Catatan Tambahan Perkembangan:</div>
+            <div id="detNotes" style="font-size: 12px; color: var(--text-main); margin-top: 3px;">-</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" onclick="closeModal('attendanceDetailModal')">Tutup</button>
+    </div>
+  </div>
+</div>
+
 <script>
+  function openAttendanceDetail(btn) {
+    const d = btn.dataset;
+
+    document.getElementById("detStudentName").innerText = d.student || "-";
+    let meta = "";
+    if (d.grade) meta += "Kelas " + d.grade;
+    if (d.school) meta += (meta ? " • " : "") + d.school;
+    document.getElementById("detStudentMeta").innerText = meta ? "(" + meta + ")" : "";
+    document.getElementById("detProgramName").innerText = d.program || "-";
+    document.getElementById("detMentorName").innerText = d.mentor || "-";
+    document.getElementById("detDateTime").innerText = (d.date || "-") + " • " + (d.time || "-");
+
+    // Siklus pertemuan
+    const mNum = d.meeting;
+    const pNum = d.period;
+    const badgeContainer = document.getElementById("detMeetingBadge");
+    if (mNum && mNum !== "-" && pNum && pNum !== "-") {
+      let cumText = d.cumulative && d.cumulative !== "-" ? " • Kumulatif ke-" + d.cumulative : "";
+      badgeContainer.innerHTML = '<span class="badge badge-success" style="font-size: 12px; font-weight: 700;">Pertemuan ' + mNum + ' (' + pNum + ')' + cumText + '</span>';
+    } else {
+      badgeContainer.innerHTML = '<span class="badge badge-secondary" style="font-size: 11px;">Belum Terhitung Siklus</span>';
+    }
+
+    // Status kehadiran badge
+    const stContainer = document.getElementById("detStatusBadge");
+    const st = d.status || "hadir";
+    if (st === "hadir") {
+      stContainer.innerHTML = '<span class="badge badge-success">✓ Siswa Hadir</span>';
+    } else if (st === "izin") {
+      stContainer.innerHTML = '<span class="badge badge-warning">Izin (Tidak Dihitung)</span>';
+    } else {
+      stContainer.innerHTML = '<span class="badge badge-danger">Tidak Hadir (Tidak Dihitung)</span>';
+    }
+
+    // Dokumentasi Foto (Khusus Admin & Owner)
+    const photoBox = document.getElementById("detDocPhotoBox");
+    const pendingBox = document.getElementById("detDocPendingBox");
+    const noneBox = document.getElementById("detDocNoneBox");
+
+    photoBox.style.display = "none";
+    pendingBox.style.display = "none";
+    noneBox.style.display = "none";
+
+    if (d.docPhoto) {
+      photoBox.style.display = "block";
+      const photoUrl = "/uploads/session_photos/" + encodeURIComponent(d.docPhoto);
+      document.getElementById("detPhotoImg").src = photoUrl;
+      document.getElementById("detPhotoLink").href = photoUrl;
+      document.getElementById("detPhotoBtnLink").href = photoUrl;
+    } else if (d.docStatus === "menunggu") {
+      pendingBox.style.display = "block";
+      document.getElementById("detDocPendingReason").innerText = d.docReason || "Kendala kamera/unggahan saat sesi les";
+    } else {
+      noneBox.style.display = "block";
+    }
+
+    // Laporan Perkembangan Belajar
+    document.getElementById("detTopics").innerText = d.topics || "Materi tidak dicatat secara spesifik";
+    document.getElementById("detSkills").innerText = d.skills || "Sedang dalam penguatan konsep dasar";
+    document.getElementById("detDifficulties").innerText = d.difficulties || "Tidak ada kendala berarti";
+    document.getElementById("detRecommendations").innerText = d.recommendations || "Lanjutkan latihan mandiri secara rutin";
+
+    const notesWrap = document.getElementById("detNotesWrapper");
+    if (d.notes && d.notes.trim()) {
+      notesWrap.style.display = "block";
+      document.getElementById("detNotes").innerText = d.notes;
+    } else {
+      notesWrap.style.display = "none";
+    }
+
+    openModal("attendanceDetailModal");
+  }
+
   function prepareMentorReplacementModal(scheduleId, mentorName) {
     document.getElementById("replaceScheduleId").value = scheduleId;
     document.getElementById("currentMentorSpan").innerText = mentorName;

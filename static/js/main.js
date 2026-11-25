@@ -1,14 +1,40 @@
 /**
  * DESI PRIVAT - Main JavaScript File
  * Mengelola interaktivitas UI:
+ * - Modal dialogs (Global & Immediate availability)
  * - Toggle navigasi mobile
  * - Show/Hide password
- * - Modal dialogs
  * - Deteksi bentrokan jadwal dinamis (AJAX/Fetch)
  * - Helper pengujian akun cepat
  */
 
-document.addEventListener("DOMContentLoaded", () => {
+// ============================================================================
+// 1. MODAL DIALOG HANDLERS (DEFINED AT TOP-LEVEL FOR IMMEDIATE GLOBAL AVAILABILITY)
+// ============================================================================
+window.openModal = function(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.classList.add("active");
+    document.body.style.overflow = "hidden";
+    const bodyEl = modal.querySelector(".modal-body");
+    if (bodyEl) {
+      bodyEl.scrollTop = 0;
+    }
+  }
+};
+
+window.closeModal = function(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.classList.remove("active");
+    const hasOther = document.querySelector(".modal-overlay.active");
+    if (!hasOther) {
+      document.body.style.overflow = "";
+    }
+  }
+};
+
+function initMain() {
   // 1. Toggle Sidebar & Drawer Mobile/Tablet (Responsif Modern)
   const toggleBtn = document.getElementById("mobileToggleBtn");
   const sidebar = document.getElementById("sidebar");
@@ -75,39 +101,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 4. Modal Dialog Handler
-  window.openModal = function(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-      modal.classList.add("active");
-      document.body.style.overflow = "hidden";
-      const bodyEl = modal.querySelector(".modal-body");
-      if (bodyEl) {
-        bodyEl.scrollTop = 0;
-      }
-    }
-  };
-
-  window.closeModal = function(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-      modal.classList.remove("active");
-      const hasOther = document.querySelector(".modal-overlay.active");
-      if (!hasOther) {
-        document.body.style.overflow = "";
-      }
-    }
-  };
-
-  // Tutup modal jika klik overlay latar belakang
+  // 3. Modal Overlay & Keyboard Event Listeners
   document.querySelectorAll(".modal-overlay").forEach(overlay => {
     overlay.addEventListener("click", (e) => {
       if (e.target === overlay) {
-        overlay.classList.remove("active");
-        const hasOther = document.querySelector(".modal-overlay.active");
-        if (!hasOther) {
-          document.body.style.overflow = "";
-        }
+        window.closeModal(overlay.id);
       }
     });
   });
@@ -126,7 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // 5. Deteksi Bentrokan Jadwal Dinamis (Frontend live check)
+  // 4. Deteksi Bentrokan Jadwal Dinamis (Frontend live check)
   const scheduleForm = document.getElementById("scheduleForm");
   if (scheduleForm) {
     const mentorSelect = scheduleForm.querySelector("[name='mentor_id']");
@@ -213,4 +211,10 @@ document.addEventListener("DOMContentLoaded", () => {
       mentorSelect.innerHTML = "<option value=''>Gagal memuat mentor pengganti</option>";
     }
   };
-});
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initMain);
+} else {
+  initMain();
+}

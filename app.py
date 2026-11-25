@@ -6,12 +6,10 @@ import os
 import sys
 from pathlib import Path
 
-# Deteksi otomatis virtual environment lokal (.venv) jika ada
 _local_venv = Path(__file__).resolve().parent / ".venv" / "Lib" / "site-packages"
 if _local_venv.exists() and str(_local_venv) not in sys.path:
     sys.path.insert(0, str(_local_venv))
 
-# Fallback path jika dependensi terpasang di Python 3.11 pengguna
 _py311_site = Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Python" / "Python311" / "Lib" / "site-packages"
 if _py311_site.exists() and str(_py311_site) not in sys.path:
     sys.path.append(str(_py311_site))
@@ -25,6 +23,7 @@ from routes.auth import auth_bp, generate_csrf_token
 from routes.admin import admin_bp
 from routes.owner import owner_bp
 from routes.mentor import mentor_bp
+from routes.parent import parent_bp
 from routes.developer import developer_bp
 from services.icon_service import render_icon
 
@@ -37,7 +36,6 @@ def create_app(config_class=None):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    # Inisialisasi Database dan Data Utama secara otomatis jika belum ada
     with app.app_context():
         try:
             init_db()
@@ -80,12 +78,84 @@ def create_app(config_class=None):
     app.register_blueprint(admin_bp)
     app.register_blueprint(owner_bp)
     app.register_blueprint(mentor_bp)
+    app.register_blueprint(parent_bp)
     app.register_blueprint(developer_bp)
+
+    # Endpoint Terproteksi untuk Dokumentasi Foto Sesi Belajar (Langkah 3)
+    @app.route("/uploads/session_photos/<path:filename>")
+    def serve_session_photo(filename):
+        from werkzeug.utils import secure_filename
+        from flask import abort, send_from_directory, session
+        import os
+
+        # 1. Autentikasi: pengguna wajib login
+        if "user_id" not in session:
+            abort(401)
+
+        safe_name = secure_filename(filename)
+        if safe_name != filename:
+            abort(400)
+
+        role = session.get("role")
+        user_id = session.get("user_id")
+
+        # 2. Otorisasi Role:
+        # Admin dan Owner memiliki hak penuh untuk verifikasi & audit
+        if role in ("admin", "owner"):
+            folder = os.path.join(app.root_path, "uploads", "session_photos")
+            return send_from_directory(folder, safe_name)
+
+        # Mentor hanya dapat melihat foto dari sesi siswa yang diajar oleh dirinya
+        if role == "mentor":
+            mentor = query_db("SELECT id FROM mentors WHERE user_id = ?", (user_id,), one=True)
+            if mentor:
+                allowed = query_db(
+                    "SELECT id FROM attendance WHERE documentation_photo = ? AND mentor_id = ?",
+                    (safe_name, mentor["id"]),
+                    one=True
+                )
+                if allowed:
+                    folder = os.path.join(app.root_path, "uploads", "session_photos")
+                    return send_from_directory(folder, safe_name)
+
+        # Akun Orang Tua (Parent) dan pengguna umum diblokir demi privasi siswa
+        abort(403)
 
     # Registrasi Sistem SVG Icon Helper
     app.jinja_env.globals["icon"] = render_icon
     app.jinja_env.globals["svg_icon"] = render_icon
     app.template_filter("svg_icon")(render_icon)
+
+    import urllib.parse
+
+    def format_wa_billing_url(phone, student_name, amount):
+        if not phone:
+            return ""
+        clean_phone = "".join(ch for ch in str(phone) if ch.isdigit())
+        if clean_phone.startswith("0"):
+            clean_phone = "62" + clean_phone[1:]
+        elif not clean_phone.startswith("62") and clean_phone.startswith("8"):
+            clean_phone = "62" + clean_phone
+
+        try:
+            amt = float(amount or 0)
+        except (ValueError, TypeError):
+            amt = 0.0
+        nominal_str = f"{amt:,.0f}".replace(",", ".")
+
+        message = (
+            "Assalamu'alaikum, selamat malam Bapak/Ibu.\n\n"
+            f"Kami dari Admin DESI PRIVAT ingin menginformasikan bahwa periode pembelajaran Ananda *{student_name}* telah memasuki periode selanjutnya.\n\n"
+            f"Sehubungan dengan hal tersebut, kami ingin mengingatkan Bapak/Ibu terkait pembayaran biaya les untuk periode berikutnya sebesar *Rp{nominal_str}*.\n\n"
+            "Mohon kesediaannya untuk melakukan pembayaran agar kegiatan pembelajaran Ananda pada periode selanjutnya dapat terus berjalan dengan lancar.\n\n"
+            "Jika sudah melakukan pembayaran, Bapak/Ibu dapat mengabaikan pesan ini dan mengirimkan bukti pembayaran kepada admin.\n\n"
+            "Terima kasih atas perhatian dan kerja samanya.\n\n"
+            "Salam,\n"
+            "*Admin DESI PRIVAT*"
+        )
+        return f"https://wa.me/{clean_phone}?text={urllib.parse.quote(message)}"
+
+    app.jinja_env.globals["wa_billing_url"] = format_wa_billing_url
 
     # Context Processor untuk Template Jinja2
     @app.context_processor
@@ -139,6 +209,7 @@ def create_app(config_class=None):
     def status_badge_filter(status_code):
         labels = {
             "aktif": ("Aktif", "badge-success"),
+            "menunggu_validasi": ("Menunggu Validasi Pemilik", "badge-warning"),
             "nonaktif": ("Nonaktif", "badge-secondary"),
             "berhenti": ("Berhenti (Arsip)", "badge-warning"),
             "diarsipkan": ("Diarsipkan", "badge-warning"),

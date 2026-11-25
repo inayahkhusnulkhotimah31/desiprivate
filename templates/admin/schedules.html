@@ -17,7 +17,7 @@
         Jadwal tetap berulang setiap minggu yang ditetapkan Admin. Periode dan nomor pertemuan dihitung otomatis dari absensi kehadiran mentor.
       </div>
     </div>
-    <button class="btn btn-primary btn-sm" onclick="openModal('addRoutineModal')">
+    <button type="button" id="btnOpenAddRoutine" class="btn btn-primary btn-sm" onclick="openModal('addRoutineModal')">
       {{ icon('plus') }} Tambah Jadwal Rutin
     </button>
   </div>
@@ -111,7 +111,16 @@
               <span class="badge badge-success">Rutin Aktif</span>
             </td>
             <td>
-              <div style="display: flex; gap: 6px; align-items: center;">
+              <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                <button
+                  type="button"
+                  class="btn btn-warning btn-sm"
+                  onclick="openRoutineReplacementModal({{ rs.id }}, '{{ rs.student_name|escape }}', '{{ rs.program_name|escape }}', '{{ rs.mentor_name|escape }}', {{ rs.day_of_week }})"
+                  title="Tugaskan Mentor Pengganti Sementara untuk Sesi Mendatang"
+                  style="font-size: 11px; padding: 4px 8px;"
+                >
+                  {{ icon('user-check') }} Ganti Sementara
+                </button>
                 <button
                   type="button"
                   class="btn btn-secondary btn-sm"
@@ -132,7 +141,7 @@
           {% else %}
           <tr>
             <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 28px;">
-              Belum ada jadwal rutin mingguan. Klik tombol <strong>{{ icon('plus') }} Tambah Jadwal Rutin</strong> di atas atau tetapkan saat pendaftaran siswa baru.
+              Belum ada jadwal rutin mingguan. Klik tombol <strong>{{ icon('plus') }} Tambah Jadwal Rutin</strong> di kanan atas untuk menetapkan hari, jam, dan mentor bagi siswa yang pembayarannya telah divalidasi oleh Pemilik.
             </td>
           </tr>
           {% endfor %}
@@ -143,16 +152,16 @@
 </div>
 
 <!-- ======================================================= -->
-<!-- 2. KARTU RIWAYAT PELAKSANAAN SESI & LOG ABSENSI -->
+<!-- 2. KARTU DAFTAR SESI SPESIFIK & PENJADWALAN ULANG -->
 <!-- ======================================================= -->
 <div class="card">
   <div class="card-header">
     <div>
       <div class="card-title">
-        <span class="card-icon">{{ icon('clipboard') }}</span> Riwayat Pelaksanaan Sesi &amp; Absensi
+        <span class="card-icon">{{ icon('calendar') }}</span> Daftar Sesi Spesifik, Presensi &amp; Penjadwalan Ulang
       </div>
       <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
-        Dokumentasi sesi bimbingan yang telah dicatat atau dijadwalkan secara spesifik.
+        Dokumentasi sesi bimbingan belajar, penggantian mentor sementara, dan reschedule jadwal per pertemuan.
       </div>
     </div>
   </div>
@@ -189,6 +198,7 @@
           <tr>
             <th>Tanggal & Jam</th>
             <th>Siswa & Program</th>
+            <th>Pertemuan & Periode</th>
             <th>Mentor Pengampu</th>
             <th>Status Pelaksanaan</th>
             <th>Aksi & Pengelolaan</th>
@@ -211,11 +221,56 @@
               {% endif %}
             </td>
             <td>
+              {% if sc.session_status == 'terlaksana' or (sc.attendance_status == 'hadir' and sc.mentor_status != 'tidak_hadir') %}
+                {% if sc.meeting_number and sc.period_number %}
+                  <span class="badge badge-period" style="font-size: 11.5px;">
+                    Pertemuan {{ sc.meeting_number }} (Periode {{ sc.period_number }})
+                  </span>
+                  {% if sc.cumulative_meeting %}
+                    <div style="font-size: 10px; color: var(--text-muted); margin-top: 3px;">Kumulatif ke-{{ sc.cumulative_meeting }}</div>
+                  {% endif %}
+                {% else %}
+                  <span class="badge badge-period" style="font-size: 11.5px;">Sesi Terlaksana</span>
+                {% endif %}
+              {% elif sc.session_status in ('siswa_berhalangan', 'mentor_berhalangan') or sc.attendance_status in ('izin', 'tidak_hadir') %}
+                <span class="badge badge-warning" style="font-size: 11px;" title="Sesi berhalangan tidak menambah hitungan pertemuan atau periode">
+                  Tidak Dihitung
+                </span>
+                <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">
+                  {% if sc.session_status == 'siswa_berhalangan' %}Siswa Berhalangan{% elif sc.session_status == 'mentor_berhalangan' %}Mentor Berhalangan{% else %}Izin / Absen{% endif %}
+                </div>
+              {% else %}
+                <span class="badge badge-neutral" style="font-size: 11px;">Belum Terlaksana</span>
+              {% endif %}
+            </td>
+            <td>
               <div style="font-weight: 600; color: var(--navy-dark);">{{ sc.mentor_name }}</div>
             </td>
             <td>
               {% if sc.attendance_status %}
-                <span class="badge badge-success">Sudah Absen</span>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                  {% if sc.mentor_status %}
+                    <span class="badge {% if sc.mentor_status == 'hadir' %}badge-success{% else %}badge-danger{% endif %}" style="font-size: 11px;">
+                      Mentor: {{ sc.mentor_status|upper }}
+                    </span>
+                  {% endif %}
+                  {% if sc.session_status %}
+                    <span class="badge {% if sc.session_status == 'terlaksana' %}badge-primary{% elif sc.session_status == 'siswa_berhalangan' %}badge-warning{% else %}badge-danger{% endif %}" style="font-size: 11px;">
+                      Sesi: {{ sc.session_status|replace('_', ' ')|upper }}
+                    </span>
+                  {% else %}
+                    <span class="badge badge-success">Sudah Absen</span>
+                  {% endif %}
+                  {% if sc.documentation_photo %}
+                    <a href="{{ url_for('serve_session_photo', filename=sc.documentation_photo) }}" target="_blank" class="badge badge-success" style="text-decoration:none; display: inline-flex; align-items: center; gap: 4px; font-size: 11px;">
+                      {{ icon('camera') }} Lihat Foto
+                    </a>
+                  {% elif sc.documentation_status == 'menunggu' %}
+                    <span class="badge badge-warning" style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px;" title="{{ sc.documentation_pending_reason or 'Menunggu kelengkapan foto' }}">
+                      {{ icon('alert') }} Foto Menunggu
+                    </span>
+                  {% endif %}
+                </div>
               {% elif sc.status == 'ditolak' %}
                 <span class="badge badge-danger">Dibatalkan</span>
               {% else %}
@@ -224,20 +279,40 @@
             </td>
             <td>
               <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                {% if sc.documentation_status == 'menunggu' and sc.attendance_id %}
+                  <button
+                    type="button"
+                    class="btn btn-warning btn-sm"
+                    onclick="openCompleteDocModal({{ sc.attendance_id }}, '{{ sc.student_name }}', '{{ sc.schedule_date|date_indo }}', '{{ sc.documentation_pending_reason or '' }}')"
+                    title="Lengkapi Foto Dokumentasi"
+                  >
+                    {{ icon('camera') }} Lengkapi Foto
+                  </button>
+                {% endif %}
                 {% if not sc.attendance_status and sc.status != 'ditolak' %}
+                  <button
+                    type="button"
+                    class="btn btn-primary btn-sm"
+                    onclick="prepareRescheduleModal({{ sc.id }}, '{{ sc.student_name|escape }}', '{{ sc.program_name|escape }}', '{{ sc.mentor_name|escape }}', '{{ sc.schedule_date }}', '{{ sc.start_time }}', '{{ sc.end_time }}')"
+                    title="Reschedule Sesi Ini (Sementara)"
+                    style="font-size: 11px; padding: 4px 8px;"
+                  >
+                    {{ icon('calendar') }} Reschedule
+                  </button>
                   <button
                     type="button"
                     class="btn btn-warning btn-sm"
                     onclick="prepareMentorReplacementModal({{ sc.id }}, '{{ sc.mentor_name }}')"
-                    title="Ganti Mentor Pengganti"
+                    title="Tugaskan Mentor Pengganti Sementara untuk Sesi Ini"
+                    style="font-size: 11px; padding: 4px 8px;"
                   >
-                    {{ icon('refresh') }} Ganti Mentor
+                    {{ icon('user-check') }} Ganti Tentor
                   </button>
                   <form method="POST" action="{{ url_for('admin.admin_reject_schedule', schedule_id=sc.id) }}" onsubmit="return confirm('Batalkan sesi jadwal les ini?');" style="display:inline;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn btn-danger btn-sm" title="Batalkan Jadwal">Batalkan</button>
+                    <button type="submit" class="btn btn-danger btn-sm" title="Batalkan Jadwal" style="font-size: 11px; padding: 4px 8px;">Batalkan</button>
                   </form>
-                {% else %}
+                {% elif not sc.documentation_status or sc.documentation_status != 'menunggu' %}
                   <span style="font-size: 11.5px; color: var(--text-muted);">-</span>
                 {% endif %}
               </div>
@@ -245,7 +320,7 @@
           </tr>
           {% else %}
           <tr>
-            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 24px;">
+            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 24px;">
               Belum ada riwayat sesi spesifik yang tercatat pada filter ini.
             </td>
           </tr>
@@ -274,7 +349,7 @@
 
         <div class="form-group">
           <label class="form-label">Pilih Siswa <span style="color: var(--danger);">*</span></label>
-          <select class="form-select" name="student_id" required>
+          <select class="form-select" name="student_id" id="routineStudentSelect" required onchange="onRoutineStudentChange()">
             <option value="">-- Pilih Siswa Aktif --</option>
             {% for st in students %}
               <option value="{{ st.id }}">{{ st.full_name }}</option>
@@ -284,45 +359,149 @@
 
         <div class="grid-form-2">
           <div class="form-group">
-            <label class="form-label">Program Les <span style="color: var(--danger);">*</span></label>
-            <select class="form-select" name="program_id" required>
-              <option value="">-- Pilih Program --</option>
-              {% for pr in programs %}
-                <option value="{{ pr.id }}">{{ pr.name }}</option>
-              {% endfor %}
+            <label class="form-label">Program Les yang Diambil Siswa <span style="color: var(--danger);">*</span></label>
+            <select class="form-select" name="program_id" id="routineProgramSelect" required disabled onchange="onRoutineProgramChange()">
+              <option value="">-- Pilih Siswa Terlebih Dahulu --</option>
             </select>
+            <small style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 3px;">
+              Hanya menampilkan program les aktif yang diambil oleh siswa terpilih.
+            </small>
           </div>
           <div class="form-group">
-            <label class="form-label">Mentor Pengampu <span style="color: var(--danger);">*</span></label>
-            <select class="form-select" name="mentor_id" required>
-              <option value="">-- Pilih Mentor --</option>
-              {% for m in mentors %}
-                <option value="{{ m.id }}">{{ m.full_name }}</option>
-              {% endfor %}
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label class="form-label" style="margin: 0; font-size: 13px; font-weight: 600;">
+                Mentor Pengampu <span style="color: var(--danger);">*</span>
+              </label>
+              <button type="button" class="btn btn-outline-primary btn-sm" onclick="addAdditionalMentorSelect()" style="font-size: 11px; padding: 2px 8px; font-weight: 600;" title="Tambahkan mentor jika 1 anak diajar 2 mentor bergantian">
+                {{ icon('plus') }} Tambah Mentor
+              </button>
+            </div>
+            <div id="mentorSelectsContainer" style="display: flex; flex-direction: column; gap: 6px;">
+              <div class="mentor-select-row" style="display: flex; gap: 6px; align-items: center;">
+                <select class="form-select routine-mentor-select" name="mentor_ids[]" id="routineMentorSelect" required style="flex: 1;">
+                  <option value="">-- Pilih Mentor --</option>
+                  {% for m in mentors %}
+                    <option value="{{ m.id }}">{{ m.full_name }}</option>
+                  {% endfor %}
+                </select>
+                <button type="button" class="btn btn-outline-danger btn-sm btn-remove-mentor" onclick="removeAdditionalMentorSelect(this)" style="display: none; padding: 6px 10px;" title="Hapus Mentor">
+                  {{ icon('trash') }}
+                </button>
+              </div>
+            </div>
+            <small style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 3px;">
+              Jika 1 siswa diajar 2 mentor (misal bergantian di Gowa &amp; Makassar), klik <strong>+ Tambah Mentor</strong>.
+            </small>
+          </div>
+        </div>
+
+        <!-- PILIHAN PAKET PERIODE -->
+        <div class="form-group" style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+            <div>
+              <label class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 2px; color: var(--navy-dark);">
+                {{ icon('settings') }} Paket Siklus Pertemuan per Periode
+              </label>
+              <div style="font-size: 11px; color: var(--text-muted);">
+                Tentukan target siklus periode: 4, 8, atau 12 pertemuan (menentukan kapan periode baru dimulai &amp; fee tentor cair).
+              </div>
+            </div>
+            <select class="form-select form-select-sm" name="meetings_per_period" id="routineMeetingsPerPeriodSelect" style="max-width: 240px; font-weight: 700; color: var(--navy-dark);">
+              <option value="8" selected>8 Pertemuan / Periode (Standar - 8 Sesi)</option>
+              <option value="4">4 Pertemuan / Periode (Paket Khusus - 4 Sesi)</option>
+              <option value="12">12 Pertemuan / Periode (Paket Intensif - 12 Sesi)</option>
             </select>
           </div>
         </div>
 
-        <div class="grid-form-3">
-          <div class="form-group">
-            <label class="form-label">Hari Les <span style="color: var(--danger);">*</span></label>
-            <select class="form-select" name="day_of_week" required>
-              <option value="0">Senin</option>
-              <option value="1">Selasa</option>
-              <option value="2">Rabu</option>
-              <option value="3">Kamis</option>
-              <option value="4">Jumat</option>
-              <option value="5" selected>Sabtu</option>
-              <option value="6">Minggu</option>
-            </select>
+        <!-- RIWAYAT BELAJAR AWAL (KHUSUS SISWA LAMA - OPSIONAL) -->
+        <div style="background: var(--blue-ultra-soft, #eff6ff); border: 1.5px solid var(--border-blue, #bfdbfe); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+            <label class="form-label" style="font-weight: 700; color: var(--navy-dark); margin-bottom: 0; font-size: 12px;">
+              {{ icon('settings') }} Riwayat Belajar Awal (Khusus Siswa Lama)
+            </label>
+            <span class="badge badge-info" style="font-size: 10px;">Opsional</span>
           </div>
-          <div class="form-group">
-            <label class="form-label">Jam Mulai <span style="color: var(--danger);">*</span></label>
-            <input type="time" class="form-control" name="start_time" value="09:00" required>
+          <p style="font-size: 11px; color: var(--text-body); margin-bottom: 8px;">
+            Jika siswa sudah pernah mengikuti les sebelum sistem ini digunakan, tentukan posisi periode dan pertemuan terakhirnya. Sistem akan otomatis melanjutkan penomoran pertemuan dari posisi berikutnya.
+          </p>
+          <div class="grid-form-2">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 11px;">Periode Terakhir Selesai</label>
+              <input type="number" class="form-control form-control-sm" name="initial_periods_completed" value="1" min="1" max="25">
+              <small style="font-size: 10px; color: var(--text-muted);">Contoh: 1</small>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 11px;">Pertemuan Terakhir pada Periode Tersebut</label>
+              <input type="number" class="form-control form-control-sm" name="initial_last_meeting" value="0" min="0" max="12">
+              <small style="font-size: 10px; color: var(--text-muted);">Contoh: 3 (maka sesi awal web = Pertemuan 4)</small>
+            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label">Jam Selesai <span style="color: var(--danger);">*</span></label>
-            <input type="time" class="form-control" name="end_time" value="10:30" required>
+          <div class="form-group" style="margin-top: 8px; margin-bottom: 0;">
+            <input type="text" class="form-control form-control-sm" name="initial_offset_notes" placeholder="Catatan riwayat offline siswa lama (opsional)...">
+          </div>
+        </div>
+
+        <!-- PENGATURAN HARI & WAKTU LES (BISA LEBIH DARI 1 HARI / JADWAL LAIN) -->
+        <div style="margin-top: 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <label class="form-label" style="font-weight: 700; margin: 0; color: var(--navy-dark); font-size: 13px;">
+            {{ icon('clock') }} Jadwal Hari &amp; Jam Les Rutin
+          </label>
+          <button type="button" class="btn btn-secondary btn-sm" id="btnAddRoutineSlot" onclick="addRoutineSlotRow()" style="font-size: 11.5px; padding: 4px 10px; font-weight: 600;">
+            {{ icon('plus') }} Tambah Hari / Jadwal Lain
+          </button>
+        </div>
+
+        <div id="routineSlotsContainer" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+          <!-- Slot 1 (Default) -->
+          <div class="routine-slot-row" style="background: var(--bg-soft); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px;">
+            <div style="display: grid; grid-template-columns: 2fr 1.5fr 1.5fr auto; gap: 8px; align-items: flex-end;">
+              <div>
+                <label class="form-label" style="font-size: 11px; margin-bottom: 3px;">Hari Les <span style="color:red">*</span></label>
+                <select class="form-select slot-day" name="day_of_week[]" id="routineDaySelect" required onchange="fetchMentorRecommendations()">
+                  <option value="0">Senin</option>
+                  <option value="1">Selasa</option>
+                  <option value="2">Rabu</option>
+                  <option value="3">Kamis</option>
+                  <option value="4">Jumat</option>
+                  <option value="5" selected>Sabtu</option>
+                  <option value="6">Minggu</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" style="font-size: 11px; margin-bottom: 3px;">Mulai <span style="color:red">*</span></label>
+                <input type="time" class="form-control slot-start" name="start_time[]" id="routineStartInput" value="09:00" required onchange="fetchMentorRecommendations()">
+              </div>
+              <div>
+                <label class="form-label" style="font-size: 11px; margin-bottom: 3px;">Selesai <span style="color:red">*</span></label>
+                <input type="time" class="form-control slot-end" name="end_time[]" id="routineEndInput" value="10:30" required onchange="fetchMentorRecommendations()">
+              </div>
+              <div>
+                <button type="button" class="btn btn-danger btn-sm btn-remove-slot" onclick="removeRoutineSlotRow(this)" style="display: none; padding: 7px 10px;" title="Hapus Baris Slot Ini">
+                  {{ icon('trash') }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANEL REKOMENDASI MENTOR (LANGKAH 4) -->
+        <div id="recommendationSection" style="margin-top: 14px; margin-bottom: 14px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: #f8fafc; padding: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <label style="font-size: 12.5px; font-weight: 700; color: var(--navy-primary); display: flex; align-items: center; gap: 5px; margin: 0;">
+              {{ icon('star') }} Rekomendasi Mentor untuk Sesi Ini
+            </label>
+            <span id="recLoadingIndicator" style="font-size: 11px; color: var(--text-muted); display: none;">
+              Memuat rekomendasi...
+            </span>
+          </div>
+
+          <div id="recHelperText" style="font-size: 11.5px; color: var(--text-muted);">
+            Pilih siswa, program les, hari, dan jam untuk melihat peringkat kecocokan mentor.
+          </div>
+
+          <div id="recCardsContainer" style="display: none; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; padding-right: 4px;">
+            <!-- Kartu rekomendasi di-render dinamis oleh JavaScript -->
           </div>
         </div>
 
@@ -444,7 +623,194 @@
   </div>
 </div>
 
+<!-- ======================================================= -->
+<!-- MODAL RESCHEDULE SESI BELAJAR (SEMENTARA) -->
+<!-- ======================================================= -->
+<div class="modal-overlay" id="rescheduleModal">
+  <div class="modal-dialog" style="max-width: 520px;">
+    <div class="modal-header">
+      <div class="modal-title">{{ icon('calendar') }} Reschedule Sesi Bimbingan (Sementara)</div>
+      <button class="modal-close-btn" onclick="closeModal('rescheduleModal')">&times;</button>
+    </div>
+    <form method="POST" id="rescheduleForm" action="">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-left: 4px solid var(--blue-brand); border-radius: 6px; padding: 10px 12px; margin-bottom: 14px; font-size: 12.5px; color: var(--navy-dark);">
+          <strong>Catatan Reschedule Sementara:</strong> Penggeseran tanggal/waktu ini hanya berlaku khusus untuk 1 sesi ini saja tanpa merusak formula jadwal rutin mingguan siswa.
+        </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label">Siswa &amp; Program</label>
+          <div style="font-weight: 700; color: var(--navy-dark); font-size: 14px;" id="reschedStudentProgram">-</div>
+        </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label">Mentor Pengampu</label>
+          <div style="font-weight: 600; color: var(--blue-brand); font-size: 13px;" id="reschedMentorName">-</div>
+        </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label">Jadwal Sebelumnya</label>
+          <div style="font-size: 12.5px; color: var(--text-muted);" id="reschedCurrentTimeInfo">-</div>
+        </div>
+        <div class="grid-form-3" style="margin-bottom: 12px;">
+          <div class="form-group">
+            <label class="form-label">Tanggal Baru <span style="color: red;">*</span></label>
+            <input type="date" class="form-control" name="schedule_date" id="reschedNewDate" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Jam Mulai <span style="color: red;">*</span></label>
+            <input type="time" class="form-control" name="start_time" id="reschedNewStart" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Jam Selesai</label>
+            <input type="time" class="form-control" name="end_time" id="reschedNewEnd">
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom: 8px;">
+          <label class="form-label">Alasan Reschedule <span style="color: red;">*</span></label>
+          <input type="text" class="form-control" name="reason" placeholder="Contoh: Siswa sakit / ada kegiatan sekolah mendadak..." required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('rescheduleModal')">Batal</button>
+        <button type="submit" class="btn btn-primary">Simpan Reschedule Sesi</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ======================================================= -->
+<!-- MODAL TUGASKAN PENGGANTI SEMENTARA DARI JADWAL RUTIN -->
+<!-- ======================================================= -->
+<div class="modal-overlay" id="routineReplacementModal">
+  <div class="modal-dialog" style="max-width: 520px;">
+    <div class="modal-header">
+      <div class="modal-title">{{ icon('user-check') }} Tugaskan Mentor Pengganti Sementara</div>
+      <button class="modal-close-btn" onclick="closeModal('routineReplacementModal')">&times;</button>
+    </div>
+    <form method="POST" id="routineReplacementForm" action="">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <div style="background: #fefce8; border: 1px solid #fef08a; border-left: 4px solid #eab308; border-radius: 6px; padding: 10px 12px; margin-bottom: 14px; font-size: 12.5px; color: #854d0e;">
+          Tugaskan mentor pengganti untuk sesi tertentu saat mentor utama berhalangan hadir. Hak honor sesi tersebut akan dialihkan secara otomatis ke mentor pengganti.
+        </div>
+        <div class="form-group" style="margin-bottom: 10px;">
+          <label class="form-label">Siswa &amp; Program</label>
+          <div style="font-weight: 700; color: var(--navy-dark); font-size: 13.5px;" id="routineRepStudentProgram">-</div>
+        </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label">Mentor Utama Saat Ini</label>
+          <div style="font-weight: 600; color: var(--text-body); font-size: 13px;" id="routineRepMentorName">-</div>
+        </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label">Tanggal Sesi yang Digantikan <span style="color: red;">*</span></label>
+          <input type="date" class="form-control" name="target_date" id="routineRepTargetDate" required>
+        </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label">Pilih Mentor Pengganti <span style="color: red;">*</span></label>
+          <select class="form-select" name="replacement_mentor_id" required>
+            <option value="">-- Pilih Mentor Pengganti --</option>
+            {% for m in mentors %}
+              <option value="{{ m.id }}">{{ m.full_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 8px;">
+          <label class="form-label">Alasan Penggantian <span style="color: red;">*</span></label>
+          <input type="text" class="form-control" name="reason" placeholder="Contoh: Mentor utama sakit / dinas luar kota..." required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('routineReplacementModal')">Batal</button>
+        <button type="submit" class="btn btn-warning">Tugaskan Mentor Pengganti</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Pelengkapan Dokumentasi Foto Tertunda (Langkah 3) -->
+<div class="modal-overlay" id="completeDocModal">
+  <div class="modal-dialog" style="max-width: 520px;">
+    <div class="modal-header">
+      <div class="modal-title">{{ icon('camera') }} Lengkapi Foto Dokumentasi Sesi Belajar</div>
+      <button class="modal-close-btn" onclick="closeModal('completeDocModal')">&times;</button>
+    </div>
+    <form method="POST" id="completeDocForm" action="" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body">
+        <div style="background: var(--blue-ultra-soft); border: 1px solid var(--border-blue); border-radius: 6px; padding: 12px; margin-bottom: 14px; font-size: 13px;">
+          <div>Siswa: <strong id="docModalStudentName"></strong></div>
+          <div>Tanggal Sesi: <strong id="docModalScheduleDate"></strong></div>
+          <div style="margin-top: 6px; color: #856404; font-size: 12px;">
+            Alasan Kendala Sebelumnya: <span id="docModalReason" style="font-style: italic;"></span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            Pilih Foto Dokumentasi Susulan <span style="color: var(--danger);">* (Maks. 5MB)</span>
+          </label>
+          <input type="file" name="session_photo" class="form-control" accept="image/*" required>
+          <small style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
+            Format JPG, PNG, atau WebP. Foto akan tersimpan aman dan terproteksi.
+          </small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('completeDocModal')">Batal</button>
+        <button type="submit" class="btn btn-primary">{{ icon('backup') }} Simpan &amp; Verifikasi Foto</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
+  // Fallback modal handlers jika script eksternal belum selesai dimuat
+  if (typeof window.openModal !== "function") {
+    window.openModal = function(modalId) {
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        modal.classList.add("active");
+        document.body.style.overflow = "hidden";
+        const bodyEl = modal.querySelector(".modal-body");
+        if (bodyEl) bodyEl.scrollTop = 0;
+      }
+    };
+  }
+  if (typeof window.closeModal !== "function") {
+    window.closeModal = function(modalId) {
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        modal.classList.remove("active");
+        const hasOther = document.querySelector(".modal-overlay.active");
+        if (!hasOther) document.body.style.overflow = "";
+      }
+    };
+  }
+
+  // Event listener tombol Tambah Jadwal Rutin
+  function bindAddRoutineBtn() {
+    const btn = document.getElementById("btnOpenAddRoutine");
+    if (btn) {
+      btn.addEventListener("click", function(e) {
+        e.preventDefault();
+        window.openModal("addRoutineModal");
+      });
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindAddRoutineBtn);
+  } else {
+    bindAddRoutineBtn();
+  }
+
+  function openCompleteDocModal(attId, studentName, dateIndo, reason) {
+    document.getElementById("docModalStudentName").innerText = studentName;
+    document.getElementById("docModalScheduleDate").innerText = dateIndo;
+    document.getElementById("docModalReason").innerText = reason || "Tidak ada alasan spesifik";
+    document.getElementById("completeDocForm").action = "/admin/attendance/" + attId + "/complete-documentation";
+    openModal("completeDocModal");
+  }
+
   function openEditRoutineModal(id, day, start, end, mentorId, subject, notes) {
     document.getElementById("editRoutineForm").action = "/admin/schedules/routine/" + id + "/edit";
     document.getElementById("editRoutineDay").value = day;
@@ -461,6 +827,367 @@
     document.getElementById("replaceCurrentMentorName").innerText = currentMentorName;
     document.getElementById("replaceMentorForm").action = "/admin/schedules/" + schedId + "/replace-mentor";
     openModal("replacementModal");
+  }
+
+  function prepareRescheduleModal(schedId, studentName, programName, mentorName, currentDate, currentStart, currentEnd) {
+    document.getElementById("reschedStudentProgram").innerText = studentName + " (" + programName + ")";
+    document.getElementById("reschedMentorName").innerText = mentorName;
+    document.getElementById("reschedCurrentTimeInfo").innerText = currentDate + " (" + currentStart + " - " + currentEnd + " WIB)";
+    document.getElementById("reschedNewDate").value = currentDate;
+    document.getElementById("reschedNewStart").value = currentStart;
+    document.getElementById("reschedNewEnd").value = currentEnd;
+    document.getElementById("rescheduleForm").action = "/admin/schedules/" + schedId + "/reschedule";
+    openModal("rescheduleModal");
+  }
+
+  function openRoutineReplacementModal(routineId, studentName, programName, mentorName, dayOfWeek) {
+    document.getElementById("routineRepStudentProgram").innerText = studentName + " (" + programName + ")";
+    document.getElementById("routineRepMentorName").innerText = mentorName;
+
+    // Hitung tanggal terdekat untuk hari les tersebut
+    var today = new Date();
+    var currentDay = today.getDay(); // 0 is Sunday, 1 is Monday in JS
+    // In our system: 0=Senin, 1=Selasa, 2=Rabu, 3=Kamis, 4=Jumat, 5=Sabtu, 6=Minggu
+    var jsDay = (dayOfWeek + 1) % 7;
+    var diff = jsDay - currentDay;
+    if (diff <= 0) diff += 7;
+    var targetDate = new Date(today);
+    targetDate.setDate(today.getDate() + diff);
+    var yyyy = targetDate.getFullYear();
+    var mm = String(targetDate.getMonth() + 1).padStart(2, '0');
+    var dd = String(targetDate.getDate()).padStart(2, '0');
+    document.getElementById("routineRepTargetDate").value = yyyy + '-' + mm + '-' + dd;
+
+    document.getElementById("routineReplacementForm").action = "/admin/routine-schedules/" + routineId + "/assign-temporary-mentor";
+    openModal("routineReplacementModal");
+  }
+
+  // SISTEM REKOMENDASI MENTOR (LANGKAH 4)
+  function escapeJs(str) {
+    if (!str) return '';
+    return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+  }
+
+  function selectMentorFromRecommendation(mentorId, mentorName) {
+    const selects = document.querySelectorAll(".routine-mentor-select");
+    let target = null;
+    for (let s of selects) {
+      if (!s.value) {
+        target = s;
+        break;
+      }
+    }
+    if (!target && selects.length > 0) {
+      target = selects[0];
+    }
+    if (target) {
+      target.value = mentorId;
+      target.style.borderColor = "#10b981";
+      target.style.backgroundColor = "#ecfdf5";
+      setTimeout(function() {
+        target.style.borderColor = "";
+        target.style.backgroundColor = "";
+      }, 1500);
+    }
+  }
+
+  function renderRecommendationCards(recommendations) {
+    const container = document.getElementById("recCardsContainer");
+    const helper = document.getElementById("recHelperText");
+    if (!container || !helper) return;
+
+    container.innerHTML = "";
+
+    if (!recommendations || recommendations.length === 0) {
+      helper.innerText = "Tidak ada mentor aktif yang ditemukan.";
+      helper.style.display = "block";
+      container.style.display = "none";
+      return;
+    }
+
+    helper.style.display = "none";
+    container.style.display = "flex";
+
+    recommendations.forEach(function(item) {
+      const card = document.createElement("div");
+      card.className = "recommendation-card";
+
+      let borderLeftColor = "#94a3b8"; // default abu-abu (bebas bentrok tanpa info)
+      if (item.time_status === "tersedia") borderLeftColor = "#10b981"; // hijau
+      else if (item.time_status === "luar_preferensi") borderLeftColor = "#f59e0b"; // kuning
+      else if (item.time_status === "bentrok") borderLeftColor = "#ef4444"; // merah
+
+      card.style.cssText = "background: white; border: 1px solid " + (item.has_conflict ? '#fca5a5' : '#e2e8f0') +
+        "; border-left: 4px solid " + borderLeftColor +
+        "; border-radius: 6px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;";
+
+      let badgeClass = "badge-secondary";
+      if (item.time_badge === "success") badgeClass = "badge-success";
+      else if (item.time_badge === "warning") badgeClass = "badge-warning";
+      else if (item.time_badge === "danger") badgeClass = "badge-danger";
+
+      let conflictHtml = "";
+      if (item.has_conflict && item.conflict_info) {
+        conflictHtml = '<div style="font-size: 11px; color: #dc2626; font-weight: 600; margin-top: 3px;">⚠️ ' +
+          escapeJs(item.conflict_info.message) + '</div>';
+      }
+
+      let expBadgeHtml = "";
+      if (item.expertise_matched) {
+        expBadgeHtml = '<span class="badge badge-primary" style="font-size: 10.5px;">✓ ' + escapeJs(item.expertise_label) + '</span>';
+      } else {
+        expBadgeHtml = '<span class="badge badge-light" style="font-size: 10.5px; border: 1px solid #cbd5e1; color: #64748b;">' + escapeJs(item.expertise_label) + '</span>';
+      }
+
+      let distHtml = '<span style="font-size: 11px; color: var(--text-muted); display: inline-flex; align-items: center; gap: 3px;">📍 Jarak: <strong>' + escapeJs(item.distance_label) + '</strong></span>';
+
+      card.innerHTML =
+        '<div style="flex: 1;">' +
+          '<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">' +
+            '<strong style="font-size: 13px; color: var(--navy-primary);">' + item.rank + '. ' + escapeJs(item.mentor_name) + '</strong>' +
+            '<span class="badge ' + badgeClass + '" style="font-size: 10.5px;">' + escapeJs(item.time_label) + '</span>' +
+            expBadgeHtml +
+          '</div>' +
+          '<div style="margin-top: 4px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">' +
+            distHtml +
+            '<span style="font-size: 11px; color: var(--text-muted);">Keahlian: <em>' + escapeJs(item.expertise) + '</em></span>' +
+          '</div>' +
+          conflictHtml +
+        '</div>' +
+        '<div>' +
+          '<button type="button" class="btn btn-sm ' + (item.has_conflict ? 'btn-outline-secondary' : 'btn-outline-primary') + '" ' +
+            'style="font-size: 11.5px; padding: 4px 8px; white-space: nowrap;" ' +
+            'onclick="selectMentorFromRecommendation(' + item.mentor_id + ', \'' + escapeJs(item.mentor_name) + '\')">' +
+            'Pilih Mentor Ini' +
+          '</button>' +
+        '</div>';
+
+      container.appendChild(card);
+    });
+  }
+
+  function onRoutineStudentChange() {
+    const studentSelect = document.getElementById("routineStudentSelect");
+    const programSelect = document.getElementById("routineProgramSelect");
+    const mentorSelect = document.getElementById("routineMentorSelect");
+    const studentId = studentSelect ? studentSelect.value : "";
+
+    if (!programSelect) return;
+
+    if (!studentId) {
+      programSelect.innerHTML = '<option value="">-- Pilih Siswa Terlebih Dahulu --</option>';
+      programSelect.disabled = true;
+      fetchMentorRecommendations();
+      return;
+    }
+
+    programSelect.disabled = true;
+    programSelect.innerHTML = '<option value="">Memuat program les siswa...</option>';
+
+    fetch("/admin/api/students/" + studentId + "/programs")
+      .then(function(res) { return res.json(); })
+      .then(function(programs) {
+        programSelect.disabled = false;
+        if (!programs || programs.length === 0) {
+          programSelect.innerHTML = '<option value="">-- Siswa ini belum mengambil program les --</option>';
+        } else {
+          var html = '<option value="">-- Pilih Program yang Diambil Siswa --</option>';
+          programs.forEach(function(p) {
+            var mentorAttr = p.mentor_id ? ' data-mentor-id="' + p.mentor_id + '"' : '';
+            var mppAttr = ' data-mpp="' + (p.meetings_per_period || 8) + '"';
+            html += '<option value="' + p.id + '"' + mentorAttr + mppAttr + '>' + p.name + ' (' + (p.level || 'Umum') + ' - ' + (p.meetings_per_period || 8) + ' Sesi/Periode)</option>';
+          });
+          programSelect.innerHTML = html;
+
+          if (programs.length === 1) {
+            programSelect.value = programs[0].id;
+            var mppSelect = document.getElementById("routineMeetingsPerPeriodSelect");
+            if (mppSelect && programs[0].meetings_per_period) {
+              mppSelect.value = programs[0].meetings_per_period;
+            }
+            if (mentorSelect && programs[0].mentor_id && !mentorSelect.value) {
+              mentorSelect.value = programs[0].mentor_id;
+            }
+          }
+        }
+        fetchMentorRecommendations();
+      })
+      .catch(function() {
+        programSelect.disabled = false;
+        programSelect.innerHTML = '<option value="">Gagal memuat program les siswa</option>';
+        fetchMentorRecommendations();
+      });
+  }
+
+  function onRoutineProgramChange() {
+    var programSelect = document.getElementById("routineProgramSelect");
+    var mppSelect = document.getElementById("routineMeetingsPerPeriodSelect");
+    if (programSelect && mppSelect && programSelect.selectedIndex >= 0) {
+      var selectedOption = programSelect.options[programSelect.selectedIndex];
+      if (selectedOption && selectedOption.dataset && selectedOption.dataset.mpp) {
+        mppSelect.value = selectedOption.dataset.mpp;
+      }
+    }
+    fetchMentorRecommendations();
+  }
+
+  function fetchMentorRecommendations() {
+    const studentSelect = document.getElementById("routineStudentSelect");
+    const programSelect = document.getElementById("routineProgramSelect");
+    const daySelect = document.getElementById("routineDaySelect");
+    const startInput = document.getElementById("routineStartInput");
+    const endInput = document.getElementById("routineEndInput");
+
+    const studentId = studentSelect ? studentSelect.value : "";
+    const programId = programSelect ? programSelect.value : "";
+    const dayOfWeek = daySelect ? daySelect.value : "";
+    const startTime = startInput ? startInput.value.trim() : "";
+    const endTime = endInput ? endInput.value.trim() : "";
+
+    const helper = document.getElementById("recHelperText");
+    const container = document.getElementById("recCardsContainer");
+    const loader = document.getElementById("recLoadingIndicator");
+
+    if (!studentId || !programId || dayOfWeek === "" || !startTime || !endTime) {
+      if (helper) {
+        helper.style.display = "block";
+        helper.innerText = "Pilih siswa, program les, hari, dan jam untuk melihat peringkat kecocokan mentor.";
+      }
+      if (container) container.style.display = "none";
+      return;
+    }
+
+    if (loader) loader.style.display = "inline";
+
+    const url = "/admin/api/mentor-recommendations?student_id=" + encodeURIComponent(studentId) +
+      "&program_id=" + encodeURIComponent(programId) +
+      "&day_of_week=" + encodeURIComponent(dayOfWeek) +
+      "&start_time=" + encodeURIComponent(startTime) +
+      "&end_time=" + encodeURIComponent(endTime);
+
+    fetch(url)
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (loader) loader.style.display = "none";
+        if (data.success && data.recommendations) {
+          renderRecommendationCards(data.recommendations);
+        } else {
+          if (helper) {
+            helper.style.display = "block";
+            helper.innerText = data.message || "Gagal memuat rekomendasi mentor.";
+          }
+          if (container) container.style.display = "none";
+        }
+      })
+      .catch(function(err) {
+        if (loader) loader.style.display = "none";
+        if (helper) {
+          helper.style.display = "block";
+          helper.innerText = "Terjadi kendala saat memuat rekomendasi.";
+        }
+        if (container) container.style.display = "none";
+      });
+  }
+
+  function addAdditionalMentorSelect() {
+    const container = document.getElementById("mentorSelectsContainer");
+    if (!container) return;
+    const firstRow = container.querySelector(".mentor-select-row");
+    const newRow = firstRow.cloneNode(true);
+    const select = newRow.querySelector("select");
+    select.id = "";
+    select.value = "";
+    const removeBtn = newRow.querySelector(".btn-remove-mentor");
+    if (removeBtn) removeBtn.style.display = "inline-flex";
+    container.appendChild(newRow);
+    updateMentorRemoveButtons();
+  }
+
+  function removeAdditionalMentorSelect(btn) {
+    const container = document.getElementById("mentorSelectsContainer");
+    if (!container) return;
+    const rows = container.querySelectorAll(".mentor-select-row");
+    if (rows.length > 1) {
+      btn.closest(".mentor-select-row").remove();
+    }
+    updateMentorRemoveButtons();
+  }
+
+  function updateMentorRemoveButtons() {
+    const container = document.getElementById("mentorSelectsContainer");
+    if (!container) return;
+    const rows = container.querySelectorAll(".mentor-select-row");
+    rows.forEach(function(row) {
+      const btn = row.querySelector(".btn-remove-mentor");
+      if (btn) btn.style.display = (rows.length > 1) ? "inline-flex" : "none";
+    });
+  }
+
+  function addRoutineSlotRow() {
+    const container = document.getElementById("routineSlotsContainer");
+    if (!container) return;
+
+    const rows = container.querySelectorAll(".routine-slot-row");
+    const defaultDays = ["0", "1", "2", "3", "4", "5", "6"];
+    const usedDays = Array.from(rows).map(function(r) { return r.querySelector(".slot-day").value; });
+    const availableDay = defaultDays.find(function(d) { return !usedDays.includes(d); }) || "1";
+
+    const newRow = document.createElement("div");
+    newRow.className = "routine-slot-row";
+    newRow.style.cssText = "background: var(--bg-soft); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px; margin-top: 4px; animation: fadeIn 0.2s;";
+    newRow.innerHTML =
+      '<div style="display: grid; grid-template-columns: 2fr 1.5fr 1.5fr auto; gap: 8px; align-items: flex-end;">' +
+        '<div>' +
+          '<label class="form-label" style="font-size: 11px; margin-bottom: 3px;">Hari Les <span style="color:red">*</span></label>' +
+          '<select class="form-select slot-day" name="day_of_week[]" required onchange="fetchMentorRecommendations()">' +
+            '<option value="0"' + (availableDay === "0" ? " selected" : "") + '>Senin</option>' +
+            '<option value="1"' + (availableDay === "1" ? " selected" : "") + '>Selasa</option>' +
+            '<option value="2"' + (availableDay === "2" ? " selected" : "") + '>Rabu</option>' +
+            '<option value="3"' + (availableDay === "3" ? " selected" : "") + '>Kamis</option>' +
+            '<option value="4"' + (availableDay === "4" ? " selected" : "") + '>Jumat</option>' +
+            '<option value="5"' + (availableDay === "5" ? " selected" : "") + '>Sabtu</option>' +
+            '<option value="6"' + (availableDay === "6" ? " selected" : "") + '>Minggu</option>' +
+          '</select>' +
+        '</div>' +
+        '<div>' +
+          '<label class="form-label" style="font-size: 11px; margin-bottom: 3px;">Mulai <span style="color:red">*</span></label>' +
+          '<input type="time" class="form-control slot-start" name="start_time[]" value="16:00" required onchange="fetchMentorRecommendations()">' +
+        '</div>' +
+        '<div>' +
+          '<label class="form-label" style="font-size: 11px; margin-bottom: 3px;">Selesai <span style="color:red">*</span></label>' +
+          '<input type="time" class="form-control slot-end" name="end_time[]" value="17:30" required onchange="fetchMentorRecommendations()">' +
+        '</div>' +
+        '<div>' +
+          '<button type="button" class="btn btn-danger btn-sm btn-remove-slot" onclick="removeRoutineSlotRow(this)" style="padding: 7px 10px;" title="Hapus Baris Slot Ini">' +
+            '{{ icon("trash") }}' +
+          '</button>' +
+        '</div>' +
+      '</div>';
+
+    container.appendChild(newRow);
+    updateRemoveButtons();
+    fetchMentorRecommendations();
+  }
+
+  function removeRoutineSlotRow(btn) {
+    const row = btn.closest(".routine-slot-row");
+    if (row) {
+      row.remove();
+      updateRemoveButtons();
+      fetchMentorRecommendations();
+    }
+  }
+
+  function updateRemoveButtons() {
+    const container = document.getElementById("routineSlotsContainer");
+    if (!container) return;
+    const rows = container.querySelectorAll(".routine-slot-row");
+    rows.forEach(function(r) {
+      const removeBtn = r.querySelector(".btn-remove-slot");
+      if (removeBtn) {
+        removeBtn.style.display = rows.length > 1 ? "inline-block" : "none";
+      }
+    });
   }
 </script>
 {% endblock %}

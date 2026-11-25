@@ -27,6 +27,7 @@
         <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>Admin Pengelola</option>
         <option value="owner" {% if role_filter == 'owner' %}selected{% endif %}>Pemilik</option>
         <option value="mentor" {% if role_filter == 'mentor' %}selected{% endif %}>Mentor</option>
+        <option value="parent" {% if role_filter == 'parent' %}selected{% endif %}>Orang Tua / Wali</option>
       </select>
       <button type="submit" class="btn btn-secondary">Filter</button>
       {% if search or role_filter %}
@@ -65,7 +66,7 @@
               {% elif acc.role == 'mentor' %}
                 <span class="badge badge-success">Mentor Pengajar</span>
               {% elif acc.role == 'parent' %}
-                <span class="badge badge-secondary" title="Akses login parent dinonaktifkan sistem">Orang Tua (Akses Nonaktif)</span>
+                <span class="badge badge-primary">Orang Tua / Wali</span>
               {% endif %}
             </td>
             <td>{{ acc.full_name }}</td>
@@ -138,6 +139,7 @@
               <option value="admin">Admin / Pengelola</option>
               <option value="owner">Pemilik (Supervisi Baca Saja)</option>
               <option value="mentor">Mentor Pengajar</option>
+              <option value="parent">Orang Tua / Wali Murid</option>
             </select>
           </div>
         </div>

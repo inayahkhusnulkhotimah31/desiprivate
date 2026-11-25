@@ -1,0 +1,566 @@
+{% extends "base.html" %}
+{% block title %}Tagihan &amp; Tunggakan Siswa (Pemilik){% endblock %}
+{% block page_title %}Pengawasan Tagihan, Cicilan &amp; Tunggakan Siswa{% endblock %}
+{% block page_subtitle %}Validasi pembayaran murid baru sebelum pembelajaran dimulai, pemantauan pembayaran cicilan, dan kontrol sisa tunggakan periode.{% endblock %}
+
+{% block content %}
+<style>
+  .stat-card.interactive {
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    border: 1px solid var(--border-subtle, #e2e8f0);
+  }
+  .stat-card.interactive:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 18px -3px rgba(0, 0, 0, 0.1);
+    border-color: var(--blue-brand, #0284c7);
+  }
+  .stat-card.interactive .stat-hint {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--blue-brand, #0284c7);
+    margin-top: 6px;
+    display: inline-block;
+  }
+  .pending-validation-card {
+    background: #fffbeb;
+    border: 1.5px solid #fde68a;
+    border-left: 5px solid #f59e0b;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+  }
+  .billing-alert-banner {
+    background: #f0fdf4;
+    border: 1.5px solid #bbf7d0;
+    border-left: 5px solid #16a34a;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+  }
+</style>
+
+<!-- KARTU STATISTIK TAGIHAN & TUNGGAKAN (INTERAKTIF) -->
+{% set total_billed = bills | sum(attribute='total_amount') %}
+{% set total_paid = bills | sum(attribute='paid_amount') %}
+{% set total_remaining = bills | sum(attribute='remaining_amount') %}
+
+<div class="stats-grid" style="margin-bottom: 24px;">
+  <div class="stat-card interactive" onclick="filterTableStatus('all')" title="Klik untuk menampilkan semua tagihan">
+    <div class="stat-icon">{{ icon('receipt') }}</div>
+    <div>
+      <div class="stat-value">Rp {{ "{:,.0f}".format(total_billed).replace(",", ".") }}</div>
+      <div class="stat-label">Total Tagihan Periode (Semua)</div>
+      <div class="stat-hint">Lihat Semua Tagihan &darr;</div>
+    </div>
+  </div>
+
+  <div class="stat-card interactive success" onclick="filterTableStatus('lunas')" title="Klik untuk memfilter tagihan lunas">
+    <div class="stat-icon">{{ icon('check-circle') }}</div>
+    <div>
+      <div class="stat-value">Rp {{ "{:,.0f}".format(total_paid).replace(",", ".") }}</div>
+      <div class="stat-label">Total Pembayaran Diterima</div>
+      <div class="stat-hint">Lihat Tagihan Lunas &darr;</div>
+    </div>
+  </div>
+
+  <div class="stat-card interactive {% if total_remaining > 0 %}danger{% endif %}" onclick="filterTableStatus('belum_lunas')" title="Klik untuk memfilter tagihan yang masih menunggak">
+    <div class="stat-icon">{{ icon('alert-circle') }}</div>
+    <div>
+      <div class="stat-value" style="color: #dc2626;">Rp {{ "{:,.0f}".format(total_remaining).replace(",", ".") }}</div>
+      <div class="stat-label">Total Sisa Tunggakan (Belum Lunas)</div>
+      <div class="stat-hint" style="color: #dc2626;">Lihat Yang Menunggak &darr;</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 1: PERINGATAN PENAGIHAN KE WALI SISWA (FEE MENTOR TELAH DIBAGIKAN) -->
+{% if billing_alerts %}
+<div class="billing-alert-banner">
+  <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px;">
+    <div style="font-size: 26px; color: #16a34a;">{{ icon('bell') }}</div>
+    <div>
+      <h3 style="margin: 0; font-size: 15.5px; font-weight: 700; color: #166534;">
+        Peringatan: Fee Mentor Telah Diberikan &mdash; Wali Siswa Harus Segera Membayar Periode Baru
+      </h3>
+      <p style="margin: 3px 0 0 0; font-size: 12.5px; color: #15803d;">
+        Siklus 8 pertemuan telah selesai dan honor mentor telah ditransfer. Tagihan periode berikutnya telah dibuat dan harus segera dibayarkan oleh wali siswa:
+      </p>
+    </div>
+  </div>
+
+  <div class="table-responsive" style="background: #ffffff; border-radius: 8px; border: 1px solid #dcfce7;">
+    <table class="table-desi" style="margin: 0;">
+      <thead>
+        <tr>
+          <th>Siswa &amp; Program</th>
+          <th>Wali Murid &amp; Kontak</th>
+          <th>Tagihan Periode Baru</th>
+          <th>Sisa Tunggakan</th>
+          <th style="text-align: right;">Aksi Pembayaran (Pemilik)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in billing_alerts %}
+        {% if b.bill_status != 'lunas' and (b.remaining_amount is none or b.remaining_amount > 0) %}
+        <tr>
+          <td>
+            <strong style="color: var(--navy-dark); font-size: 13.5px;">{{ b.student_name }}</strong>
+            <div style="font-size: 11px; color: var(--navy-primary);">{{ b.program_name }}</div>
+          </td>
+          <td>
+            <strong>{{ b.parent_name or '-' }}</strong>
+            {% if b.parent_phone %}
+              <div style="font-size: 12px; color: var(--blue-brand); margin-top: 2px;">
+                {{ icon('phone') }} <a href="tel:{{ b.parent_phone }}" style="color: inherit; text-decoration: none;">{{ b.parent_phone }}</a>
+              </div>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge badge-info" style="font-size: 11.5px;">Periode {{ b.period_number + 1 }}</span>
+            <div style="font-size: 12px; font-weight: 700; color: var(--navy-dark); margin-top: 2px;">
+              Rp {{ "{:,.0f}".format(b.total_amount or 800000).replace(",", ".") }}
+            </div>
+          </td>
+          <td>
+            {% if b.remaining_amount and b.remaining_amount > 0 %}
+              <span class="badge badge-danger" style="font-size: 11.5px;">
+                Tunggakan: Rp {{ "{:,.0f}".format(b.remaining_amount).replace(",", ".") }}
+              </span>
+            {% else %}
+              <span class="badge badge-success" style="font-size: 11px;">Belum Ada Tunggakan</span>
+            {% endif %}
+          </td>
+          <td style="text-align: right;">
+            {% if b.next_bill_id %}
+              <button type="button" class="btn btn-primary btn-sm" onclick="openPaymentModal({{ b.next_bill_id }}, '{{ b.bill_code or 'INV-BARU' }}', '{{ b.student_name|escape }}', '{{ b.program_name|escape }}', {{ b.total_amount or 800000 }}, {{ b.paid_amount or 0 }}, {{ b.remaining_amount or (b.total_amount or 800000) }})" style="font-size: 11.5px; padding: 5px 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                {{ icon('credit-card') }} Input Pembayaran
+              </button>
+            {% else %}
+              <span class="badge badge-warning" style="font-size: 11px;">Tagihan Sedang Disiapkan</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- SECTION 2: SISWA BARU MENUNGGU VALIDASI PEMBAYARAN OLEH PEMILIK -->
+{% if pending_new_students %}
+<div class="pending-validation-card">
+  <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px;">
+    <div style="font-size: 26px; color: #d97706;">{{ icon('alert-circle') }}</div>
+    <div>
+      <h3 style="margin: 0; font-size: 15.5px; font-weight: 700; color: #92400e;">
+        Siswa Baru Menunggu Validasi Pembayaran (Pembelajaran Belum Dapat Dimulai)
+      </h3>
+      <p style="margin: 3px 0 0 0; font-size: 12.5px; color: #b45309;">
+        Sesuai aturan, pembelajaran les baru dapat dimulai setelah Pemilik memvalidasi bahwa pembayaran pendaftaran awal telah lunas.
+      </p>
+    </div>
+  </div>
+
+  <div class="table-responsive" style="background: #ffffff; border-radius: 8px; border: 1px solid #fed7aa;">
+    <table class="table-desi" style="margin: 0;">
+      <thead>
+        <tr>
+          <th>Nama Siswa Baru</th>
+          <th>Sekolah &amp; Kelas</th>
+          <th>Wali Murid &amp; Kontak</th>
+          <th>Program Les</th>
+          <th>Tagihan Pendaftaran Awal</th>
+          <th style="text-align: right;">Aksi Pemilik</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for st in pending_new_students %}
+        <tr>
+          <td>
+            <strong style="color: var(--navy-dark); font-size: 14px;">{{ st.full_name }}</strong>
+            <div><span class="badge badge-warning" style="font-size: 10.5px;">Menunggu Validasi</span></div>
+          </td>
+          <td>
+            <div style="font-weight: 600; color: var(--navy-primary);">{{ st.school or '-' }}</div>
+            <div style="font-size: 11.5px; color: var(--text-muted);">{{ st.grade or '-' }}</div>
+          </td>
+          <td>
+            <strong>{{ st.parent_name or '-' }}</strong>
+            {% if st.parent_phone %}
+              <div style="font-size: 12px; color: var(--blue-brand); margin-top: 2px;">
+                {{ icon('phone') }} <a href="tel:{{ st.parent_phone }}" style="color: inherit; text-decoration: none;">{{ st.parent_phone }}</a>
+              </div>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge badge-info">{{ st.enrolled_programs or 'Les Privat' }}</span>
+          </td>
+          <td>
+            {% if st.initial_bill_amount %}
+              <div style="font-size: 13px; font-weight: 700; color: var(--navy-dark);">
+                Rp {{ "{:,.0f}".format(st.initial_bill_amount).replace(",", ".") }}
+              </div>
+              <div style="font-size: 11px; color: var(--text-muted);">
+                Dibayar: Rp {{ "{:,.0f}".format(st.initial_paid_amount or 0).replace(",", ".") }}
+                {% if st.initial_remaining and st.initial_remaining > 0 %}
+                  &bull; <span style="color: #ef4444; font-weight: 700;">Sisa: Rp {{ "{:,.0f}".format(st.initial_remaining).replace(",", ".") }}</span>
+                {% else %}
+                  &bull; <span style="color: #16a34a; font-weight: 700;">Lunas</span>
+                {% endif %}
+              </div>
+            {% else %}
+              <span style="font-size: 11.5px; color: var(--gray-400);">Tagihan Awal Dibuat</span>
+            {% endif %}
+          </td>
+          <td style="text-align: right;">
+            <div style="display: inline-flex; gap: 6px; align-items: center;">
+              {% if st.initial_bill_id %}
+                <button type="button" class="btn btn-outline-primary btn-sm" onclick="openPaymentModal({{ st.initial_bill_id }}, 'INV-AWAL', '{{ st.full_name|escape }}', '{{ st.enrolled_programs|escape }}', {{ st.initial_bill_amount or 800000 }}, {{ st.initial_paid_amount or 0 }}, {{ st.initial_remaining or (st.initial_bill_amount or 800000) }})" style="font-size: 11.5px; padding: 5px 10px;">
+                  {{ icon('credit-card') }} Input Pembayaran
+                </button>
+              {% endif %}
+              <form method="POST" action="{{ url_for('owner.validate_student_payment', student_id=st.id) }}" onsubmit="return confirm('Validasi pembayaran {{ st.full_name }} dan izinkan pembelajaran dimulai?');" style="display: inline; margin: 0;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-success btn-sm" style="font-size: 11.5px; padding: 5px 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                  {{ icon('check-circle') }} Buka Belajar
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- SECTION 3: DAFTAR SELURUH TAGIHAN, CICILAN & TUNGGAKAN -->
+<div class="card">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <div class="card-title">
+      <span>{{ icon('receipt') }}</span> Daftar Tagihan Periode, Pembayaran Cicilan &amp; Sisa Tunggakan
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <a href="{{ url_for('owner.payments') }}" class="btn btn-secondary btn-sm">
+        {{ icon('receipt') }} Riwayat Pembayaran &amp; Kuitansi
+      </a>
+      <div style="font-size: 12px; color: var(--text-muted);">
+        Sisa tunggakan wajib dipantau hingga lunas sebelum siklus 8 pertemuan berikutnya
+      </div>
+    </div>
+  </div>
+  <div class="card-body">
+    <!-- FILTER -->
+    <form method="GET" action="{{ url_for('owner.bills') }}" class="filter-bar" style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+      <input type="text" name="q" value="{{ search or '' }}" placeholder="Cari nama siswa, wali, kode tagihan..." class="form-control" style="max-width: 280px;">
+      <select name="status" class="form-select" style="max-width: 170px;">
+        <option value="">Semua Status</option>
+        <option value="belum_lunas" {% if status_filter == 'belum_lunas' %}selected{% endif %}>Belum Lunas</option>
+        <option value="sebagian" {% if status_filter == 'sebagian' %}selected{% endif %}>Sebagian (Mencicil)</option>
+        <option value="lunas" {% if status_filter == 'lunas' %}selected{% endif %}>Lunas</option>
+      </select>
+      <button type="submit" class="btn btn-secondary">Filter</button>
+      {% if search or status_filter %}
+        <a href="{{ url_for('owner.bills') }}" class="btn btn-secondary">Reset</a>
+      {% endif %}
+    </form>
+
+    <div class="table-responsive">
+      <table class="table-desi">
+        <thead>
+          <tr>
+            <th>Kode Tagihan</th>
+            <th>Siswa &amp; Program</th>
+            <th>Periode</th>
+            <th>Total Biaya Les</th>
+            <th>Sudah Dicicil / Dibayar</th>
+            <th>Sisa Tunggakan</th>
+            <th>Status</th>
+            <th style="text-align: right;">Aksi Pembayaran (Pemilik)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in bills %}
+          <tr class="bill-row" data-status="{{ b.status }}">
+            <td>
+              <strong style="color: var(--blue-brand); font-size: 13px;">{{ b.bill_code }}</strong>
+              <div style="font-size: 11px; color: var(--text-muted);">{{ b.created_at|date_indo if b.created_at else '-' }}</div>
+            </td>
+            <td>
+              <strong style="color: var(--navy-dark); font-size: 13.5px;">{{ b.student_name }}</strong>
+              <div style="font-size: 11.5px; color: var(--navy-primary);">{{ b.program_name }}</div>
+              <div style="font-size: 11px; color: var(--text-muted);">Wali: {{ b.parent_name or '-' }}</div>
+            </td>
+            <td>
+              <span class="badge" style="background: #e0f2fe; color: #0369a1; font-size: 11.5px; font-weight: 700;">
+                Periode {{ b.period_number }}
+              </span>
+            </td>
+            <td>
+              <strong style="font-size: 13.5px; color: var(--navy-dark);">
+                Rp {{ "{:,.0f}".format(b.total_amount).replace(",", ".") }}
+              </strong>
+            </td>
+            <td>
+              <span style="font-size: 13px; font-weight: 700; color: var(--green-success);">
+                Rp {{ "{:,.0f}".format(b.paid_amount or 0).replace(",", ".") }}
+              </span>
+            </td>
+            <td>
+              {% if b.remaining_amount and b.remaining_amount > 0 %}
+                <span class="badge badge-danger" style="font-size: 12px; font-weight: 700;">
+                  Tunggakan: Rp {{ "{:,.0f}".format(b.remaining_amount).replace(",", ".") }}
+                </span>
+                <div style="font-size: 10.5px; color: #b91c1c; margin-top: 2px;">
+                  Harap lunas sbl 8 sesi berikutnya
+                </div>
+              {% else %}
+                <span class="badge badge-success" style="font-size: 11.5px;">
+                  Lunas (Tidak Ada Tunggakan)
+                </span>
+              {% endif %}
+            </td>
+            <td>
+              {% if b.status == 'lunas' %}
+                <span class="badge badge-success">Lunas</span>
+              {% elif b.status == 'sebagian' %}
+                <span class="badge badge-warning" style="background: #fef08a; color: #854d0e;">Sedang Mencicil</span>
+              {% else %}
+                <span class="badge badge-danger">Belum Lunas</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right;">
+              <div style="display: inline-flex; gap: 4px; align-items: center; justify-content: flex-end;">
+                <a href="{{ url_for('owner.payments', bill_id=b.id) }}" class="btn btn-secondary btn-sm" title="Lihat Kuitansi & Koreksi Nominal" style="font-size: 11px; padding: 4px 8px; display: inline-flex; align-items: center; gap: 3px;">
+                  {{ icon('receipt') }} Kuitansi
+                </a>
+                <button type="button" class="btn btn-outline-primary btn-sm" onclick="openPaymentModal({{ b.id }}, '{{ b.bill_code }}', '{{ b.student_name|escape }}', '{{ b.program_name|escape }}', {{ b.total_amount }}, {{ b.paid_amount or 0 }}, {{ b.remaining_amount or 0 }})" style="font-size: 11.5px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
+                  {{ icon('credit-card') }} Input Bayar
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 36px; color: var(--gray-500);">
+              Belum ada data tagihan periode yang tercatat.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL INPUT PEMBAYARAN / CICILAN (PEMILIK) -->
+<div id="paymentModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 9999; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(2px);">
+  <div style="background: #ffffff; border-radius: 14px; max-width: 520px; width: 100%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); overflow: hidden;">
+    <div style="padding: 16px 22px; background: var(--navy-primary, #1e3a8a); color: #ffffff; display: flex; justify-content: space-between; align-items: center;">
+      <div style="font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+        {{ icon('credit-card') }} Catat Pembayaran Tagihan / Cicilan
+      </div>
+      <button type="button" onclick="closePaymentModal()" style="background: none; border: none; color: #ffffff; font-size: 22px; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+    
+    <form method="POST" action="{{ url_for('owner.record_owner_payment') }}" id="ownerPaymentForm" style="padding: 20px 22px; margin: 0;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="bill_id" id="modalBillId">
+      <input type="hidden" id="modalExistingPaid" value="0">
+      <input type="hidden" id="modalCurrentRemaining" value="0">
+
+      <!-- Rincian Tagihan -->
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px;">
+        <div style="font-size: 14px; font-weight: 700; color: var(--navy-dark);" id="modalStudentName">-</div>
+        <div style="font-size: 12px; color: var(--navy-primary); font-weight: 600;" id="modalProgramName">-</div>
+        <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 4px; display: flex; justify-content: space-between;">
+          <span id="modalBillCode">-</span>
+          <span>Sisa Tunggakan Saat Ini: <strong style="color: #ef4444;" id="modalRemainingDisplay">Rp 0</strong></span>
+        </div>
+      </div>
+
+      <!-- Opsi Pembayaran: Cicilan vs Lunas -->
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label class="form-label" style="font-weight: 700; font-size: 12.5px; margin-bottom: 8px; display: block;">
+          Tipe Status Pembayaran <span style="color: #ef4444;">*</span>
+        </label>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <label style="border: 1.5px solid var(--blue-brand, #0284c7); background: #eff6ff; border-radius: 8px; padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px;" id="labelOptionCicilan">
+            <input type="radio" name="payment_option" value="cicilan" id="optCicilan" checked onchange="togglePaymentOption()">
+            <div>
+              <div style="font-size: 13px; font-weight: 700; color: var(--navy-dark);">Masih Cicilan</div>
+              <div style="font-size: 11px; color: var(--text-muted);">Pembayaran bertahap</div>
+            </div>
+          </label>
+          <label style="border: 1.5px solid #e2e8f0; background: #ffffff; border-radius: 8px; padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px;" id="labelOptionLunas">
+            <input type="radio" name="payment_option" value="lunas" id="optLunas" onchange="togglePaymentOption()">
+            <div>
+              <div style="font-size: 13px; font-weight: 700; color: var(--navy-dark);">Sudah Lunas</div>
+              <div style="font-size: 11px; color: var(--text-muted);">Lunas langsung</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Input Nominal yang Dibayarkan Sekarang -->
+      <div class="form-group" style="margin-bottom: 14px;">
+        <label class="form-label" style="font-weight: 700; font-size: 12.5px; margin-bottom: 4px; display: block;">
+          Nominal Pembayaran Diterima (Rp) <span style="color: #ef4444;">*</span>
+        </label>
+        <div style="position: relative;">
+          <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: 700; color: var(--text-muted); font-size: 13px;">Rp</span>
+          <input type="number" name="amount" id="modalAmount" required min="1" step="any" placeholder="Contoh: 750000" class="form-control" style="padding-left: 36px; font-weight: 700; font-size: 14px; color: var(--navy-dark);" oninput="recalcRemaining()">
+        </div>
+      </div>
+
+      <!-- Khusus Cicilan: Target Nominal Lunas -->
+      <div id="targetTotalContainer" class="form-group" style="margin-bottom: 14px;">
+        <label class="form-label" style="font-weight: 700; font-size: 12.5px; margin-bottom: 4px; display: block;">
+          Target Nominal Total Agar Lunas (Rp)
+        </label>
+        <div style="position: relative;">
+          <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: 700; color: var(--text-muted); font-size: 13px;">Rp</span>
+          <input type="number" name="target_total_amount" id="modalTargetTotal" min="1" step="any" placeholder="Contoh: 1000000" class="form-control" style="padding-left: 36px; font-weight: 700; font-size: 14px; color: var(--navy-dark);" oninput="recalcRemaining()">
+        </div>
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px;">
+          Bisa disesuaikan jika ada diskon atau target nominal pelunasan khusus.
+        </div>
+      </div>
+
+      <!-- KOTAK KALKULASI INTERAKTIF SISA TUNGGAKAN -->
+      <div id="calcSummaryBox" style="background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px;">
+        <div style="font-size: 11.5px; color: #166534; font-weight: 600;">Deteksi Sistem Keuangan:</div>
+        <div style="font-size: 15px; font-weight: 800; color: #15803d; margin-top: 2px;" id="calcRemainingText">
+          Sisa Tunggakan: Rp 0
+        </div>
+      </div>
+
+      <!-- Metode Pembayaran & Catatan -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+        <div>
+          <label class="form-label" style="font-size: 12px; font-weight: 600; margin-bottom: 4px;">Metode Pembayaran</label>
+          <select name="payment_method" class="form-select" style="font-size: 12.5px;">
+            <option value="Transfer Bank BCA">Transfer Bank BCA</option>
+            <option value="Transfer Bank BRI">Transfer Bank BRI</option>
+            <option value="Transfer Bank Mandiri">Transfer Bank Mandiri</option>
+            <option value="Transfer Bank BNI">Transfer Bank BNI</option>
+            <option value="Tunai / Cash">Tunai / Cash</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label" style="font-size: 12px; font-weight: 600; margin-bottom: 4px;">Catatan (Opsional)</label>
+          <input type="text" name="notes" placeholder="Misal: Cicilan ke-1" class="form-control" style="font-size: 12.5px;">
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+        <button type="button" class="btn btn-secondary" onclick="closePaymentModal()">Batal</button>
+        <button type="submit" class="btn btn-primary" style="font-weight: 700;">Simpan Pembayaran</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openPaymentModal(billId, billCode, studentName, progName, totalAmount, paidAmount, remainingAmount) {
+    document.getElementById("modalBillId").value = billId;
+    document.getElementById("modalBillCode").textContent = billCode;
+    document.getElementById("modalStudentName").textContent = studentName;
+    document.getElementById("modalProgramName").textContent = progName;
+    document.getElementById("modalExistingPaid").value = paidAmount;
+    document.getElementById("modalCurrentRemaining").value = remainingAmount;
+    document.getElementById("modalRemainingDisplay").textContent = "Rp " + Number(remainingAmount).toLocaleString("id-ID");
+
+    document.getElementById("optCicilan").checked = true;
+    document.getElementById("modalTargetTotal").value = totalAmount;
+    document.getElementById("modalAmount").value = remainingAmount > 0 ? remainingAmount : totalAmount;
+
+    togglePaymentOption();
+    recalcRemaining();
+
+    const m = document.getElementById("paymentModal");
+    m.style.display = "flex";
+  }
+
+  function closePaymentModal() {
+    document.getElementById("paymentModal").style.display = "none";
+  }
+
+  function togglePaymentOption() {
+    const isLunas = document.getElementById("optLunas").checked;
+    const targetContainer = document.getElementById("targetTotalContainer");
+    const labelLunas = document.getElementById("labelOptionLunas");
+    const labelCicilan = document.getElementById("labelOptionCicilan");
+
+    if (isLunas) {
+      targetContainer.style.display = "none";
+      labelLunas.style.borderColor = "var(--blue-brand, #0284c7)";
+      labelLunas.style.background = "#eff6ff";
+      labelCicilan.style.borderColor = "#e2e8f0";
+      labelCicilan.style.background = "#ffffff";
+    } else {
+      targetContainer.style.display = "block";
+      labelCicilan.style.borderColor = "var(--blue-brand, #0284c7)";
+      labelCicilan.style.background = "#eff6ff";
+      labelLunas.style.borderColor = "#e2e8f0";
+      labelLunas.style.background = "#ffffff";
+    }
+    recalcRemaining();
+  }
+
+  function recalcRemaining() {
+    const isLunas = document.getElementById("optLunas").checked;
+    const calcBox = document.getElementById("calcSummaryBox");
+    const calcText = document.getElementById("calcRemainingText");
+
+    if (isLunas) {
+      calcBox.style.background = "#f0fdf4";
+      calcBox.style.borderColor = "#86efac";
+      calcText.style.color = "#15803d";
+      calcText.innerHTML = "Status Tagihan: <strong>LUNAS</strong> (Sisa Tunggakan: Rp 0)";
+      return;
+    }
+
+    const existingPaid = parseFloat(document.getElementById("modalExistingPaid").value) || 0;
+    const amount = parseFloat(document.getElementById("modalAmount").value) || 0;
+    const targetTotal = parseFloat(document.getElementById("modalTargetTotal").value) || 0;
+
+    const totalPaidNew = existingPaid + amount;
+    const remainingNew = Math.max(0, targetTotal - totalPaidNew);
+
+    if (remainingNew === 0) {
+      calcBox.style.background = "#f0fdf4";
+      calcBox.style.borderColor = "#86efac";
+      calcText.style.color = "#15803d";
+      calcText.innerHTML = "Status Tagihan: <strong>LUNAS</strong> (Sisa Tunggakan: Rp 0)";
+    } else {
+      calcBox.style.background = "#fffbeb";
+      calcBox.style.borderColor = "#fde68a";
+      calcText.style.color = "#b45309";
+      calcText.innerHTML = "Status: <strong>Sedang Mencicil</strong> &bull; Sisa Tunggakan: <strong style='color:#dc2626;'>Rp " + remainingNew.toLocaleString("id-ID") + "</strong>";
+    }
+  }
+
+  function filterTableStatus(status) {
+    const rows = document.querySelectorAll(".bill-row");
+    rows.forEach(r => {
+      const s = r.getAttribute("data-status");
+      if (status === 'all') {
+        r.style.display = "";
+      } else if (status === 'lunas' && s === 'lunas') {
+        r.style.display = "";
+      } else if (status === 'belum_lunas' && (s === 'belum_lunas' || s === 'sebagian')) {
+        r.style.display = "";
+      } else {
+        r.style.display = "none";
+      }
+    });
+  }
+</script>
+
+{% endblock %}
