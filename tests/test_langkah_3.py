@@ -45,7 +45,7 @@ class TestLangkah3(unittest.TestCase):
         with cls.app.app_context():
             # Seed data pengguna, orang tua, program, mentor, dan murid untuk menjaga integritas FK
             execute_db("""
-                INSERT OR IGNORE INTO users (id, username, password_hash, role, full_name, is_active)
+                INSERT OR REPLACE INTO users (id, username, password_hash, role, full_name, is_active)
                 VALUES (1, 'admin', 'pbkdf2:dummy', 'admin', 'Admin Pengelola', 1),
                        (1005, 'andiriska', 'pbkdf2:dummy', 'mentor', 'Andi Riska Putri Muliadi', 1),
                        (1006, 'atira', 'pbkdf2:dummy', 'mentor', 'Atira', 1),
@@ -53,23 +53,23 @@ class TestLangkah3(unittest.TestCase):
             """, db_path=cls.test_db_path)
 
             execute_db("""
-                INSERT OR IGNORE INTO parents (id, user_id, full_name, phone, address)
+                INSERT OR REPLACE INTO parents (id, user_id, full_name, phone, address)
                 VALUES (10, 1025, 'Orang Tua Aya', '0812345678', 'Jl. Kaliurang')
             """, db_path=cls.test_db_path)
 
             execute_db("""
-                INSERT OR IGNORE INTO programs (id, name, code, description, status)
+                INSERT OR REPLACE INTO programs (id, name, code, description, status)
                 VALUES (10, 'Math School', 'MATH-TEST-10', 'Belajar Matematika', 'aktif')
             """, db_path=cls.test_db_path)
 
             execute_db("""
-                INSERT OR IGNORE INTO mentors (id, user_id, full_name, phone, expertise, status, address, latitude, longitude)
+                INSERT OR REPLACE INTO mentors (id, user_id, full_name, phone, expertise, status, address, latitude, longitude)
                 VALUES (14, 1005, 'Andi Riska Putri Muliadi', '081200000014', 'Biologi', 'aktif', 'Jl. Uji 14', -7.765, 110.372),
                        (15, 1006, 'Atira', '081200000015', 'Math', 'aktif', 'Jl. Uji 15', -7.760, 110.370)
             """, db_path=cls.test_db_path)
 
             execute_db("""
-                INSERT OR IGNORE INTO students (id, parent_id, full_name, school, grade, status, payment_status, address, latitude, longitude)
+                INSERT OR REPLACE INTO students (id, parent_id, full_name, school, grade, status, payment_status, address, latitude, longitude)
                 VALUES (38, 10, 'Muh. Halim', 'SD Uji', '5', 'aktif', 'lunas', 'Jl. Murid 38', NULL, NULL),
                        (39, 10, 'Aya', 'SD Uji', '4', 'aktif', 'lunas', 'Jl. Murid 39', -7.7750, 110.3750)
             """, db_path=cls.test_db_path)

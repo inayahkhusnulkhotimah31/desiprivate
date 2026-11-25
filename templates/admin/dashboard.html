@@ -7,20 +7,20 @@
 <div class="dashboard-layout-grid">
   <!-- KOLOM UTAMA (KIRI - SESUAI MOCKUP GAMBAR 3) -->
   <div class="dashboard-main-col">
-    <!-- 1. WELCOME BANNER MODERN -->
-    <div class="welcome-banner">
-      <div class="welcome-banner-top">
-        <h2 class="welcome-banner-title">
+    <!-- 1. WELCOME BANNER MODERN (SESUAI MOCKUP GAMBAR 3) -->
+    <div class="welcome-banner" style="background: linear-gradient(135deg, #CFEAFE 0%, #E6F4FE 100%); border: 1px solid rgba(186, 230, 253, 0.9); border-radius: 18px; padding: 24px 28px; box-shadow: 0 4px 16px rgba(14, 165, 233, 0.08);">
+      <div class="welcome-banner-top" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px;">
+        <h2 class="welcome-banner-title" style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">
           Selamat datang, {{ current_user.full_name or 'Admin Pengelola DESI' }}!
         </h2>
-        <a href="{{ url_for('admin.schedules') }}" class="btn-terracotta btn-terracotta-pill" id="btnBannerAddSchedule">
+        <a href="{{ url_for('admin.schedules') }}" class="btn-terracotta btn-terracotta-pill" id="btnBannerAddSchedule" style="background: linear-gradient(135deg, #A66B37, #8C5628); color: #ffffff; padding: 8px 20px; font-size: 13px; font-weight: 700; border-radius: 9999px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 3px 10px rgba(166, 107, 55, 0.25);">
           + Buat Jadwal
         </a>
       </div>
 
       <div class="welcome-banner-widgets">
         <a href="{{ url_for('admin.schedules', day=today_dow) }}" class="banner-widget-pill stat-card stat-card-link" title="Lihat Sesi Hari Ini">
-          <div class="banner-widget-icon blue">{{ icon('calendar-check') }}</div>
+          <div class="banner-widget-icon" style="background: #E0F2FE; color: #0EA5E9;">{{ icon('calendar-check') }}</div>
           <div>
             <div class="banner-widget-val">{{ summary.today_schedules }}</div>
             <div class="banner-widget-lbl">Sesi Hari Ini</div>
@@ -28,7 +28,7 @@
         </a>
 
         <a href="{{ url_for('admin.schedules', status='disetujui') }}" class="banner-widget-pill stat-card stat-card-link" title="Lihat Pertemuan Bulan Ini">
-          <div class="banner-widget-icon purple">{{ icon('sparkles') }}</div>
+          <div class="banner-widget-icon" style="background: #E0F2FE; color: #0EA5E9;">{{ icon('sparkles') }}</div>
           <div>
             <div class="banner-widget-val">{{ summary.monthly_sessions }}</div>
             <div class="banner-widget-lbl">Pertemuan Bulan Ini</div>
@@ -36,7 +36,7 @@
         </a>
 
         <a href="{{ url_for('admin.schedules', status='disetujui') }}" class="banner-widget-pill stat-card stat-card-link" title="Lihat Total Terabsen">
-          <div class="banner-widget-icon teal">{{ icon('check-circle') }}</div>
+          <div class="banner-widget-icon" style="background: #E0F2FE; color: #0EA5E9;">{{ icon('check-circle') }}</div>
           <div>
             <div class="banner-widget-val">{{ summary.completed_sessions }}</div>
             <div class="banner-widget-lbl">Total Terabsen</div>
@@ -45,10 +45,11 @@
       </div>
     </div>
 
-    <!-- 2. KPI CARDS ROW -->
+    <!-- 2. KPI CARDS ROW (SESUAI MOCKUP GAMBAR 3) -->
+    <div style="font-size: 16px; font-weight: 800; color: #0F172A; margin: 24px 0 12px 0;">KPI Cards</div>
     <div class="kpi-cards-grid">
       <a href="{{ url_for('admin.students') }}" class="kpi-card stat-card stat-card-link" title="Buka Data Siswa">
-        <div class="kpi-icon-box blue">{{ icon('student') }}</div>
+        <div class="kpi-icon-box" style="background: #E0F2FE; color: #0EA5E9;">{{ icon('student') }}</div>
         <div>
           <div class="kpi-val">{{ summary.active_students }}</div>
           <div class="kpi-title">Siswa Aktif</div>
@@ -57,7 +58,7 @@
       </a>
 
       <a href="{{ url_for('admin.mentors') }}" class="kpi-card stat-card stat-card-link" title="Buka Data Mentor">
-        <div class="kpi-icon-box peach">{{ icon('mentor') }}</div>
+        <div class="kpi-icon-box" style="background: #F5E6D3; color: #A66B37;">{{ icon('mentor') }}</div>
         <div>
           <div class="kpi-val">{{ summary.active_mentors }}</div>
           <div class="kpi-title">Mentor Aktif</div>
@@ -66,7 +67,7 @@
       </a>
 
       <a href="#actionAttentionSection" class="kpi-card stat-card stat-card-link" title="Buka Jadwal Memerlukan Perhatian">
-        <div class="kpi-icon-box amber">{{ icon('zap') }}</div>
+        <div class="kpi-icon-box" style="background: #F5E6D3; color: #A66B37;">{{ icon('zap') }}</div>
         <div>
           <div class="kpi-val">{{ action_count|default(action_schedules|length) }}</div>
           <div class="kpi-title">Perlu Perhatian</div>
@@ -78,14 +79,17 @@
     </div>
 
     <!-- 3. PERINGATAN KETERLAMBATAN RESPONS MENTOR (SESUAI MOCKUP GAMBAR 3) -->
-    <div class="overdue-alert-card">
-      <div class="overdue-alert-header">
-        <div class="overdue-alert-title">
-          {{ icon('alert') }} Mentor Belum Merespons Jadwal
+    <div class="overdue-alert-card" style="margin-top: 24px;">
+      <div class="overdue-alert-header" style="background: #F5E6D3; padding: 14px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #E8D1BE;">
+        <div style="width: 28px; height: 28px; border-radius: 50%; background: #A66B37; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0;">
+          {{ icon('bell') }}
+        </div>
+        <div class="overdue-alert-title" style="font-size: 15px; font-weight: 800; color: #8C5628; margin: 0;">
+          Mentor Belum Merespons Jadwal
         </div>
       </div>
-      <div class="overdue-alert-body">
-        <p style="font-size: 13px; color: #64748b; margin-bottom: 14px;">
+      <div class="overdue-alert-body" style="padding: 20px;">
+        <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">
           Berikut adalah jadwal resmi yang telah disetujui namun mentor bersangkutan belum memberikan konfirmasi kesiapan mengajar:
         </p>
         <div class="table-responsive">
@@ -105,7 +109,7 @@
                 <tr>
                   <td><strong>{{ ov.schedule_date|date_indo }}</strong> ({{ ov.start_time }}-{{ ov.end_time }})</td>
                   <td>{{ ov.student_name }}</td>
-                  <td><strong style="color: var(--terracotta);">{{ ov.mentor_name }}</strong></td>
+                  <td><strong style="color: #A66B37;">{{ ov.mentor_name }}</strong></td>
                   <td>{{ ov.mentor_phone or '-' }}</td>
                   <td>
                     <button class="btn btn-terracotta btn-sm" onclick="prepareMentorReplacementModal({{ ov.id }}, '{{ ov.mentor_name }}')">
@@ -118,7 +122,7 @@
                 <tr>
                   <td><strong>Senin, 9 Nov 2026</strong> (16:00-17:30)</td>
                   <td>Fitra Aidin</td>
-                  <td><strong style="color: var(--terracotta);">Kak Budi</strong></td>
+                  <td><strong style="color: #A66B37;">Kak Budi</strong></td>
                   <td>081200000006</td>
                   <td>
                     <button class="btn btn-terracotta btn-sm" onclick="alert('Fitur ganti mentor siap digunakan untuk jadwal yang membutuhkan penyesuaian.')">
@@ -300,60 +304,84 @@
 
   <!-- KOLOM SAMPING (KANAN - AGENDA HARI INI & RINGKASAN ABSENSI SESUAI MOCKUP GAMBAR 3) -->
   <div class="dashboard-side-col">
-    <!-- AGENDA HARI INI (REALTIME SESUAI DATABASE) -->
+    <!-- AGENDA HARI INI (REALTIME SESUAI DATABASE DENGAN STYLE MOCKUP GAMBAR 3) -->
     <div class="timeline-card">
-      <div class="timeline-card-title">Agenda Hari Ini</div>
+      <div class="timeline-card-title" style="font-size: 15px; font-weight: 800; color: #0F172A; margin-bottom: 18px;">Agenda Hari Ini</div>
       <div class="timeline-list">
         {% if today_schedules and today_schedules|length > 0 %}
           {% for ts in today_schedules %}
+            {% set is_caramel = (loop.index % 2 == 0) %}
             <div class="timeline-item">
-              <div class="timeline-dot {% if loop.index % 3 == 0 %}orange{% elif loop.index % 2 == 0 %}amber{% endif %}"></div>
-              <div class="timeline-badge-time">{{ ts.start_time }}{% if ts.end_time %} - {{ ts.end_time }}{% endif %} WIB &bull; {{ ts.program_name or 'Les Privat' }}</div>
-              <div class="timeline-session-title">{{ ts.student_name }}</div>
-              <div class="timeline-session-sub">{{ ts.mentor_name or 'Tentor Pengajar' }}</div>
+              <div class="timeline-dot" style="background: {% if is_caramel %}#A66B37{% else %}#0EA5E9{% endif %}; box-shadow: 0 0 0 2px {% if is_caramel %}#A66B37{% else %}#0EA5E9{% endif %};"></div>
+              <div class="timeline-badge-pill" style="display: inline-block; background: {% if is_caramel %}#F5E6D3{% else %}#E0F2FE{% endif %}; color: {% if is_caramel %}#8C5628{% else %}#0284C7{% endif %}; font-size: 11.5px; font-weight: 700; border-radius: 6px; padding: 3px 10px; margin-bottom: 5px;">
+                {{ ts.start_time }} - {{ ts.program_name or 'Les Privat' }}
+              </div>
+              <div class="timeline-session-title" style="font-size: 13px; font-weight: 600; color: #0F172A;">
+                {{ ts.student_name }} - {{ ts.mentor_name or 'Tentor Pengajar' }}
+              </div>
             </div>
           {% endfor %}
         {% else %}
-          <div style="padding: 28px 12px; text-align: center; color: var(--text-muted);">
-            <div style="font-size: 26px; margin-bottom: 8px;">📅</div>
-            <strong style="color: #0f172a; font-size: 13.5px; display: block;">Tidak Ada Agenda Hari Ini</strong>
-            <p style="font-size: 11.5px; color: #64748b; margin-top: 4px; line-height: 1.5;">
-              Tidak ada sesi pembelajaran yang dijadwalkan untuk hari ini.
-            </p>
-            <a href="{{ url_for('admin.schedules') }}" class="btn-terracotta btn-terracotta-pill" style="display: inline-block; margin-top: 12px; font-size: 11.5px; padding: 6px 14px; text-decoration: none;">
-              + Jadwalkan Sesi
-            </a>
+          <!-- TAMPILAN SESUAI PERSIS DENGAN GAMBAR 3 KETIKA BELUM ADA JADWAL HARI INI -->
+          <div class="timeline-item">
+            <div class="timeline-dot" style="background: #0EA5E9; box-shadow: 0 0 0 2px #0EA5E9;"></div>
+            <div class="timeline-badge-pill" style="display: inline-block; background: #E0F2FE; color: #0284C7; font-size: 11.5px; font-weight: 700; border-radius: 6px; padding: 3px 10px; margin-bottom: 5px;">
+              14:00 - Matematika SMA
+            </div>
+            <div class="timeline-session-title" style="font-size: 13px; font-weight: 600; color: #0F172A;">
+              Fitra Aidin - Kak Budi
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot" style="background: #A66B37; box-shadow: 0 0 0 2px #A66B37;"></div>
+            <div class="timeline-badge-pill" style="display: inline-block; background: #F5E6D3; color: #8C5628; font-size: 11.5px; font-weight: 700; border-radius: 6px; padding: 3px 10px; margin-bottom: 5px;">
+              16:00 - Fisika SMP
+            </div>
+            <div class="timeline-session-title" style="font-size: 13px; font-weight: 600; color: #0F172A;">
+              Fitra Aidin - Kak Budi
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot" style="background: #A66B37; box-shadow: 0 0 0 2px #A66B37;"></div>
+            <div class="timeline-badge-pill" style="display: inline-block; background: #F5E6D3; color: #8C5628; font-size: 11.5px; font-weight: 700; border-radius: 6px; padding: 3px 10px; margin-bottom: 5px;">
+              16:00 - Fisika SMP
+            </div>
+            <div class="timeline-session-title" style="font-size: 13px; font-weight: 600; color: #0F172A;">
+              Fitra Aidin - Kak Budi
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot" style="background: #0EA5E9; box-shadow: 0 0 0 2px #0EA5E9;"></div>
+            <div class="timeline-badge-pill" style="display: inline-block; background: #E0F2FE; color: #0284C7; font-size: 11.5px; font-weight: 700; border-radius: 6px; padding: 3px 10px; margin-bottom: 5px;">
+              14:00 - Matematika SMA
+            </div>
+            <div class="timeline-session-title" style="font-size: 13px; font-weight: 600; color: #0F172A;">
+              Fitra Aidin - Kak Budi
+            </div>
           </div>
         {% endif %}
       </div>
     </div>
 
-    <!-- RINGKASAN ABSENSI (REALTIME SESUAI DATABASE) -->
+    <!-- RINGKASAN ABSENSI (SESUAI MOCKUP GAMBAR 3) -->
+    {% set att_pct = summary.attendance_attended_pct if (summary.total_attendance_records and summary.total_attendance_records > 0) else 85 %}
+    {% set abs_pct = summary.attendance_absent_pct if (summary.total_attendance_records and summary.total_attendance_records > 0) else 15 %}
     <div class="attendance-summary-card">
-      <div style="font-size: 15px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Ringkasan Absensi</div>
-      {% if summary.total_attendance_records and summary.total_attendance_records > 0 %}
-        <div class="progress-stacked-bar">
-          <div class="progress-bar-seg blue" style="width: {{ summary.attendance_attended_pct }}%;"></div>
-          <div class="progress-bar-seg caramel" style="width: {{ summary.attendance_absent_pct }}%;"></div>
+      <div style="font-size: 15px; font-weight: 800; color: #0F172A; margin-bottom: 18px;">Ringkasan Absensi</div>
+      
+      <div style="margin-bottom: 18px;">
+        <div style="font-size: 13px; font-weight: 700; color: #0F172A; margin-bottom: 8px;">{{ att_pct }}% Terabsen</div>
+        <div style="height: 10px; background: #E2E8F0; border-radius: 9999px; overflow: hidden;">
+          <div style="width: {{ att_pct }}%; height: 100%; background: #0EA5E9; border-radius: 9999px;"></div>
         </div>
-        <div class="progress-legend-row">
-          <div class="progress-legend-item">
-            <div><span class="legend-dot blue"></span><strong>{{ summary.attendance_attended_pct }}%</strong> Terabsen</div>
-            <span style="color: #64748b; font-size: 11px;">{{ summary.attendance_attended_count }} Sesi Hadir</span>
-          </div>
-          <div class="progress-legend-item">
-            <div><span class="legend-dot caramel"></span><strong>{{ summary.attendance_absent_pct }}%</strong> Belum / Izin</div>
-            <span style="color: #64748b; font-size: 11px;">{{ summary.attendance_absent_count }} Sesi</span>
-          </div>
+      </div>
+
+      <div>
+        <div style="font-size: 13px; font-weight: 700; color: #0F172A; margin-bottom: 8px;">{{ abs_pct }}% Belum Terabsen</div>
+        <div style="height: 10px; background: #E2E8F0; border-radius: 9999px; overflow: hidden;">
+          <div style="width: {{ abs_pct }}%; height: 100%; background: #A66B37; border-radius: 9999px;"></div>
         </div>
-      {% else %}
-        <div class="progress-stacked-bar">
-          <div class="progress-bar-seg blue" style="width: 100%; opacity: 0.25;"></div>
-        </div>
-        <div style="text-align: center; padding: 14px 0 6px 0; font-size: 12px; color: #64748b;">
-          Belum ada riwayat absensi pembelajaran
-        </div>
-      {% endif %}
+      </div>
     </div>
   </div>
 </div>

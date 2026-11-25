@@ -5,77 +5,86 @@
    ========================================================================== */
 
 :root {
-  /* Palet Warna Utama: Soft Blue & White */
-  --bg-gradient: linear-gradient(135deg, #f4f8fc 0%, #edf4fc 50%, #f0f6ff 100%);
-  --bg-app: #f4f8fc;
-  --white: #ffffff;
-  --white-glass: rgba(255, 255, 255, 0.88);
-  --white-glass-strong: rgba(255, 255, 255, 0.96);
-  --white-glass-subtle: rgba(255, 255, 255, 0.70);
-  --sidebar-glass: rgba(255, 255, 255, 0.95);
-  --header-glass: rgba(255, 255, 255, 0.92);
+  /* ==========================================================================
+     GLOBAL DESIGN SYSTEM: LIGHT BLUE & WARM CARAMEL BROWN
+     ========================================================================== */
+  /* Background Utama */
+  --bg-app: #F2F8FD;
+  --bg-gradient: linear-gradient(135deg, #F2F8FD 0%, #E6F4FE 100%);
 
-  /* Biru Lembut (Soft Blue) Brand */
-  --blue-brand: #0284c7;         /* Cerulean Blue */
-  --blue-brand-dark: #0369a1;    /* Deep Ocean Blue */
-  --blue-brand-light: #38bdf8;   /* Sky Blue */
-  --blue-soft: #e0f2fe;          /* Tint Blue Lembut */
-  --blue-ultra-soft: #f0f9ff;    /* Ice Blue */
+  /* Surface / Card */
+  --surface-card: #FFFFFF;
+  --white: #FFFFFF;
+  --white-glass: rgba(255, 255, 255, 0.94);
+  --white-glass-strong: rgba(255, 255, 255, 0.98);
+  --white-glass-subtle: rgba(255, 255, 255, 0.85);
+  --sidebar-glass: rgba(255, 255, 255, 0.96);
+  --header-glass: rgba(255, 255, 255, 0.95);
+  --card-shadow: 0 4px 16px rgba(14, 165, 233, 0.08);
+  --card-shadow-hover: 0 8px 24px rgba(14, 165, 233, 0.12);
 
-  /* Aksen Terracotta / Caramel Brown (Signature Mockup) */
-  --terracotta: #b7521e;
-  --terracotta-dark: #9c4214;
-  --terracotta-hover: #a84717;
-  --terracotta-light: #faeae1;
-  --terracotta-soft: #fdf5f0;
-  --terracotta-border: #f8c9b2;
-  --terracotta-shadow: rgba(183, 82, 30, 0.28);
+  /* Primer: Biru Langit */
+  --blue-primary: #0EA5E9;
+  --blue-hover: #0284C7;
+  --blue-soft: #E0F2FE;
+  --blue-hero-gradient: linear-gradient(135deg, #CFEAFE, #E6F4FE);
 
-  /* Aksen Lavender Lembut */
-  --lavender: #7c83fd;
-  --lavender-soft: #ede9fe;
-  --lavender-dark: #4f46e5;
+  /* Kompatibilitas Blue Brand */
+  --blue-brand: #0EA5E9;
+  --blue-brand-dark: #0284C7;
+  --blue-brand-light: #38BDF8;
+  --blue-ultra-soft: #F0F9FF;
 
-  /* Aksen Bronze / Warm Gold (Aksen Logo DESI PRIVAT) */
-  --bronze: #8d4b26;
-  --bronze-light: #fef3c7;
-  --bronze-soft: #fffbeb;
+  /* Sekunder: Cokelat Hangat / Caramel */
+  --caramel: #A66B37;
+  --caramel-hover: #8C5628;
+  --caramel-soft: #F5E6D3;
+  --caramel-shadow: rgba(166, 107, 55, 0.25);
 
-  /* Teks & Netral Slate Navy */
-  --text-main: #0f172a;          /* Slate Navy Gelap */
-  --text-heading: #0c4a6e;       /* Deep Sky Navy */
-  --text-body: #334155;          /* Slate Body */
-  --text-muted: #64748b;         /* Slate Muted */
-  --text-light: #94a3b8;
+  /* Kompatibilitas Terracotta */
+  --terracotta: #A66B37;
+  --terracotta-dark: #8C5628;
+  --terracotta-hover: #8C5628;
+  --terracotta-light: #F5E6D3;
+  --terracotta-soft: #FAF2EB;
+  --terracotta-border: #E8D1BE;
+  --terracotta-shadow: rgba(166, 107, 55, 0.25);
+
+  /* Teks & Netral Slate */
+  --text-main: #0F172A;
+  --text-heading: #0F172A;
+  --text-body: #334155;
+  --text-muted: #64748B;
+  --text-light: #94A3B8;
 
   /* Garis Border Halus */
-  --border-subtle: rgba(226, 232, 240, 0.85);
+  --border-subtle: #E2E8F0;
+  --border-light: #F1F5F9;
   --border-blue: rgba(186, 230, 253, 0.7);
-  --border-lavender: rgba(221, 214, 254, 0.7);
 
-  /* Status Warna */
+  /* Status Badges */
+  --badge-active-bg: #E0F2FE;
+  --badge-active-text: #0284C7;
+  --badge-pending-bg: #F5E6D3;
+  --badge-pending-text: #8C5628;
+  --badge-danger-bg: #FEE2E2;
+  --badge-danger-text: #B91C1C;
+
   --success: #059669;
-  --success-bg: #ecfdf5;
-  --success-border: #a7f3d0;
-
-  --warning: #d97706;
-  --warning-bg: #fffbeb;
-  --warning-border: #fde68a;
-
-  --danger: #dc2626;
-  --danger-bg: #fef2f2;
-  --danger-border: #fecaca;
-
-  --info: #0284c7;
-  --info-bg: #f0f9ff;
-  --info-border: #bae6fd;
-
-  --purple-badge: #6d28d9;
-  --purple-badge-bg: #f5f3ff;
-  --purple-badge-border: #ddd6fe;
+  --success-bg: #E0F2FE;
+  --success-border: #BAE6FD;
+  --warning: #8C5628;
+  --warning-bg: #F5E6D3;
+  --warning-border: #E8D1BE;
+  --danger: #B91C1C;
+  --danger-bg: #FEE2E2;
+  --danger-border: #FECACA;
+  --info: #0284C7;
+  --info-bg: #E0F2FE;
+  --info-border: #BAE6FD;
 
   /* Tipografi & Dimensi */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --sidebar-width: 275px;
   --header-height: 72px;
 
@@ -87,9 +96,9 @@
   --radius-xl: 22px;
   --radius-pill: 9999px;
 
-  /* Glassmorphism Shadow */
-  --shadow-glass: 0 10px 30px -5px rgba(2, 132, 199, 0.06), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
-  --shadow-glass-hover: 0 16px 36px -4px rgba(2, 132, 199, 0.12), 0 8px 18px -3px rgba(15, 23, 42, 0.06);
+  /* Shadow Terpadu */
+  --shadow-glass: 0 4px 16px rgba(14, 165, 233, 0.08);
+  --shadow-glass-hover: 0 8px 24px rgba(14, 165, 233, 0.12);
   --shadow-sm: 0 2px 5px rgba(15, 23, 42, 0.04);
   --shadow-dropdown: 0 14px 28px rgba(15, 23, 42, 0.08), 0 6px 12px rgba(15, 23, 42, 0.04);
 }
@@ -256,11 +265,12 @@ a:hover {
 }
 
 .nav-link.active {
-  background: #e2f0fe;
-  color: #1958a7;
+  background: #E0F2FE;
+  color: #0284C7;
   font-weight: 700;
-  border-left: 3.5px solid #0284c7;
-  box-shadow: 0 2px 6px rgba(25, 88, 167, 0.08);
+  border-left: 4px solid #A66B37;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.1);
 }
 
 /* ==========================================================================
@@ -511,7 +521,7 @@ a:hover {
   position: absolute;
   top: -2px;
   right: -2px;
-  background: var(--danger);
+  background: var(--caramel, #A66B37);
   color: var(--white);
   border-radius: var(--radius-pill);
   font-size: 10px;
@@ -519,6 +529,17 @@ a:hover {
   padding: 2px 6px;
   line-height: 1;
   border: 2px solid var(--white);
+}
+
+.notif-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  background: #A66B37;
+  border-radius: 50%;
+  border: 1.5px solid #FFFFFF;
 }
 
 /* CONTENT BODY */
@@ -803,27 +824,27 @@ a:hover {
 }
 
 .badge-success {
-  background: var(--success-bg);
-  color: var(--success);
-  border: 1px solid var(--success-border);
+  background: #E0F2FE;
+  color: #0284C7;
+  border: 1px solid #BAE6FD;
 }
 
 .badge-warning {
-  background: var(--warning-bg);
-  color: var(--warning);
-  border: 1px solid var(--warning-border);
+  background: #F5E6D3;
+  color: #8C5628;
+  border: 1px solid #E8D1BE;
 }
 
 .badge-danger {
-  background: var(--danger-bg);
-  color: var(--danger);
-  border: 1px solid var(--danger-border);
+  background: #FEE2E2;
+  color: #B91C1C;
+  border: 1px solid #FECACA;
 }
 
 .badge-info {
-  background: var(--info-bg);
-  color: var(--info);
-  border: 1px solid var(--info-border);
+  background: #E0F2FE;
+  color: #0284C7;
+  border: 1px solid #BAE6FD;
 }
 
 .badge-purple, .badge-period {
@@ -1514,6 +1535,79 @@ form.modal-content {
   .content-body {
     padding: 16px 14px;
     gap: 16px;
+    padding-bottom: 80px !important;
+  }
+
+  /* Mobile Bottom Navigation Bar (Fixed Sesuai Spesifikasi 2) */
+  .mobile-bottom-nav {
+    display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 62px;
+    background: #FFFFFF;
+    border-top: 1px solid var(--border-subtle);
+    box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.06);
+    z-index: 1040;
+    justify-content: space-around;
+    align-items: center;
+    padding: 4px 8px;
+  }
+
+  .mobile-bottom-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: var(--text-muted);
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 8px;
+    gap: 3px;
+    transition: all 0.15s ease;
+  }
+
+  .mobile-bottom-item .bottom-icon .svg-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .mobile-bottom-item.active {
+    color: var(--blue-hover);
+    background: var(--blue-soft);
+  }
+
+  .navbar-search {
+    display: none !important;
+  }
+
+  /* Bento Dashboard Mobile Stacking (Sesuai Spesifikasi 4) */
+  .dashboard-layout-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .kpi-cards-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .kpi-cards-grid .kpi-card:nth-child(3) {
+    grid-column: span 2;
+  }
+
+  .welcome-banner-top {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .welcome-banner-widgets {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
   }
 
   /* Form & Input sentuhan ramah jemari (min 44px) */
@@ -1774,6 +1868,11 @@ form.modal-content {
 /* ==========================================================================
    KOMPONEN DESAIN MOCKUP BARU (TERRACOTTA, GLASSMORPHISM & CLEAN LAYOUTS)
    ========================================================================== */
+
+/* Mobile Bottom Nav Base (Desktop: Hidden) */
+.mobile-bottom-nav {
+  display: none;
+}
 
 /* 1. Terracotta Signature Button */
 .btn-terracotta {

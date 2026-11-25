@@ -6,79 +6,79 @@
   <title>Masuk - DESI PRIVAT</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
-<body style="margin: 0; background: #ffffff;">
+<body style="margin: 0; background: #FFFFFF; font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;">
   <div class="login-split-container">
-    <!-- KOLOM KIRI: HERO & BRANDING (SESUAI MOCKUP GAMBAR 1) -->
-    <div class="login-left-hero">
+    <!-- KOLOM KIRI: HERO & BRANDING (GRADASI BIRU MUDA LEMBUT SESUAI SPESIFIKASI 3.B) -->
+    <div class="login-left-hero" style="background: linear-gradient(135deg, #CFEAFE 0%, #E6F4FE 100%);">
       <div class="login-hero-logo">
         <img src="{{ url_for('static', filename='images/logo_symbol.svg') }}" class="login-hero-logo-img" alt="Logo DESI PRIVAT">
         <div>
-          <div class="login-hero-logo-title"><span style="color: #0284c7;">DESI</span> <span style="color: #8d4b26;">PRIVAT</span></div>
-          <div class="login-hero-logo-sub">SISTEM MANAJEMEN LES</div>
+          <div class="login-hero-logo-title"><span style="color: #0EA5E9;">DESI</span> <span style="color: #A66B37;">PRIVAT</span></div>
+          <div class="login-hero-logo-sub" style="color: #64748B;">SISTEM MANAJEMEN LES</div>
         </div>
       </div>
 
       <div class="login-hero-content">
-        <h1 class="login-hero-headline">
-          Pusat Pengelolaan Belajar yang Lebih <span style="color: #b7521e;">Efektif &amp; Teratur.</span>
+        <h1 class="login-hero-headline" style="color: #A66B37; font-weight: 800; font-size: 32px; line-height: 1.25;">
+          Pusat Pengelolaan Belajar yang Lebih <span style="color: #8C5628;">Efektif &amp; Teratur.</span>
         </h1>
-        <p class="login-hero-desc">
+        <p class="login-hero-desc" style="color: #334155; font-size: 14px; line-height: 1.6;">
           Selamat datang di platform manajemen les privat Desi Privat. Silakan masuk untuk mengelola siswa, tutor, dan jadwal harian Anda.
         </p>
       </div>
 
-      <!-- ILUSTRASI FLAT MODERN BELAJAR & JADWAL -->
+      <!-- ILUSTRASI FLAT MODERN BIRU-COKELAT -->
       <div class="login-hero-graphic">
-        <svg viewBox="0 0 460 220" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; max-width: 420px; height: auto; filter: drop-shadow(0 8px 24px rgba(2, 132, 199, 0.08));">
+        <svg viewBox="0 0 460 220" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; max-width: 420px; height: auto; filter: drop-shadow(0 8px 24px rgba(14, 165, 233, 0.12));">
           <!-- Calendar and Screen floating cards -->
-          <rect x="30" y="40" width="220" height="150" rx="12" fill="#ffffff" stroke="#bae6fd" stroke-width="2"/>
-          <rect x="30" y="40" width="220" height="28" rx="12" fill="#e0f2fe"/>
-          <circle cx="48" cy="54" r="4" fill="#38bdf8"/>
-          <circle cx="62" cy="54" r="4" fill="#7dd3fc"/>
-          <circle cx="76" cy="54" r="4" fill="#bae6fd"/>
+          <rect x="30" y="40" width="220" height="150" rx="12" fill="#FFFFFF" stroke="#BAE6FD" stroke-width="2"/>
+          <rect x="30" y="40" width="220" height="28" rx="12" fill="#E0F2FE"/>
+          <circle cx="48" cy="54" r="4" fill="#38BDF8"/>
+          <circle cx="62" cy="54" r="4" fill="#7DD3FC"/>
+          <circle cx="76" cy="54" r="4" fill="#BAE6FD"/>
           
           <!-- Calendar Widget on desk -->
-          <rect x="190" y="20" width="90" height="85" rx="8" fill="#ffffff" stroke="#fbcfe8" stroke-width="1.5" filter="drop-shadow(0 4px 10px rgba(0,0,0,0.04))"/>
-          <rect x="190" y="20" width="90" height="20" rx="8" fill="#f43f5e"/>
-          <circle cx="210" cy="30" r="2.5" fill="#ffffff"/>
-          <circle cx="260" cy="30" r="2.5" fill="#ffffff"/>
-          <rect x="202" y="50" width="16" height="12" rx="3" fill="#b7521e"/>
-          <rect x="226" y="50" width="16" height="12" rx="3" fill="#e2e8f0"/>
-          <rect x="250" y="50" width="16" height="12" rx="3" fill="#e2e8f0"/>
-          <rect x="202" y="70" width="16" height="12" rx="3" fill="#e2e8f0"/>
-          <rect x="226" y="70" width="16" height="12" rx="3" fill="#0284c7"/>
-          <rect x="250" y="70" width="16" height="12" rx="3" fill="#e2e8f0"/>
+          <rect x="190" y="20" width="90" height="85" rx="8" fill="#FFFFFF" stroke="#F5E6D3" stroke-width="1.5" filter="drop-shadow(0 4px 10px rgba(0,0,0,0.04))"/>
+          <rect x="190" y="20" width="90" height="20" rx="8" fill="#A66B37"/>
+          <circle cx="210" cy="30" r="2.5" fill="#FFFFFF"/>
+          <circle cx="260" cy="30" r="2.5" fill="#FFFFFF"/>
+          <rect x="202" y="50" width="16" height="12" rx="3" fill="#A66B37"/>
+          <rect x="226" y="50" width="16" height="12" rx="3" fill="#E2E8F0"/>
+          <rect x="250" y="50" width="16" height="12" rx="3" fill="#E2E8F0"/>
+          <rect x="202" y="70" width="16" height="12" rx="3" fill="#E2E8F0"/>
+          <rect x="226" y="70" width="16" height="12" rx="3" fill="#0EA5E9"/>
+          <rect x="250" y="70" width="16" height="12" rx="3" fill="#E2E8F0"/>
 
           <!-- Character Tutor (Right) -->
-          <circle cx="330" cy="85" r="22" fill="#fed7aa"/>
-          <path d="M312 75 C312 60 348 60 348 75 Z" fill="#1e293b"/>
-          <path d="M305 130 C305 110 355 110 355 130 L355 180 L305 180 Z" fill="#0284c7" rx="10"/>
+          <circle cx="330" cy="85" r="22" fill="#FED7AA"/>
+          <path d="M312 75 C312 60 348 60 348 75 Z" fill="#1E293B"/>
+          <path d="M305 130 C305 110 355 110 355 130 L355 180 L305 180 Z" fill="#0EA5E9" rx="10"/>
           <!-- Book in tutor hand -->
-          <rect x="290" y="140" width="28" height="35" rx="3" fill="#b7521e" transform="rotate(-15 290 140)"/>
+          <rect x="290" y="140" width="28" height="35" rx="3" fill="#A66B37" transform="rotate(-15 290 140)"/>
 
           <!-- Character Student (Left) -->
-          <circle cx="105" cy="115" r="18" fill="#fed7aa"/>
+          <circle cx="105" cy="115" r="18" fill="#FED7AA"/>
           <path d="M90 108 C90 95 120 95 120 108 Z" fill="#475569"/>
-          <path d="M85 150 C85 135 125 135 125 150 L125 190 L85 190 Z" fill="#f59e0b" rx="8"/>
+          <path d="M85 150 C85 135 125 135 125 150 L125 190 L85 190 Z" fill="#F59E0B" rx="8"/>
 
           <!-- Sparkles & Growth graph lines -->
-          <path d="M50 140 Q 100 110 150 130 T 210 90" stroke="#0284c7" stroke-width="3" stroke-linecap="round" fill="none"/>
-          <circle cx="210" cy="90" r="4" fill="#b7521e"/>
+          <path d="M50 140 Q 100 110 150 130 T 210 90" stroke="#0EA5E9" stroke-width="3" stroke-linecap="round" fill="none"/>
+          <circle cx="210" cy="90" r="4" fill="#A66B37"/>
         </svg>
       </div>
     </div>
 
-    <!-- KOLOM KANAN: CARD FORM LOGIN SESUAI MOCKUP GAMBAR 1 -->
+    <!-- KOLOM KANAN: CARD FORM LOGIN SESUAI MOCKUP & SPESIFIKASI 3.B -->
     <div class="login-right-form-wrapper">
-      <div class="login-modern-card">
+      <div class="login-modern-card" style="box-shadow: 0 4px 20px rgba(14, 165, 233, 0.08); border: 1px solid #E2E8F0;">
         <!-- Logo untuk tampilan mobile -->
         <div style="text-align: center; margin-bottom: 20px; display: none;" class="mobile-only-logo">
           <img src="{{ url_for('static', filename='images/logo_symbol.svg') }}" style="width: 48px; height: auto;" alt="Logo DESI PRIVAT">
-          <div style="font-size: 18px; font-weight: 800; margin-top: 6px;"><span style="color: #0284c7;">DESI</span> <span style="color: #8d4b26;">PRIVAT</span></div>
+          <div style="font-size: 18px; font-weight: 800; margin-top: 6px;"><span style="color: #0EA5E9;">DESI</span> <span style="color: #A66B37;">PRIVAT</span></div>
         </div>
 
         <h2 class="login-card-title">Selamat Datang Kembali <span style="display:none;">Masuk ke Sistem</span></h2>
@@ -134,7 +134,7 @@
                 required
                 style="padding-right: 85px;"
               >
-              <button type="button" class="toggle-password-btn" id="togglePasswordBtn" style="position: absolute; right: 12px; background: none; border: none; font-size: 12px; color: #64748b; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+              <button type="button" class="toggle-password-btn" id="togglePasswordBtn" style="position: absolute; right: 12px; background: none; border: none; font-size: 12px; color: #64748B; cursor: pointer; display: flex; align-items: center; gap: 4px;">
                 {{ icon('eye') }} lihat
               </button>
             </div>
@@ -143,20 +143,20 @@
           <!-- INGAT SAYA & LUPA KATA SANDI -->
           <div class="login-remember-row">
             <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;">
-              <input type="checkbox" name="remember" style="accent-color: #b7521e; width: 15px; height: 15px; border-radius: 4px;">
+              <input type="checkbox" name="remember" style="accent-color: #A66B37; width: 15px; height: 15px; border-radius: 4px;">
               <span>Ingat Saya</span>
             </label>
-            <a href="#" onclick="alert('Untuk bantuan pemulihan kata sandi akun, silakan hubungi Administrator atau Pemilik DESI PRIVAT via WhatsApp resmi.'); return false;" style="color: #b7521e; font-weight: 600; text-decoration: none;">Lupa Kata Sandi?</a>
+            <a href="#" onclick="alert('Untuk bantuan pemulihan kata sandi akun, silakan hubungi Administrator atau Pemilik DESI PRIVAT via WhatsApp resmi.'); return false;" style="color: #A66B37; font-weight: 600; text-decoration: none;">Lupa Kata Sandi?</a>
           </div>
 
-          <!-- TOMBOL MASUK KE DASHBOARD -->
-          <button type="submit" class="login-btn-submit">
+          <!-- TOMBOL MASUK KE DASHBOARD (FULL WIDTH COKELAT WARM CARAMEL) -->
+          <button type="submit" class="login-btn-submit" style="background: linear-gradient(135deg, #A66B37 0%, #8C5628 100%);">
             Masuk ke Dashboard
           </button>
         </form>
 
         <div class="login-help-link">
-          Butuh bantuan? <a href="https://wa.me/6281200000000" target="_blank">Hubungi Tim Dukungan 💬</a>
+          Butuh bantuan? <a href="https://wa.me/6281200000000" target="_blank" style="color: #A66B37;">Hubungi Tim Dukungan 💬</a>
         </div>
       </div>
     </div>

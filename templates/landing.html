@@ -7,188 +7,184 @@
   <meta name="description" content="Platform bimbingan belajar les privat terpercaya untuk SD, SMP, SMA, dan Bahasa Inggris dengan mentor berpengalaman.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
-<body class="landing-body">
+<body class="landing-body" style="background: #F2F8FD; font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;">
 
-  <!-- NAVBAR GLASSMORPHISM MENGAMBANG (SESUAI MOCKUP GAMBAR 2) -->
+  <!-- NAVBAR GLASSMORPHISM MENGAMBANG (SESUAI MOCKUP & SPESIFIKASI 3.A) -->
   <div class="landing-nav-wrapper">
-    <header class="landing-navbar">
+    <header class="landing-navbar" style="background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(16px); border: 1px solid rgba(226, 232, 240, 0.85); box-shadow: 0 4px 20px rgba(14, 165, 233, 0.08);">
       <div style="display: flex; align-items: center; gap: 12px;">
         <img src="{{ url_for('static', filename='images/logo_symbol.svg') }}" style="width: 36px; height: auto;" alt="Logo DESI PRIVAT">
         <div>
           <div style="font-size: 16px; font-weight: 900; line-height: 1.15; letter-spacing: 0.5px;">
-            <span style="color: #0284c7;">DESI</span> <span style="color: #8d4b26;">PRIVAT</span>
+            <span style="color: #0EA5E9;">DESI</span> <span style="color: #A66B37;">PRIVAT</span>
           </div>
-          <div style="font-size: 9.5px; font-weight: 700; color: #64748b; letter-spacing: 1px; text-transform: uppercase;">
+          <div style="font-size: 9.5px; font-weight: 700; color: #64748B; letter-spacing: 1px; text-transform: uppercase;">
             SISTEM MANAJEMEN LES
           </div>
         </div>
       </div>
 
-      <!-- DESKTOP NAV LINKS -->
-      <nav class="landing-nav-links" id="landingNavMenu">
-        <a href="#hero" class="landing-nav-link" style="color: #0284c7; font-weight: 700;">Beranda</a>
-        <a href="#profil" class="landing-nav-link">Profil Usaha</a>
-        <a href="#program" class="landing-nav-link">Program Les</a>
-        <a href="#dokumentasi" class="landing-nav-link">Dokumentasi</a>
-        <a href="#kontak" class="landing-nav-link">Kontak</a>
+      <!-- DESKTOP NAV LINKS: KAPSUL MENU DI TENGAH -->
+      <nav class="landing-nav-links" id="landingNavMenu" style="background: rgba(241, 245, 249, 0.8); padding: 4px 12px; border-radius: 9999px; border: 1px solid #E2E8F0;">
+        <a href="#hero" class="landing-nav-link" style="color: #0284C7; font-weight: 700;">Beranda</a>
+        <a href="#profil" class="landing-nav-link" style="color: #334155;">Profil Usaha</a>
+        <a href="#program" class="landing-nav-link" style="color: #334155;">Program Les</a>
+        <a href="#dokumentasi" class="landing-nav-link" style="color: #334155;">Dokumentasi</a>
+        <a href="#kontak" class="landing-nav-link" style="color: #334155;">Kontak</a>
       </nav>
 
       <!-- CTA LOGIN -->
       <div style="display: flex; align-items: center; gap: 12px;">
-        <a href="{{ url_for('auth.login') }}" class="btn-terracotta btn-terracotta-pill" style="font-size: 13px;">
+        <a href="{{ url_for('auth.login') }}" class="btn-caramel btn-terracotta-pill" style="font-size: 13px; text-decoration: none;">
           Masuk / Login
         </a>
-        <button type="button" class="mobile-toggle-btn" id="landingMobileToggle" style="display: none; background: none; border: none; font-size: 20px; color: #0f172a; cursor: pointer;" aria-label="Buka Menu">
-          {{ icon('menu') }}
-        </button>
       </div>
     </header>
   </div>
 
-  <!-- HERO SECTION DENGAN MOSAIK BELAJAR (SESUAI MOCKUP GAMBAR 2) -->
-  <div class="landing-hero-container" id="hero">
-    <div class="landing-hero-card">
-      <!-- Background subtle grid pattern -->
-      <div style="position: absolute; inset: 0; background: radial-gradient(circle at 20% 30%, rgba(56, 189, 248, 0.15) 0%, transparent 60%), radial-gradient(circle at 80% 70%, rgba(183, 82, 30, 0.12) 0%, transparent 50%); pointer-events: none;"></div>
+  <!-- HERO SECTION DENGAN MOSAIK BELAJAR (SESUAI MOCKUP & SPESIFIKASI 3.A) -->
+  <div class="landing-hero-container" id="hero" style="padding-top: 100px;">
+    <div class="landing-hero-card" style="position: relative; overflow: hidden; background: linear-gradient(135deg, #0284C7 0%, #0369A1 50%, #0C4A6E 100%); border-radius: 24px; box-shadow: 0 12px 36px rgba(2, 132, 199, 0.2);">
+      <!-- Background overlay gradasi biru transparan -->
+      <div style="position: absolute; inset: 0; background: radial-gradient(circle at 20% 30%, rgba(56, 189, 248, 0.25) 0%, transparent 60%), radial-gradient(circle at 80% 70%, rgba(166, 107, 55, 0.2) 0%, transparent 50%); pointer-events: none;"></div>
 
-      <div style="position: relative; z-index: 2; max-width: 820px; margin: 0 auto;">
-        <h1 class="landing-hero-title">
+      <div style="position: relative; z-index: 2; max-width: 820px; margin: 0 auto; text-align: center;">
+        <h1 class="landing-hero-title" style="color: #FFFFFF; font-weight: 800; font-size: 34px; line-height: 1.25; margin-bottom: 14px;">
           Bimbingan Belajar Privat yang Terarah &amp; Personal
         </h1>
-        <p class="landing-hero-desc">
+        <p class="landing-hero-desc" style="color: #E0F2FE; font-size: 15px; line-height: 1.6; max-width: 680px; margin: 0 auto 28px auto;">
           Pendampingan belajar eksklusif bersama mentor terbaik untuk memaksimalkan potensi akademik putra putri Anda.
         </p>
 
-        <div class="landing-hero-actions">
-          <a href="{{ url_for('auth.login') }}" class="btn-terracotta btn-terracotta-pill" style="padding: 12px 28px; font-size: 14.5px;">
+        <div class="landing-hero-actions" style="display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;">
+          <a href="{{ url_for('auth.login') }}" class="btn-caramel btn-terracotta-pill" style="padding: 12px 28px; font-size: 14.5px; text-decoration: none;">
             Masuk Portal
           </a>
-          <a href="#profil" class="btn-outline-white" style="padding: 12px 26px; font-size: 14.5px;">
+          <a href="#profil" class="btn-outline-white" style="padding: 12px 26px; font-size: 14.5px; border-radius: 9999px;">
             Profil Usaha
           </a>
         </div>
       </div>
 
-      <!-- MOSAIK VISUAL SESI BELAJAR -->
+      <!-- MOSAIK VISUAL SESI BELAJAR (TILTED / ROTATED SUBTLE COLLAGE) -->
       <div class="landing-photo-mosaic" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 48px; position: relative; z-index: 1;">
-        <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 14px; padding: 20px; text-align: left; backdrop-filter: blur(8px);">
-          <div style="font-size: 20px; margin-bottom: 6px;">📐</div>
-          <div style="font-size: 13.5px; font-weight: 700; color: #fff;">Matematika &amp; Sains</div>
-          <div style="font-size: 11.5px; color: #cbd5e1; margin-top: 4px;">Konsep dasar hingga soal olimpiade</div>
+        <div style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 14px; padding: 20px; text-align: left; backdrop-filter: blur(10px); transform: rotate(-1deg);">
+          <div style="font-size: 24px; margin-bottom: 8px;">📐</div>
+          <div style="font-size: 14px; font-weight: 700; color: #FFFFFF;">Matematika &amp; Sains</div>
+          <div style="font-size: 12px; color: #E0F2FE; margin-top: 4px;">Konsep dasar hingga soal olimpiade</div>
         </div>
-        <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 14px; padding: 20px; text-align: left; backdrop-filter: blur(8px);">
-          <div style="font-size: 20px; margin-bottom: 6px;">🇬🇧</div>
-          <div style="font-size: 13.5px; font-weight: 700; color: #fff;">Bahasa Inggris</div>
-          <div style="font-size: 11.5px; color: #cbd5e1; margin-top: 4px;">Grammar, conversation &amp; vocabulary</div>
+        <div style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 14px; padding: 20px; text-align: left; backdrop-filter: blur(10px); transform: rotate(1deg);">
+          <div style="font-size: 24px; margin-bottom: 8px;">🇬🇧</div>
+          <div style="font-size: 14px; font-weight: 700; color: #FFFFFF;">Bahasa Inggris</div>
+          <div style="font-size: 12px; color: #E0F2FE; margin-top: 4px;">Grammar, conversation &amp; vocabulary</div>
         </div>
-        <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 14px; padding: 20px; text-align: left; backdrop-filter: blur(8px);">
-          <div style="font-size: 20px; margin-bottom: 6px;">🎨</div>
-          <div style="font-size: 13.5px; font-weight: 700; color: #fff;">Calistung Ceria</div>
-          <div style="font-size: 11.5px; color: #cbd5e1; margin-top: 4px;">Membaca, menulis, &amp; berhitung ramah anak</div>
+        <div style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 14px; padding: 20px; text-align: left; backdrop-filter: blur(10px); transform: rotate(-1deg);">
+          <div style="font-size: 24px; margin-bottom: 8px;">🎨</div>
+          <div style="font-size: 14px; font-weight: 700; color: #FFFFFF;">Calistung Ceria</div>
+          <div style="font-size: 12px; color: #E0F2FE; margin-top: 4px;">Membaca, menulis &amp; berhitung ramah anak</div>
         </div>
-        <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 14px; padding: 20px; text-align: left; backdrop-filter: blur(8px);">
-          <div style="font-size: 20px; margin-bottom: 6px;">🏆</div>
-          <div style="font-size: 13.5px; font-weight: 700; color: #fff;">Persiapan Ujian</div>
-          <div style="font-size: 11.5px; color: #cbd5e1; margin-top: 4px;">UTBK, PTS, PAS &amp; Asesmen Nasional</div>
+        <div style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 14px; padding: 20px; text-align: left; backdrop-filter: blur(10px); transform: rotate(1deg);">
+          <div style="font-size: 24px; margin-bottom: 8px;">🏆</div>
+          <div style="font-size: 14px; font-weight: 700; color: #FFFFFF;">Persiapan Ujian</div>
+          <div style="font-size: 12px; color: #E0F2FE; margin-top: 4px;">UTBK, PTS, PAS &amp; Asesmen Nasional</div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- STATS BAR MENGAMBANG (REALTIME SESUAI DATABASE) -->
-  <div class="landing-stats-grid">
-    <div class="landing-stat-box">
-      <div class="landing-stat-icon" style="background: #e0f2fe; color: #0284c7;">
+  <!-- BAR STATISTIK (#D8EEFE SESUAI SPESIFIKASI 3.A) -->
+  <div class="landing-stats-grid" style="background: #D8EEFE; border: 1px solid #BAE6FD; border-radius: 18px; box-shadow: 0 4px 16px rgba(14, 165, 233, 0.08); padding: 18px 24px;">
+    <div class="landing-stat-box" style="background: #FFFFFF; border-radius: 14px; padding: 16px;">
+      <div class="landing-stat-icon" style="background: #E0F2FE; color: #0284C7;">
         {{ icon('users') }}
       </div>
       <div>
-        <div class="landing-stat-val">{{ student_count|default(0) }}{% if student_count and student_count > 0 %}+{% endif %}</div>
-        <div class="landing-stat-lbl">Siswa Aktif</div>
+        <div class="landing-stat-val" style="color: #0F172A; font-weight: 800;">{{ student_count|default(0) }}{% if student_count and student_count > 0 %}+{% endif %}</div>
+        <div class="landing-stat-lbl" style="color: #64748B;">Siswa Aktif</div>
       </div>
     </div>
 
-    <div class="landing-stat-box">
-      <div class="landing-stat-icon" style="background: #faeae1; color: #b7521e;">
+    <div class="landing-stat-box" style="background: #FFFFFF; border-radius: 14px; padding: 16px;">
+      <div class="landing-stat-icon" style="background: #F5E6D3; color: #8C5628;">
         {{ icon('mentor') }}
       </div>
       <div>
-        <div class="landing-stat-val">{{ mentor_count|default(0) }}{% if mentor_count and mentor_count > 0 %}+{% endif %}</div>
-        <div class="landing-stat-lbl">Mentor Terverifikasi</div>
+        <div class="landing-stat-val" style="color: #0F172A; font-weight: 800;">{{ mentor_count|default(0) }}{% if mentor_count and mentor_count > 0 %}+{% endif %}</div>
+        <div class="landing-stat-lbl" style="color: #64748B;">Mentor Terverifikasi</div>
       </div>
     </div>
 
-    <div class="landing-stat-box">
-      <div class="landing-stat-icon" style="background: #fef3c7; color: #d97706;">
+    <div class="landing-stat-box" style="background: #FFFFFF; border-radius: 14px; padding: 16px;">
+      <div class="landing-stat-icon" style="background: #FEF3C7; color: #D97706;">
         {{ icon('book') }}
       </div>
       <div>
-        <div class="landing-stat-val">{{ program_count|default(0) }}{% if program_count and program_count > 0 %}+{% endif %}</div>
-        <div class="landing-stat-lbl">Program Les</div>
+        <div class="landing-stat-val" style="color: #0F172A; font-weight: 800;">{{ program_count|default(0) }}{% if program_count and program_count > 0 %}+{% endif %}</div>
+        <div class="landing-stat-lbl" style="color: #64748B;">Program Les</div>
       </div>
     </div>
 
-    <div class="landing-stat-box">
-      <div class="landing-stat-icon" style="background: #ecfdf5; color: #059669;">
+    <div class="landing-stat-box" style="background: #FFFFFF; border-radius: 14px; padding: 16px;">
+      <div class="landing-stat-icon" style="background: #ECFDF5; color: #059669;">
         {{ icon('check-circle') }}
       </div>
       <div>
-        <div class="landing-stat-val">{{ satisfaction_rate|default(98) }}%</div>
-        <div class="landing-stat-lbl">Kepuasan Wali</div>
+        <div class="landing-stat-val" style="color: #0F172A; font-weight: 800;">{{ satisfaction_rate|default(98) }}%</div>
+        <div class="landing-stat-lbl" style="color: #64748B;">Kepuasan Wali</div>
       </div>
     </div>
   </div>
 
-  <!-- TENTANG & PROGRAM UNGGULAN (REALTIME DARI DATABASE) -->
-  <section class="landing-section" id="program">
-    <div class="landing-section-header">
-      <h2 class="landing-section-title">TENTANG &amp; PROGRAM UNGGULAN</h2>
-      <p class="landing-section-sub">Profil usaha DESI PRIVAT sebagai solusi bimbingan belajar terbaik untuk buah hati Anda.</p>
+  <!-- TENTANG & PROGRAM UNGGULAN (SESUAI SPESIFIKASI 3.A) -->
+  <section class="landing-section" id="program" style="max-width: 1200px; margin: 48px auto; padding: 0 20px;">
+    <div class="landing-section-header" style="text-align: center; margin-bottom: 32px;">
+      <h2 class="landing-section-title" style="font-size: 24px; font-weight: 800; color: #0F172A; letter-spacing: 0.5px;">TENTANG &amp; PROGRAM UNGGULAN</h2>
+      <p class="landing-section-sub" style="font-size: 14px; color: #64748B; margin-top: 6px;">Profil usaha DESI PRIVAT sebagai solusi bimbingan belajar terbaik untuk buah hati Anda.</p>
     </div>
 
-    <div class="landing-programs-grid">
+    <div class="landing-programs-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px;">
       {% if programs and programs|length > 0 %}
         {% for p in programs %}
-          <div class="landing-program-card">
-            <div class="landing-program-icon">
+          <div class="landing-program-card" style="background: #FFFFFF; border-radius: 16px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 4px 16px rgba(14, 165, 233, 0.08); text-align: center;">
+            <div class="landing-program-icon" style="font-size: 32px; margin-bottom: 12px;">
               {% if loop.index == 1 %}🏅{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥇{% else %}⭐{% endif %}
             </div>
-            <div class="landing-program-name">{{ p.name }}</div>
-            <p style="font-size: 12.5px; color: #64748b; margin-top: 8px; line-height: 1.5;">
+            <div class="landing-program-name" style="font-size: 15px; font-weight: 800; color: #0F172A;">{{ p.name }}</div>
+            <p style="font-size: 12.5px; color: #64748B; margin-top: 8px; line-height: 1.5;">
               {{ p.description or 'Pendampingan belajar terarah dan personal bersama mentor pilihan untuk hasil akademik optimal.' }}
             </p>
           </div>
         {% endfor %}
       {% else %}
-        <!-- Fallback Default -->
-        <div class="landing-program-card">
-          <div class="landing-program-icon">🏅</div>
-          <div class="landing-program-name">Privat SD &amp; Mapel Umum</div>
-          <p style="font-size: 12.5px; color: #64748b; margin-top: 8px; line-height: 1.5;">
+        <div class="landing-program-card" style="background: #FFFFFF; border-radius: 16px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 4px 16px rgba(14, 165, 233, 0.08); text-align: center;">
+          <div class="landing-program-icon" style="font-size: 32px; margin-bottom: 12px;">🏅</div>
+          <div class="landing-program-name" style="font-size: 15px; font-weight: 800; color: #0F172A;">Privat SD &amp; Mapel Umum</div>
+          <p style="font-size: 12.5px; color: #64748B; margin-top: 8px; line-height: 1.5;">
             Pendampingan harian matematika, tematik, dan IPA dengan metode interaktif yang menyenangkan.
           </p>
         </div>
-        <div class="landing-program-card">
-          <div class="landing-program-icon">🥈</div>
-          <div class="landing-program-name">Privat SMP</div>
-          <p style="font-size: 12.5px; color: #64748b; margin-top: 8px; line-height: 1.5;">
+        <div class="landing-program-card" style="background: #FFFFFF; border-radius: 16px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 4px 16px rgba(14, 165, 233, 0.08); text-align: center;">
+          <div class="landing-program-icon" style="font-size: 32px; margin-bottom: 12px;">🥈</div>
+          <div class="landing-program-name" style="font-size: 15px; font-weight: 800; color: #0F172A;">Privat SMP</div>
+          <p style="font-size: 12.5px; color: #64748B; margin-top: 8px; line-height: 1.5;">
             Penguatan pemahaman konsep matematika, IPA terpadu, dan bahasa untuk persiapan ujian sekolah.
           </p>
         </div>
-        <div class="landing-program-card">
-          <div class="landing-program-icon">🥇</div>
-          <div class="landing-program-name">Privat SMA &amp; SNBT</div>
-          <p style="font-size: 12.5px; color: #64748b; margin-top: 8px; line-height: 1.5;">
+        <div class="landing-program-card" style="background: #FFFFFF; border-radius: 16px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 4px 16px rgba(14, 165, 233, 0.08); text-align: center;">
+          <div class="landing-program-icon" style="font-size: 32px; margin-bottom: 12px;">🥇</div>
+          <div class="landing-program-name" style="font-size: 15px; font-weight: 800; color: #0F172A;">Privat SMA &amp; SNBT</div>
+          <p style="font-size: 12.5px; color: #64748B; margin-top: 8px; line-height: 1.5;">
             Fokus pendalaman materi Saintek, Soshum, serta pemantapan penalaran umum ujian masuk PTN.
           </p>
         </div>
-        <div class="landing-program-card">
-          <div class="landing-program-icon">⭐</div>
-          <div class="landing-program-name">Bahasa Inggris &amp; Calistung</div>
-          <p style="font-size: 12.5px; color: #64748b; margin-top: 8px; line-height: 1.5;">
+        <div class="landing-program-card" style="background: #FFFFFF; border-radius: 16px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 4px 16px rgba(14, 165, 233, 0.08); text-align: center;">
+          <div class="landing-program-icon" style="font-size: 32px; margin-bottom: 12px;">⭐</div>
+          <div class="landing-program-name" style="font-size: 15px; font-weight: 800; color: #0F172A;">Bahasa Inggris &amp; Calistung</div>
+          <p style="font-size: 12.5px; color: #64748B; margin-top: 8px; line-height: 1.5;">
             English Kids conversation aktif dan pondasi calistung ceria usia dini dengan modul ramah anak.
           </p>
         </div>
@@ -197,32 +193,32 @@
   </section>
 
   <!-- DOKUMENTASI KEGIATAN -->
-  <section class="landing-section" id="dokumentasi" style="background: #ffffff; border-radius: 24px; padding: 48px 36px; border: 1px solid #e2e8f0;">
-    <div class="landing-section-header">
-      <h2 class="landing-section-title">Dokumentasi Kegiatan Belajar</h2>
-      <p class="landing-section-sub">Suasana sesi bimbingan belajar tatap muka yang interaktif, fokus, dan nyaman.</p>
+  <section class="landing-section" id="dokumentasi" style="max-width: 1200px; margin: 48px auto; padding: 36px; background: #FFFFFF; border-radius: 20px; border: 1px solid #E2E8F0; box-shadow: 0 4px 16px rgba(14, 165, 233, 0.08);">
+    <div class="landing-section-header" style="text-align: center; margin-bottom: 28px;">
+      <h2 class="landing-section-title" style="font-size: 22px; font-weight: 800; color: #0F172A;">Dokumentasi Kegiatan Belajar</h2>
+      <p class="landing-section-sub" style="font-size: 13.5px; color: #64748B; margin-top: 4px;">Suasana sesi bimbingan belajar tatap muka yang interaktif, fokus, dan nyaman.</p>
     </div>
 
     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
-      <div style="background: #f1f5f9; border-radius: 12px; height: 160px; display: flex; align-items: center; justify-content: center; font-size: 36px; border: 1px solid #e2e8f0;">
+      <div style="background: #F8FAFC; border-radius: 14px; height: 160px; display: flex; align-items: center; justify-content: center; font-size: 36px; border: 1px solid #E2E8F0;">
         📖
       </div>
-      <div style="background: #f1f5f9; border-radius: 12px; height: 160px; display: flex; align-items: center; justify-content: center; font-size: 36px; border: 1px solid #e2e8f0;">
+      <div style="background: #F8FAFC; border-radius: 14px; height: 160px; display: flex; align-items: center; justify-content: center; font-size: 36px; border: 1px solid #E2E8F0;">
         ✍️
       </div>
-      <div style="background: #f1f5f9; border-radius: 12px; height: 160px; display: flex; align-items: center; justify-content: center; font-size: 36px; border: 1px solid #e2e8f0;">
+      <div style="background: #F8FAFC; border-radius: 14px; height: 160px; display: flex; align-items: center; justify-content: center; font-size: 36px; border: 1px solid #E2E8F0;">
         💡
       </div>
-      <div style="background: #f1f5f9; border-radius: 12px; height: 160px; display: flex; align-items: center; justify-content: center; font-size: 36px; border: 1px solid #e2e8f0;">
+      <div style="background: #F8FAFC; border-radius: 14px; height: 160px; display: flex; align-items: center; justify-content: center; font-size: 36px; border: 1px solid #E2E8F0;">
         🎯
       </div>
     </div>
   </section>
 
   <!-- FOOTER -->
-  <footer style="max-width: 1200px; margin: 48px auto 24px auto; padding: 24px; text-align: center; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 12.5px;" id="kontak">
-    <div style="font-weight: 800; font-size: 15px; color: #0f172a; margin-bottom: 6px;">
-      <span style="color: #0284c7;">DESI</span> <span style="color: #8d4b26;">PRIVAT</span> - SISTEM MANAJEMEN LES
+  <footer style="max-width: 1200px; margin: 48px auto 24px auto; padding: 24px; text-align: center; border-top: 1px solid #E2E8F0; color: #64748B; font-size: 12.5px;" id="kontak">
+    <div style="font-weight: 800; font-size: 15px; color: #0F172A; margin-bottom: 6px;">
+      <span style="color: #0EA5E9;">DESI</span> <span style="color: #A66B37;">PRIVAT</span> - SISTEM MANAJEMEN LES
     </div>
     <p style="margin-bottom: 12px;">Pusat Pengelolaan Bimbingan Belajar Privat Terpercaya &amp; Terstruktur.</p>
     <div>&copy; 2026 DESI PRIVAT. Hak cipta dilindungi undang-undang.</div>
@@ -230,24 +226,14 @@
 
   <style>
     @media (max-width: 768px) {
-      .landing-navbar {
-        border-radius: 18px !important;
-      }
-      .landing-nav-links {
-        display: none !important;
-      }
-      .mobile-toggle-btn {
-        display: block !important;
-      }
-      .landing-hero-card {
-        padding: 36px 20px !important;
-      }
-      .landing-hero-title {
-        font-size: 26px !important;
-      }
-      .landing-photo-mosaic {
-        grid-template-columns: 1fr 1fr !important;
-      }
+      .landing-nav-links { display: none !important; }
+      .landing-stats-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+      .landing-programs-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+      .landing-photo-mosaic { grid-template-columns: repeat(2, 1fr) !important; }
+      .landing-hero-title { font-size: 26px !important; }
+    }
+    @media (max-width: 480px) {
+      .landing-programs-grid { grid-template-columns: 1fr !important; }
     }
   </style>
 
