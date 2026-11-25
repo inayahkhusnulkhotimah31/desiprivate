@@ -39,7 +39,10 @@
           </p>
         </div>
       </div>
-      <div style="display: flex; gap: 8px;">
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <a href="{{ url_for('owner.finance_report') }}" class="btn btn-success btn-sm">
+          {{ icon('dollar-sign') }} Buku Kas Masuk &amp; Keluar
+        </a>
         <a href="{{ url_for('owner.reports', type='schedules') }}" class="btn btn-primary btn-sm">
           {{ icon('dashboard') }} Laporan &amp; Rekapitulasi
         </a>

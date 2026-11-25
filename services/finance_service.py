@@ -816,6 +816,57 @@ def record_owner_custom_payment(bill_id, amount, payment_option, target_total_am
     return payment_id, receipt_number, new_remaining
 
 
+def record_operational_cash_transaction(
+    transaction_type, category, amount, transaction_date=None,
+    description="", payment_method="Tunai", receipt_ref=None,
+    recorded_by=None, db_path=None
+):
+    """
+    Mencatat transaksi kas operasional manual (kas masuk atau keluar):
+    - Digunakan oleh Owner untuk mencatat pemasukan non-les (misal modul, pendaftaran manual)
+      atau pengeluaran operasional (sewa, listrik, internet, ATK, konsumsi, dll).
+    """
+    if transaction_type not in ("masuk", "keluar"):
+        raise ValueError("Tipe transaksi harus 'masuk' atau 'keluar'.")
+    amount = float(amount or 0)
+    if amount <= 0:
+        raise ValueError("Nominal transaksi harus lebih besar dari 0.")
+    if not description:
+        raise ValueError("Keterangan transaksi wajib diisi.")
+    if not transaction_date:
+        transaction_date = datetime.now().strftime("%Y-%m-%d")
+
+    valid_recorder = None
+    if recorded_by:
+        u = query_db("SELECT id FROM users WHERE id = ?", (recorded_by,), one=True, db_path=db_path)
+        if u:
+            valid_recorder = u["id"]
+
+    tx_id = execute_db("""
+        INSERT INTO operational_cash_transactions (
+            transaction_type, category, amount, transaction_date,
+            description, receipt_ref, payment_method, recorded_by
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        transaction_type, category, amount, transaction_date,
+        description, receipt_ref, payment_method, valid_recorder
+    ), db_path=db_path)
+
+    return tx_id
+
+
+def delete_operational_cash_transaction(tx_id, user_id=None, db_path=None):
+    """
+    Menghapus rekaman transaksi kas operasional manual.
+    """
+    tx = query_db("SELECT * FROM operational_cash_transactions WHERE id = ?", (tx_id,), one=True, db_path=db_path)
+    if not tx:
+        return {"success": False, "message": "Transaksi kas operasional tidak ditemukan."}
+
+    execute_db("DELETE FROM operational_cash_transactions WHERE id = ?", (tx_id,), db_path=db_path)
+    return {"success": True, "message": f"Transaksi kas {tx['transaction_type']} #{tx_id} ({tx['category']}) berhasil dihapus."}
+
+
 def get_monthly_finance_report(month_str=None, db_path=None):
     """
     Menghasilkan laporan keuangan kas masuk (pembayaran orang tua) & kas keluar (honor mentor):
@@ -832,6 +883,8 @@ def get_monthly_finance_report(month_str=None, db_path=None):
         SELECT DISTINCT strftime('%Y-%m', payment_date) as ym FROM bill_payments WHERE payment_date IS NOT NULL
         UNION
         SELECT DISTINCT strftime('%Y-%m', transferred_at) as ym FROM mentor_period_honor WHERE transferred_at IS NOT NULL
+        UNION
+        SELECT DISTINCT strftime('%Y-%m', transaction_date) as ym FROM operational_cash_transactions WHERE transaction_date IS NOT NULL
         ORDER BY ym DESC
     """, db_path=db_path)
     available_months = [m["ym"] for m in months_query if m["ym"]]
@@ -882,8 +935,24 @@ def get_monthly_finance_report(month_str=None, db_path=None):
     out_query += " ORDER BY h.transferred_at DESC"
     expense_records = query_db(out_query, out_args, db_path=db_path)
 
-    total_income = sum(float(r["amount"] or 0) for r in income_records)
-    total_expense = sum(float(r["amount"] or 0) for r in expense_records)
+    # 3. Transaksi Kas Operasional Manual (Kas Masuk & Keluar)
+    op_query = """
+        SELECT op.*, u.full_name as recorder_name
+        FROM operational_cash_transactions op
+        LEFT JOIN users u ON op.recorded_by = u.id
+    """
+    op_args = []
+    if month_str != "all":
+        op_query += " WHERE strftime('%Y-%m', op.transaction_date) = ?"
+        op_args.append(month_str)
+    op_query += " ORDER BY op.transaction_date DESC, op.created_at DESC"
+    operational_records = query_db(op_query, op_args, db_path=db_path)
+
+    op_income = [r for r in operational_records if r["transaction_type"] == "masuk"]
+    op_expense = [r for r in operational_records if r["transaction_type"] == "keluar"]
+
+    total_income = sum(float(r["amount"] or 0) for r in income_records) + sum(float(r["amount"] or 0) for r in op_income)
+    total_expense = sum(float(r["amount"] or 0) for r in expense_records) + sum(float(r["amount"] or 0) for r in op_expense)
     net_balance = total_income - total_expense
 
     # Susun transaksi kas terpadu (gabungan masuk & keluar)
@@ -892,6 +961,7 @@ def get_monthly_finance_report(month_str=None, db_path=None):
         transactions.append({
             "type": "masuk",
             "type_label": "Uang Masuk",
+            "source": "siswa",
             "category": "Pembayaran Les Siswa",
             "date": inc["payment_date"],
             "amount": float(inc["amount"]),
@@ -899,12 +969,29 @@ def get_monthly_finance_report(month_str=None, db_path=None):
             "description": f"{inc['program_name']} - Periode {inc['period_number']} (Ref: {inc['receipt_number']})",
             "notes": inc["notes"] or inc["payment_method"] or "-",
             "officer": inc["recorder_name"] or "Owner",
-            "raw_id": inc["id"]
+            "raw_id": inc["id"],
+            "is_operational": False
+        })
+    for inc_op in op_income:
+        transactions.append({
+            "type": "masuk",
+            "type_label": "Uang Masuk",
+            "source": "operasional",
+            "category": inc_op["category"] or "Pemasukan Lainnya",
+            "date": inc_op["transaction_date"],
+            "amount": float(inc_op["amount"]),
+            "party": "Kas Masuk Operasional / Non-Les",
+            "description": inc_op["description"],
+            "notes": inc_op["payment_method"] or "-",
+            "officer": inc_op["recorder_name"] or "Owner",
+            "raw_id": inc_op["id"],
+            "is_operational": True
         })
     for exp in expense_records:
         transactions.append({
             "type": "keluar",
             "type_label": "Uang Keluar",
+            "source": "mentor",
             "category": "Honor Mengajar Mentor",
             "date": exp["expense_date"],
             "amount": float(exp["amount"]),
@@ -912,7 +999,23 @@ def get_monthly_finance_report(month_str=None, db_path=None):
             "description": f"Fee {exp['program_name']} Siswa {exp['student_name']} (Periode {exp['period_number']}, {exp['completed_meetings']} Sesi)",
             "notes": exp["notes"] or "Transfer Honor",
             "officer": exp["transferred_by_name"] or "Owner",
-            "raw_id": exp["id"]
+            "raw_id": exp["id"],
+            "is_operational": False
+        })
+    for exp_op in op_expense:
+        transactions.append({
+            "type": "keluar",
+            "type_label": "Uang Keluar",
+            "source": "operasional",
+            "category": exp_op["category"] or "Biaya Operasional",
+            "date": exp_op["transaction_date"],
+            "amount": float(exp_op["amount"]),
+            "party": "Pengeluaran Operasional Bimbel",
+            "description": exp_op["description"],
+            "notes": exp_op["payment_method"] or "-",
+            "officer": exp_op["recorder_name"] or "Owner",
+            "raw_id": exp_op["id"],
+            "is_operational": True
         })
 
     transactions.sort(key=lambda x: str(x["date"]), reverse=True)
@@ -970,12 +1073,12 @@ def generate_finance_excel_report(month_str=None, db_path=None):
     # Summary KPI block
     ws["A4"] = "RINGKASAN EKSEKUTIF"
     ws["A4"].font = bold_font
-    ws["A5"] = "Total Uang Masuk (Wali Murid):"
+    ws["A5"] = "Total Uang Masuk (Wali Murid & Operasional):"
     ws["B5"] = data["total_income"]
     ws["B5"].number_format = '"Rp "#,##0'
     ws["B5"].font = green_font
 
-    ws["A6"] = "Total Uang Keluar (Honor Tentor):"
+    ws["A6"] = "Total Uang Keluar (Honor Tentor & Operasional):"
     ws["B6"] = data["total_expense"]
     ws["B6"].number_format = '"Rp "#,##0'
     ws["B6"].font = red_font

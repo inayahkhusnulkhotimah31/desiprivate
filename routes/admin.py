@@ -2026,38 +2026,47 @@ def admin_assign_routine_temporary_mentor(routine_id):
         flash("Tanggal sesi, mentor pengganti, dan alasan pergantian wajib diisi.", "danger")
         return redirect(url_for("admin.schedules"))
 
-    # Cari apakah sudah ada schedule pada tanggal ini
-    existing_sched = query_db("""
-        SELECT id FROM schedules
-        WHERE student_id = ? AND program_id = ? AND schedule_date = ?
-    """, (rs["student_id"], rs["program_id"], target_date), one=True)
+    # Pastikan user_id yang merekam/menyetujui valid di tabel users
+    admin_uid = session.get("user_id")
+    valid_user = query_db("SELECT id FROM users WHERE id = ?", (admin_uid,), one=True)
+    valid_uid = valid_user["id"] if valid_user else 1
 
-    if existing_sched:
-        sched_id = existing_sched["id"]
-    else:
-        # Buat schedule untuk tanggal tersebut
-        sched_id = execute_db("""
-            INSERT INTO schedules (
-                title, program_id, student_id, mentor_id,
-                schedule_date, start_time, end_time, duration_minutes,
-                status, student_confirmation_status, mentor_response_status,
-                is_recurring, session_notes,
-                created_by, approved_by
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 90, 'disetujui', 'bersedia', 'dikonfirmasi', 1, ?, ?, ?)
-        """, (
-            f"Sesi {rs['program_name']} - {rs['student_name']}",
-            rs["program_id"], rs["student_id"], rs["mentor_id"],
-            target_date, rs["start_time"], rs["end_time"],
-            f"Penugasan mentor pengganti: {reason}",
-            session["user_id"], session["user_id"]
-        ))
+    try:
+        # Cari apakah sudah ada schedule pada tanggal ini
+        existing_sched = query_db("""
+            SELECT id FROM schedules
+            WHERE student_id = ? AND program_id = ? AND schedule_date = ?
+        """, (rs["student_id"], rs["program_id"], target_date), one=True)
 
-    # Eksekusi penggantian mentor
-    res = execute_mentor_replacement(sched_id, int(replacement_mentor_id), reason, session["user_id"])
-    if res["success"]:
-        flash(f"Berhasil menugaskan mentor pengganti untuk sesi {target_date}: {res['message']}", "success")
-    else:
-        flash(res["message"], "danger")
+        if existing_sched:
+            sched_id = existing_sched["id"]
+        else:
+            # Buat schedule untuk tanggal tersebut
+            sched_id = execute_db("""
+                INSERT INTO schedules (
+                    title, program_id, student_id, mentor_id,
+                    schedule_date, start_time, end_time, duration_minutes,
+                    status, student_confirmation_status, mentor_response_status,
+                    is_recurring, session_notes,
+                    created_by, approved_by
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, 90, 'disetujui', 'bersedia', 'dikonfirmasi', 1, ?, ?, ?)
+            """, (
+                f"Sesi {rs['program_name']} - {rs['student_name']}",
+                rs["program_id"], rs["student_id"], rs["mentor_id"],
+                target_date, rs["start_time"], rs["end_time"],
+                f"Penugasan mentor pengganti: {reason}",
+                valid_uid, valid_uid
+            ))
+
+        # Eksekusi penggantian mentor
+        res = execute_mentor_replacement(sched_id, int(replacement_mentor_id), reason, valid_uid)
+        if res["success"]:
+            flash(f"Berhasil menugaskan mentor pengganti untuk sesi {target_date}: {res['message']}", "success")
+        else:
+            flash(res["message"], "danger")
+    except Exception as e:
+        flash(f"Gagal menugaskan mentor pengganti: {e}", "danger")
+
     return redirect(url_for("admin.schedules"))
 
 # API deteksi bentrokan untuk frontend (fetch / AJAX)

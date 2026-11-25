@@ -560,6 +560,24 @@ def init_db(db_path=None, schema_path=None):
                 UNIQUE(mentor_id, student_id, program_id)
             )
         """)
+
+        # Migrasi tabel Transaksi Kas Operasional Manual (Kas Masuk & Kas Keluar Pemilik)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS operational_cash_transactions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                transaction_type TEXT NOT NULL CHECK(transaction_type IN ('masuk', 'keluar')),
+                category TEXT NOT NULL,
+                amount REAL NOT NULL,
+                transaction_date TEXT NOT NULL,
+                description TEXT NOT NULL,
+                receipt_ref TEXT,
+                payment_method TEXT DEFAULT 'Transfer Bank',
+                recorded_by INTEGER REFERENCES users(id),
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_op_cash_type_date ON operational_cash_transactions(transaction_type, transaction_date);")
     except Exception:
         pass
 

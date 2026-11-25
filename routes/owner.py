@@ -23,7 +23,8 @@ from services.finance_service import (
     sync_and_get_mentor_period_honors, mark_mentor_honor_as_transferred, get_billing_alerts_summary,
     record_bill_payment, record_owner_custom_payment, get_monthly_finance_report, generate_finance_excel_report,
     update_mentor_period_honor_meetings, get_mentor_student_program_fees,
-    save_mentor_student_program_fee, delete_mentor_student_program_fee
+    save_mentor_student_program_fee, delete_mentor_student_program_fee,
+    record_operational_cash_transaction, delete_operational_cash_transaction
 )
 
 owner_bp = Blueprint("owner", __name__, url_prefix="/owner")
@@ -38,6 +39,7 @@ def check_owner_access():
     # 2. Pengaturan tarif fee honor tentor per pertemuan (umum & detail per murid/program)
     # 3. Konfirmasi pencairan/transfer fee tentor per 8 pertemuan
     # 4. Pencatatan pembayaran tagihan & cicilan murid
+    # 5. Pencatatan dan penghapusan kas operasional mandiri (uang masuk / keluar non-otomatis)
     allowed_executive_endpoints = [
         "owner.validate_student_payment",
         "owner.update_mentor_fee",
@@ -46,6 +48,10 @@ def check_owner_access():
         "owner.confirm_honor_transfer",
         "owner.update_honor_meetings",
         "owner.record_owner_payment",
+        "owner.owner_correct_payment",
+        "owner.owner_cancel_payment",
+        "owner.create_operational_cash",
+        "owner.delete_operational_cash",
     ]
     if request.method not in ("GET", "HEAD", "OPTIONS"):
         if request.endpoint not in allowed_executive_endpoints:
@@ -776,4 +782,72 @@ def export_finance_excel():
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+@owner_bp.route("/operational-cash/create", methods=["POST"])
+def create_operational_cash():
+    """Mencatat uang masuk atau uang keluar operasional secara mandiri oleh Owner."""
+    validate_csrf()
+    tx_type = request.form.get("transaction_type", "keluar").strip().lower()
+    category = request.form.get("category", "").strip() or ("Biaya Operasional" if tx_type == "keluar" else "Pemasukan Lainnya")
+    amount = request.form.get("amount", 0)
+    tx_date = request.form.get("transaction_date", date.today().strftime("%Y-%m-%d")).strip()
+    description = request.form.get("description", "").strip()
+    payment_method = request.form.get("payment_method", "Tunai").strip()
+    receipt_ref = request.form.get("receipt_ref", "").strip() or None
+
+    if not description:
+        flash("Keterangan transaksi kas wajib diisi.", "danger")
+        return redirect(request.referrer or url_for("owner.finance_report"))
+
+    try:
+        amt = float(amount)
+        if amt <= 0:
+            flash("Nominal transaksi harus lebih besar dari 0.", "danger")
+            return redirect(request.referrer or url_for("owner.finance_report"))
+
+        tx_id = record_operational_cash_transaction(
+            transaction_type=tx_type,
+            category=category,
+            amount=amt,
+            transaction_date=tx_date,
+            description=description,
+            payment_method=payment_method,
+            receipt_ref=receipt_ref,
+            recorded_by=session.get("user_id")
+        )
+        log_audit(
+            session.get("user_id"),
+            session.get("username", "owner"),
+            "CATAT_KAS_OPERASIONAL",
+            "operational_cash_transactions",
+            str(tx_id),
+            f"Mencatat kas {tx_type}: {category} Rp {amt:,.0f} - {description}",
+            module_name="Keuangan Owner"
+        )
+        flash(f"Transaksi kas {tx_type} ({category}) sebesar Rp {amt:,.0f} berhasil dicatat.", "success")
+    except Exception as e:
+        flash(f"Gagal mencatat transaksi kas operasional: {e}", "danger")
+
+    return redirect(request.referrer or url_for("owner.finance_report"))
+
+@owner_bp.route("/operational-cash/<int:tx_id>/delete", methods=["POST"])
+def delete_operational_cash(tx_id):
+    """Menghapus transaksi kas operasional yang pernah dicatat oleh Owner."""
+    validate_csrf()
+    res = delete_operational_cash_transaction(tx_id, user_id=session.get("user_id"))
+    if res["success"]:
+        log_audit(
+            session.get("user_id"),
+            session.get("username", "owner"),
+            "HAPUS_KAS_OPERASIONAL",
+            "operational_cash_transactions",
+            str(tx_id),
+            f"Menghapus transaksi kas operasional #{tx_id}",
+            module_name="Keuangan Owner"
+        )
+        flash(res["message"], "success")
+    else:
+        flash(res["message"], "danger")
+    return redirect(request.referrer or url_for("owner.finance_report"))
+
 

@@ -397,6 +397,21 @@ CREATE TABLE IF NOT EXISTS mentor_period_honor (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 23. Tabel Transaksi Kas Operasional Manual (Kas Masuk & Kas Keluar Pemilik)
+CREATE TABLE IF NOT EXISTS operational_cash_transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    transaction_type TEXT NOT NULL CHECK(transaction_type IN ('masuk', 'keluar')),
+    category TEXT NOT NULL,
+    amount REAL NOT NULL,
+    transaction_date TEXT NOT NULL,
+    description TEXT NOT NULL,
+    receipt_ref TEXT,
+    payment_method TEXT DEFAULT 'Transfer Bank',
+    recorded_by INTEGER REFERENCES users(id),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indeks Tambahan untuk Optimalisasi Performa Pencarian dan Kalender
 CREATE INDEX IF NOT EXISTS idx_schedules_date ON schedules(schedule_date);
 CREATE INDEX IF NOT EXISTS idx_schedules_mentor ON schedules(mentor_id);
@@ -414,3 +429,4 @@ CREATE INDEX IF NOT EXISTS idx_routine_schedules_mentor ON routine_schedules(men
 CREATE INDEX IF NOT EXISTS idx_routine_schedules_student ON routine_schedules(student_id, day_of_week);
 CREATE INDEX IF NOT EXISTS idx_attendance_student_prog ON attendance(student_id, program_id);
 CREATE INDEX IF NOT EXISTS idx_attendance_recorded_at ON attendance(recorded_at);
+CREATE INDEX IF NOT EXISTS idx_op_cash_type_date ON operational_cash_transactions(transaction_type, transaction_date);

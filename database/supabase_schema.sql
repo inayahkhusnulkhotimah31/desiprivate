@@ -340,3 +340,21 @@ SELECT setval(pg_get_serial_sequence('routine_schedules', 'id'), COALESCE((SELEC
 SELECT setval(pg_get_serial_sequence('schedules', 'id'), COALESCE((SELECT MAX(id) FROM schedules), 103));
 SELECT setval(pg_get_serial_sequence('attendance', 'id'), COALESCE((SELECT MAX(id) FROM attendance), 22));
 
+-- Tabel Transaksi Kas Operasional Manual (Kas Masuk & Keluar Mandiri Owner)
+CREATE TABLE IF NOT EXISTS operational_cash_transactions (
+    id SERIAL PRIMARY KEY,
+    transaction_type VARCHAR(10) NOT NULL CHECK(transaction_type IN ('masuk', 'keluar')),
+    category VARCHAR(100) NOT NULL,
+    amount NUMERIC(14, 2) NOT NULL,
+    transaction_date DATE NOT NULL,
+    description TEXT NOT NULL,
+    receipt_ref VARCHAR(100),
+    payment_method VARCHAR(50) DEFAULT 'Transfer Bank',
+    recorded_by INTEGER REFERENCES users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_op_cash_type_date ON operational_cash_transactions(transaction_type, transaction_date);
+
+

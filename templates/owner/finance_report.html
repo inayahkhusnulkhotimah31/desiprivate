@@ -72,7 +72,10 @@
     </noscript>
   </form>
 
-  <div style="display: flex; gap: 8px;">
+  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+    <button type="button" class="btn btn-primary" onclick="openModal('operationalCashModal')" style="font-size: 12.5px; padding: 7px 16px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+      {{ icon('plus-circle') }} Catat Kas Masuk / Keluar
+    </button>
     <a href="{{ url_for('owner.export_finance_excel', month=selected_month) }}" class="btn btn-success" style="font-size: 12.5px; padding: 7px 16px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
       {{ icon('download') }} Download Rekap Excel (.xlsx)
     </a>
@@ -143,6 +146,7 @@
             <th style="text-align: right;">Uang Masuk (Rp)</th>
             <th style="text-align: right;">Uang Keluar (Rp)</th>
             <th>Keterangan / Ref</th>
+            <th style="text-align: center; width: 60px;">Aksi</th>
           </tr>
         </thead>
         <tbody>
@@ -192,10 +196,22 @@
             <td>
               <span style="font-size: 11.5px; color: var(--text-muted);">{{ t.notes }}</span>
             </td>
+            <td style="text-align: center;">
+              {% if t.is_operational %}
+                <form method="POST" action="{{ url_for('owner.delete_operational_cash', tx_id=t.raw_id) }}" onsubmit="return confirm('Hapus catatan kas operasional ini?');" style="display: inline;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-danger btn-sm" style="padding: 3px 7px; font-size: 11px;" title="Hapus Catatan Kas">
+                    {{ icon('trash') }}
+                  </button>
+                </form>
+              {% else %}
+                <span style="color: var(--gray-400); font-size: 11px;">-</span>
+              {% endif %}
+            </td>
           </tr>
           {% else %}
           <tr>
-            <td colspan="8" style="text-align: center; padding: 40px; color: var(--gray-500);">
+            <td colspan="9" style="text-align: center; padding: 40px; color: var(--gray-500);">
               Belum ada riwayat transaksi keuangan pada periode bulan ini.
             </td>
           </tr>
@@ -213,7 +229,7 @@
             <td style="text-align: right; color: #dc2626; font-size: 14px; padding: 12px 16px;">
               Rp {{ "{:,.0f}".format(report.total_expense).replace(",", ".") }}
             </td>
-            <td style="padding: 12px 16px; font-size: 12px; color: var(--navy-primary);">
+            <td style="padding: 12px 16px; font-size: 12px; color: var(--navy-primary);" colspan="2">
               Saldo Bersih: <strong>Rp {{ "{:,.0f}".format(report.net_balance).replace(",", ".") }}</strong>
             </td>
           </tr>
@@ -224,7 +240,148 @@
   </div>
 </div>
 
+<!-- MODAL CATAT KAS MASUK / KELUAR OPERASIONAL -->
+<div class="modal-overlay" id="operationalCashModal">
+  <div class="modal-dialog" style="max-width: 520px;">
+    <div class="modal-header" style="background: linear-gradient(135deg, var(--navy-dark, #0f172a), var(--blue-brand, #2563eb)); color: white;">
+      <div class="modal-title" style="color: white; display: flex; align-items: center; gap: 8px;">
+        {{ icon('plus-circle') }} Catat Kas Masuk / Keluar Operasional
+      </div>
+      <button class="modal-close-btn" onclick="closeModal('operationalCashModal')" style="color: white;">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('owner.create_operational_cash') }}" id="opCashForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-body" style="padding: 20px;">
+        
+        <!-- Pilihan Jenis Kas -->
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" style="font-weight: 700; color: var(--navy-dark);">Jenis Transaksi Kas <span style="color: red;">*</span></label>
+          <div style="display: flex; gap: 10px; margin-top: 6px;">
+            <label style="flex: 1; border: 2px solid #ef4444; background: #fef2f2; border-radius: 8px; padding: 10px 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 700; color: #b91c1c;">
+              <input type="radio" name="transaction_type" value="keluar" checked onchange="handleOpTypeChange('keluar')" style="accent-color: #dc2626;">
+              {{ icon('credit-card') }} Uang Keluar (Biaya)
+            </label>
+            <label style="flex: 1; border: 2px solid #cbd5e1; background: #ffffff; border-radius: 8px; padding: 10px 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 700; color: #15803d;" id="labelOpMasuk">
+              <input type="radio" name="transaction_type" value="masuk" onchange="handleOpTypeChange('masuk')" style="accent-color: #16a34a;">
+              {{ icon('trending-up') }} Uang Masuk
+            </label>
+          </div>
+        </div>
+
+        <!-- Pilihan Kategori -->
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" for="opCategorySelect" style="font-weight: 600;">Kategori Transaksi <span style="color: red;">*</span></label>
+          <select class="form-select" id="opCategorySelect" name="category" required>
+            <!-- Diisi dinamis via JS -->
+          </select>
+        </div>
+
+        <!-- Tanggal Transaksi & Nominal -->
+        <div class="grid-2-col" style="gap: 12px; margin-bottom: 14px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="opTxDate" style="font-weight: 600;">Tanggal Transaksi <span style="color: red;">*</span></label>
+            <input type="date" class="form-control" id="opTxDate" name="transaction_date" required>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="opAmount" style="font-weight: 600;">Nominal (Rp) <span style="color: red;">*</span></label>
+            <input type="number" class="form-control" id="opAmount" name="amount" min="1000" step="1000" placeholder="Contoh: 75000" required>
+          </div>
+        </div>
+
+        <!-- Metode Pembayaran -->
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" for="opPaymentMethod" style="font-weight: 600;">Metode Kas / Pembayaran</label>
+          <select class="form-select" id="opPaymentMethod" name="payment_method">
+            <option value="Tunai" selected>Tunai (Cash / Kas Fisik)</option>
+            <option value="Transfer Bank">Transfer Bank</option>
+            <option value="QRIS / Dompet Digital">QRIS / Dompet Digital</option>
+          </select>
+        </div>
+
+        <!-- Keterangan Transaksi -->
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" for="opDescription" style="font-weight: 600;">Keterangan / Rincian Transaksi <span style="color: red;">*</span></label>
+          <textarea class="form-control" id="opDescription" name="description" rows="2" placeholder="Contoh: Pembelian spidol whiteboard, kertas HVS 2 rim, dan isi staples..." required></textarea>
+        </div>
+
+        <!-- No Bukti / Ref (Opsional) -->
+        <div class="form-group" style="margin-bottom: 6px;">
+          <label class="form-label" for="opReceiptRef" style="font-weight: 600;">Nomor Nota / Bukti Kasir (Opsional)</label>
+          <input type="text" class="form-control" id="opReceiptRef" name="receipt_ref" placeholder="Contoh: NOTA-Gramedia-0182 atau KUITANSI-09">
+        </div>
+
+      </div>
+      <div class="modal-footer" style="padding: 14px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('operationalCashModal')">Batal</button>
+        <button type="submit" class="btn btn-primary" id="btnSubmitOpCash">
+          {{ icon('check-circle') }} Simpan Catatan Kas
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
+  const opExpenseCategories = [
+    "Operasional / ATK",
+    "Cetak Modul & Materi",
+    "Sewa / Listrik / Internet",
+    "Konsumsi & Snack Murid/Tentor",
+    "Transportasi & Kurir",
+    "Pemeliharaan & Kebersihan",
+    "Pengeluaran Lain-lain"
+  ];
+
+  const opIncomeCategories = [
+    "Pendaftaran Murid Baru (Manual)",
+    "Penjualan Buku / Modul Tambahan",
+    "Uang Pangkal / Administrasi",
+    "Pemasukan Operasional Lainnya"
+  ];
+
+  function handleOpTypeChange(type) {
+    const select = document.getElementById("opCategorySelect");
+    const labelMasuk = document.getElementById("labelOpMasuk");
+    const labelKeluar = select.closest("form").querySelector("input[value='keluar']").parentElement;
+
+    select.innerHTML = "";
+    if (type === "keluar") {
+      labelKeluar.style.borderColor = "#ef4444";
+      labelKeluar.style.background = "#fef2f2";
+      labelMasuk.style.borderColor = "#cbd5e1";
+      labelMasuk.style.background = "#ffffff";
+
+      opExpenseCategories.forEach(cat => {
+        const opt = document.createElement("option");
+        opt.value = cat;
+        opt.textContent = cat;
+        select.appendChild(opt);
+      });
+    } else {
+      labelMasuk.style.borderColor = "#10b981";
+      labelMasuk.style.background = "#ecfdf5";
+      labelKeluar.style.borderColor = "#cbd5e1";
+      labelKeluar.style.background = "#ffffff";
+
+      opIncomeCategories.forEach(cat => {
+        const opt = document.createElement("option");
+        opt.value = cat;
+        opt.textContent = cat;
+        select.appendChild(opt);
+      });
+    }
+  }
+
+  // Inisialisasi tanggal hari ini & kategori default
+  document.addEventListener("DOMContentLoaded", function() {
+    const today = new Date().toISOString().split("T")[0];
+    const dateInput = document.getElementById("opTxDate");
+    if (dateInput && !dateInput.value) {
+      dateInput.value = today;
+    }
+    handleOpTypeChange("keluar");
+  });
+
   function filterFinanceType(type) {
     const rows = document.querySelectorAll(".tx-row");
     rows.forEach(r => {
