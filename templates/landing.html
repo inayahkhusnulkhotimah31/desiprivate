@@ -93,7 +93,7 @@
         {{ icon('users') }}
       </div>
       <div>
-        <div class="landing-stat-val" style="color: #0F172A; font-weight: 800;">{{ student_count|default(150) }}{% if student_count and student_count > 0 %}+{% else %}+{% endif %}</div>
+        <div class="landing-stat-val" style="color: #0F172A; font-weight: 800;">{{ student_count|default(0) }}{% if student_count and student_count > 0 %}+{% endif %}</div>
         <div class="landing-stat-lbl" style="color: #64748B;">Siswa Aktif</div>
       </div>
     </div>
@@ -103,7 +103,7 @@
         {{ icon('mentor') }}
       </div>
       <div>
-        <div class="landing-stat-val" style="color: #0F172A; font-weight: 800;">{{ mentor_count|default(25) }}{% if mentor_count and mentor_count > 0 %}+{% else %}+{% endif %}</div>
+        <div class="landing-stat-val" style="color: #0F172A; font-weight: 800;">{{ mentor_count|default(0) }}{% if mentor_count and mentor_count > 0 %}+{% endif %}</div>
         <div class="landing-stat-lbl" style="color: #64748B;">Mentor Terverifikasi</div>
       </div>
     </div>
@@ -113,7 +113,7 @@
         {{ icon('book') }}
       </div>
       <div>
-        <div class="landing-stat-val" style="color: #0F172A; font-weight: 800;">{{ program_count|default(10) }}{% if program_count and program_count > 0 %}+{% else %}+{% endif %}</div>
+        <div class="landing-stat-val" style="color: #0F172A; font-weight: 800;">{{ program_count|default(0) }}{% if program_count and program_count > 0 %}+{% endif %}</div>
         <div class="landing-stat-lbl" style="color: #64748B;">Program Les</div>
       </div>
     </div>
