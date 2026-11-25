@@ -71,11 +71,12 @@ def get_role_dashboard_url(role):
     return url_for(mapping.get(role, "auth.login"))
 
 @auth_bp.route("/")
+@auth_bp.route("/landing")
 def index():
-    """Rute utama: arahkan pengguna yang sudah login ke dashboard, atau ke login."""
+    """Rute utama: arahkan pengguna yang sudah login ke dashboard, atau ke landing page."""
     if "user_id" in session:
         return redirect(get_role_dashboard_url(session.get("role")))
-    return redirect(url_for("auth.login"))
+    return render_template("landing.html")
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():

@@ -179,6 +179,12 @@
         </div>
 
         <div class="navbar-actions">
+          <!-- SEARCH PILL SESUAI MOCKUP GAMBAR 3 -->
+          <div class="navbar-search" style="display: flex;">
+            <span class="search-icon">{{ icon('search') }}</span>
+            <input type="text" class="navbar-search-input" placeholder="Cari data..." id="topNavbarSearch" onkeyup="if(event.key==='Enter'){window.location.href='{{ url_for('admin.students') if (current_user and current_user.role=='admin') else '#' }}?q='+encodeURIComponent(this.value);}">
+          </div>
+
           {% if current_user %}
             {% if current_user.role == 'admin' %}
               <a href="{{ url_for('admin.notifications_center') }}" class="notif-bell-btn" title="Pusat Notifikasi">
@@ -188,7 +194,7 @@
                 {% endif %}
               </a>
             {% endif %}
-            <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-sm navbar-logout-btn" title="Keluar dari sistem">
+            <a href="{{ url_for('auth.logout') }}" class="navbar-logout-btn" title="Keluar dari sistem">
               {{ icon('logout') }} <span class="logout-text">Keluar</span>
             </a>
           {% endif %}

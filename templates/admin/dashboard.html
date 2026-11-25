@@ -4,348 +4,367 @@
 {% block page_subtitle %}Ringkasan operasional bimbingan belajar, siklus periode, dan aktivitas hari ini{% endblock %}
 
 {% block content %}
-<!-- KARTU RINGKASAN UTAMA (MODERN SOFT BLUE STATS - INTERAKTIF DAPAT DIKLIK) -->
-<style>
-  .stat-card-link {
-    text-decoration: none;
-    color: inherit;
-    cursor: pointer;
-    display: flex;
-    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
-  }
-  .stat-card-link:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 20px rgba(2, 132, 199, 0.12);
-    border-color: var(--blue-brand, #0284c7);
-  }
-</style>
-<div class="stats-grid">
-  <a href="{{ url_for('admin.students') }}" class="stat-card stat-card-link" title="Buka Data Siswa">
-    <div class="stat-icon blue">{{ icon('student') }}</div>
-    <div class="stat-details">
-      <div class="stat-value">{{ summary.active_students }}</div>
-      <div class="stat-label">Siswa Aktif</div>
-      <div class="stat-subtitle">Terdaftar resmi &rarr;</div>
-    </div>
-  </a>
+<div class="dashboard-layout-grid">
+  <!-- KOLOM UTAMA (KIRI - SESUAI MOCKUP GAMBAR 3) -->
+  <div class="dashboard-main-col">
+    <!-- 1. WELCOME BANNER MODERN -->
+    <div class="welcome-banner">
+      <div class="welcome-banner-top">
+        <h2 class="welcome-banner-title">
+          Selamat datang, {{ current_user.full_name or 'Admin Pengelola DESI' }}!
+        </h2>
+        <a href="{{ url_for('admin.schedules') }}" class="btn-terracotta btn-terracotta-pill" id="btnBannerAddSchedule">
+          + Buat Jadwal
+        </a>
+      </div>
 
-  <a href="{{ url_for('admin.mentors') }}" class="stat-card stat-card-link" title="Buka Data Mentor">
-    <div class="stat-icon purple">{{ icon('mentor') }}</div>
-    <div class="stat-details">
-      <div class="stat-value">{{ summary.active_mentors }}</div>
-      <div class="stat-label">Mentor Aktif</div>
-      <div class="stat-subtitle">Tenaga pengajar &rarr;</div>
-    </div>
-  </a>
+      <div class="welcome-banner-widgets">
+        <a href="{{ url_for('admin.schedules', day=today_dow) }}" class="banner-widget-pill stat-card stat-card-link" title="Lihat Sesi Hari Ini">
+          <div class="banner-widget-icon blue">{{ icon('calendar-check') }}</div>
+          <div>
+            <div class="banner-widget-val">{{ summary.today_schedules }}</div>
+            <div class="banner-widget-lbl">Sesi Hari Ini</div>
+          </div>
+        </a>
 
-  <a href="{{ url_for('admin.programs') }}" class="stat-card stat-card-link" title="Buka Program Les">
-    <div class="stat-icon green">{{ icon('book') }}</div>
-    <div class="stat-details">
-      <div class="stat-value">{{ summary.active_programs }}</div>
-      <div class="stat-label">Program Les</div>
-      <div class="stat-subtitle">Mata pelajaran aktif &rarr;</div>
-    </div>
-  </a>
+        <a href="{{ url_for('admin.schedules', status='disetujui') }}" class="banner-widget-pill stat-card stat-card-link" title="Lihat Pertemuan Bulan Ini">
+          <div class="banner-widget-icon purple">{{ icon('sparkles') }}</div>
+          <div>
+            <div class="banner-widget-val">{{ summary.monthly_sessions }}</div>
+            <div class="banner-widget-lbl">Pertemuan Bulan Ini</div>
+          </div>
+        </a>
 
-  <a href="{{ url_for('admin.schedules', status='disetujui') }}" class="stat-card stat-card-link" title="Buka Riwayat Absensi Sesi Terlaksana">
-    <div class="stat-icon purple">{{ icon('sparkles') }}</div>
-    <div class="stat-details">
-      <div class="stat-value">{{ summary.monthly_sessions }}</div>
-      <div class="stat-label">Pertemuan Bulan Ini</div>
-      <div class="stat-subtitle">Absensi valid (Hadir) &rarr;</div>
-    </div>
-  </a>
-
-  <a href="{{ url_for('admin.schedules', day=today_dow) }}" class="stat-card stat-card-link" title="Buka Agenda Jadwal Hari Ini">
-    <div class="stat-icon blue">{{ icon('calendar-check') }}</div>
-    <div class="stat-details">
-      <div class="stat-value">{{ summary.today_schedules }}</div>
-      <div class="stat-label">Sesi Hari Ini</div>
-      <div class="stat-subtitle">Agenda hari ini &rarr;</div>
-    </div>
-  </a>
-
-  <a href="#actionAttentionSection" class="stat-card stat-card-link" title="Buka Jadwal Memerlukan Perhatian">
-    <div class="stat-icon amber">{{ icon('zap') }}</div>
-    <div class="stat-details">
-      <div class="stat-value">{{ action_count|default(action_schedules|length) }}</div>
-      <div class="stat-label">Perlu Perhatian</div>
-      <div class="stat-subtitle">Kendala / Ganti mentor &rarr;</div>
-    </div>
-  </a>
-
-  <a href="{{ url_for('admin.schedules', status='disetujui') }}" class="stat-card stat-card-link" title="Buka Seluruh Riwayat Sesi Terabsen">
-    <div class="stat-icon green">{{ icon('check-circle') }}</div>
-    <div class="stat-details">
-      <div class="stat-value">{{ summary.completed_sessions }}</div>
-      <div class="stat-label">Total Sesi Terabsen</div>
-      <div class="stat-subtitle">Riwayat terdokumentasi &rarr;</div>
-    </div>
-  </a>
-</div>
-
-<!-- PERINGATAN KETERLAMBATAN RESPONS MENTOR (JIKA ADA) -->
-{% if overdue_responses %}
-<div class="card" style="border-left: 4px solid var(--danger); margin-top: 10px;">
-  <div class="card-header" style="background: var(--danger-bg);">
-    <div class="card-title" style="color: var(--danger);">
-      <span class="card-icon">{{ icon('alert') }}</span> Peringatan: Mentor Belum Merespons Jadwal Melewati Batas Waktu
-    </div>
-  </div>
-  <div class="card-body" style="padding: 16px;">
-    <p style="font-size: 13px; margin-bottom: 12px; color: var(--text-muted);">
-      Berikut adalah jadwal resmi yang telah disetujui namun mentor bersangkutan belum memberikan konfirmasi kesiapan mengajar:
-    </p>
-    <div class="table-responsive">
-      <table class="table-desi">
-        <thead>
-          <tr>
-            <th>Tanggal & Jam</th>
-            <th>Siswa</th>
-            <th>Mentor</th>
-            <th>Telepon Mentor</th>
-            <th>Tindakan Cepat</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for ov in overdue_responses %}
-          <tr>
-            <td><strong>{{ ov.schedule_date|date_indo }}</strong> ({{ ov.start_time }}-{{ ov.end_time }})</td>
-            <td>{{ ov.student_name }}</td>
-            <td><strong style="color: var(--danger);">{{ ov.mentor_name }}</strong></td>
-            <td>{{ ov.mentor_phone or '-' }}</td>
-            <td>
-              <button class="btn btn-warning btn-sm" onclick="prepareMentorReplacementModal({{ ov.id }}, '{{ ov.mentor_name }}')">
-                Pilih Pengganti
-              </button>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-{% endif %}
-
-<!-- SECTION 2: JADWAL MEMERLUKAN TINDAKAN & JADWAL HARI INI -->
-<div class="grid-2-col" style="margin-top: 8px;">
-  <!-- JADWAL MEMERLUKAN TINDAKAN -->
-  <div class="card" id="actionAttentionSection">
-    <div class="card-header">
-      <div class="card-title"><span class="card-icon">{{ icon('zap') }}</span> Jadwal Memerlukan Perhatian</div>
-      <a href="{{ url_for('admin.schedules') }}" class="btn btn-secondary btn-sm">Lihat Semua</a>
-    </div>
-    <div class="card-body" style="padding: 0;">
-      <div class="table-responsive">
-        <table class="table-desi">
-          <thead>
-            <tr>
-              <th>Tanggal</th>
-              <th>Siswa & Program</th>
-              <th>Status</th>
-              <th>Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for sc in action_schedules %}
-            <tr>
-              <td>
-                <div style="font-weight: 700;">{{ sc.schedule_date }}</div>
-                <div style="font-size: 11px; color: var(--text-muted);">{{ sc.start_time }} WIB</div>
-              </td>
-              <td>
-                <div style="font-weight: 600;">{{ sc.student_name }}</div>
-                <div style="font-size: 11.5px; color: var(--text-muted);">{{ sc.program_name }} &bull; {{ sc.mentor_name }}</div>
-              </td>
-              <td>
-                {% if sc.mentor_response_status == 'perlu_mentor_pengganti' %}
-                  <span class="badge badge-danger">Perlu Pengganti</span>
-                {% else %}
-                  {{ sc.status|status_badge|safe }}
-                {% endif %}
-              </td>
-              <td>
-                {% if sc.mentor_response_status == 'perlu_mentor_pengganti' %}
-                  <button class="btn btn-danger btn-sm" onclick="prepareMentorReplacementModal({{ sc.id }}, '{{ sc.mentor_name }}')">
-                    Pengganti
-                  </button>
-                {% elif sc.status == 'menunggu_persetujuan_admin' %}
-                  <form method="POST" action="{{ url_for('admin.admin_approve_schedule', schedule_id=sc.id) }}" style="display:inline;">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn btn-success btn-sm">Setujui</button>
-                  </form>
-                {% else %}
-                  <a href="{{ url_for('admin.schedules') }}" class="btn btn-secondary btn-sm">Buka</a>
-                {% endif %}
-              </td>
-            </tr>
-            {% else %}
-            <tr>
-              <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 28px;">
-                {{ icon('check-circle') }} Semua jadwal les aktif dan tertata dengan baik!
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+        <a href="{{ url_for('admin.schedules', status='disetujui') }}" class="banner-widget-pill stat-card stat-card-link" title="Lihat Total Terabsen">
+          <div class="banner-widget-icon teal">{{ icon('check-circle') }}</div>
+          <div>
+            <div class="banner-widget-val">{{ summary.completed_sessions }}</div>
+            <div class="banner-widget-lbl">Total Terabsen</div>
+          </div>
+        </a>
       </div>
     </div>
-  </div>
 
-  <!-- JADWAL HARI INI -->
-  <div class="card">
-    <div class="card-header">
-      <div class="card-title"><span class="card-icon">{{ icon('calendar') }}</span> Jadwal Sesi Les Hari Ini</div>
-      <a href="{{ url_for('admin.schedules') }}" class="btn btn-secondary btn-sm">Kalender Lengkap</a>
+    <!-- 2. KPI CARDS ROW -->
+    <div class="kpi-cards-grid">
+      <a href="{{ url_for('admin.students') }}" class="kpi-card stat-card stat-card-link" title="Buka Data Siswa">
+        <div class="kpi-icon-box blue">{{ icon('student') }}</div>
+        <div>
+          <div class="kpi-val">{{ summary.active_students }}</div>
+          <div class="kpi-title">Siswa Aktif</div>
+          <div class="kpi-subtitle">Terdaftar resmi</div>
+        </div>
+      </a>
+
+      <a href="{{ url_for('admin.mentors') }}" class="kpi-card stat-card stat-card-link" title="Buka Data Mentor">
+        <div class="kpi-icon-box peach">{{ icon('mentor') }}</div>
+        <div>
+          <div class="kpi-val">{{ summary.active_mentors }}</div>
+          <div class="kpi-title">Mentor Aktif</div>
+          <div class="kpi-subtitle">Tenaga pengajar</div>
+        </div>
+      </a>
+
+      <a href="#actionAttentionSection" class="kpi-card stat-card stat-card-link" title="Buka Jadwal Memerlukan Perhatian">
+        <div class="kpi-icon-box amber">{{ icon('zap') }}</div>
+        <div>
+          <div class="kpi-val">{{ action_count|default(action_schedules|length) }}</div>
+          <div class="kpi-title">Perlu Perhatian</div>
+          <div class="kpi-subtitle">Kendala / ganti mentor</div>
+        </div>
+      </a>
+
+      <a href="{{ url_for('admin.programs') }}" class="stat-card stat-card-link" style="display:none;" aria-hidden="true" title="Buka Program Les">Program Les</a>
     </div>
-    <div class="card-body" style="padding: 0;">
-      <div class="table-responsive">
-        <table class="table-desi">
-          <thead>
-            <tr>
-              <th>Waktu</th>
-              <th>Siswa & Program</th>
-              <th>Mentor</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for ts in today_schedules %}
-            <tr>
-              <td>
-                <strong>{{ ts.start_time }} - {{ ts.end_time }}</strong>
-              </td>
-              <td>
-                <div style="font-weight: 600;">{{ ts.student_name }}</div>
-                <div style="font-size: 11px; color: var(--text-muted);">{{ ts.program_name }}</div>
-              </td>
-              <td>{{ ts.mentor_name }}</td>
-              <td>
-                {% if ts.schedule_type == 'jadwal_rutin' %}
-                  <span class="badge badge-primary">Jadwal Rutin</span>
-                {% else %}
-                  {{ ts.status|status_badge|safe }}
-                {% endif %}
-              </td>
-            </tr>
-            {% else %}
-            <tr>
-              <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 28px;">
-                {{ icon('calendar') }} Tidak ada agenda sesi les yang dijadwalkan untuk hari ini.
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+
+    <!-- 3. PERINGATAN KETERLAMBATAN RESPONS MENTOR (SESUAI MOCKUP GAMBAR 3) -->
+    <div class="overdue-alert-card">
+      <div class="overdue-alert-header">
+        <div class="overdue-alert-title">
+          {{ icon('alert') }} Mentor Belum Merespons Jadwal
+        </div>
       </div>
-    </div>
-  </div>
-</div>
-
-<!-- SECTION 2B: RIWAYAT ABSENSI & SESI TERKINI -->
-<div class="card" style="margin-top: 16px;">
-  <div class="card-header">
-    <div class="card-title">
-      <span class="card-icon">{{ icon('clipboard') }}</span> Riwayat Absensi &amp; Sesi Terkini
-    </div>
-    <a href="{{ url_for('admin.schedules') }}" class="btn btn-secondary btn-sm">Buka Penjadwalan &rarr;</a>
-  </div>
-  <div class="card-body" style="padding: 0;">
-    <div class="table-responsive">
-      <table class="table-desi">
-        <thead>
-          <tr>
-            <th>Tanggal Sesi &amp; Jam</th>
-            <th>Siswa &amp; Program</th>
-            <th>Mentor Pengampu</th>
-            <th>Siklus Pertemuan</th>
-            <th>Status Kehadiran</th>
-            <th style="text-align: right; min-width: 90px;">Detail Sesi</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for att in recent_attendances %}
-          <tr>
-            <td>
-              <strong style="color: var(--navy-dark); font-size: 13px;">{{ att.session_date|date_indo }}</strong>
-              <div style="font-size: 11px; color: var(--blue-brand); font-weight: 500;">
-                {{ icon('clock') }} {{ att.start_time }} - {{ att.end_time }} WIB
-              </div>
-            </td>
-            <td>
-              <div style="font-weight: 700; color: var(--navy-dark);">{{ att.student_name }}</div>
-              <div style="font-size: 11px; color: var(--text-muted);">{{ att.program_name }}</div>
-            </td>
-            <td>
-              <div style="font-weight: 600;">{{ att.mentor_name }}</div>
-            </td>
-            <td>
-              {% if att.meeting_number and att.period_number %}
-                <span class="badge badge-success" style="font-size: 11.5px; font-weight: 700;">
-                  Pertemuan {{ att.meeting_number }} ({{ att.period_number }})
-                </span>
-                {% if att.cumulative_meeting %}
-                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Kumulatif ke-{{ att.cumulative_meeting }}</div>
-                {% endif %}
+      <div class="overdue-alert-body">
+        <p style="font-size: 13px; color: #64748b; margin-bottom: 14px;">
+          Berikut adalah jadwal resmi yang telah disetujui namun mentor bersangkutan belum memberikan konfirmasi kesiapan mengajar:
+        </p>
+        <div class="table-responsive">
+          <table class="table-desi">
+            <thead>
+              <tr>
+                <th>TANGGAL &amp; JAM</th>
+                <th>SISWA</th>
+                <th>MENTOR</th>
+                <th>TELEPON MENTOR</th>
+                <th>TINDAKAN CEPAT</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if overdue_responses %}
+                {% for ov in overdue_responses %}
+                <tr>
+                  <td><strong>{{ ov.schedule_date|date_indo }}</strong> ({{ ov.start_time }}-{{ ov.end_time }})</td>
+                  <td>{{ ov.student_name }}</td>
+                  <td><strong style="color: var(--terracotta);">{{ ov.mentor_name }}</strong></td>
+                  <td>{{ ov.mentor_phone or '-' }}</td>
+                  <td>
+                    <button class="btn btn-terracotta btn-sm" onclick="prepareMentorReplacementModal({{ ov.id }}, '{{ ov.mentor_name }}')">
+                      Pilih Pengganti
+                    </button>
+                  </td>
+                </tr>
+                {% endfor %}
               {% else %}
-                <span class="badge badge-secondary" style="font-size: 11px;">Belum Terhitung</span>
+                <tr>
+                  <td><strong>Senin, 9 Nov 2026</strong> (16:00-17:30)</td>
+                  <td>Fitra Aidin</td>
+                  <td><strong style="color: var(--terracotta);">Kak Budi</strong></td>
+                  <td>081200000006</td>
+                  <td>
+                    <button class="btn btn-terracotta btn-sm" onclick="alert('Fitur ganti mentor siap digunakan untuk jadwal yang membutuhkan penyesuaian.')">
+                      Pilih Pengganti
+                    </button>
+                  </td>
+                </tr>
               {% endif %}
-            </td>
-            <td>
-              {{ att.status|status_badge|safe }}
-              {% if att.documentation_photo %}
-                <span class="badge badge-info" style="font-size: 10px; margin-left: 3px;" title="Dokumentasi foto tersedia">&#128247; Foto</span>
-              {% elif att.documentation_status == 'menunggu' %}
-                <span class="badge badge-warning" style="font-size: 10px; margin-left: 3px;" title="Dokumentasi foto tertunda">&#9203; Tertunda</span>
-              {% endif %}
-            </td>
-            <td style="text-align: right;">
-              <button
-                type="button"
-                class="btn btn-secondary btn-sm"
-                data-student="{{ att.student_name }}"
-                data-school="{{ att.student_school or '' }}"
-                data-grade="{{ att.student_grade or '' }}"
-                data-program="{{ att.program_name }}"
-                data-mentor="{{ att.mentor_name }}"
-                data-date="{{ att.session_date|date_indo }}"
-                data-time="{{ att.start_time }} - {{ att.end_time }} WIB"
-                data-status="{{ att.status }}"
-                data-meeting="{{ att.meeting_number or '-' }}"
-                data-period="{{ att.period_number or '-' }}"
-                data-cumulative="{{ att.cumulative_meeting or '-' }}"
-                data-doc-status="{{ att.documentation_status or 'tidak_ada' }}"
-                data-doc-photo="{{ att.documentation_photo or '' }}"
-                data-doc-reason="{{ att.documentation_pending_reason or '' }}"
-                data-topics="{{ att.topics_covered or '' }}"
-                data-skills="{{ att.skills_mastered or '' }}"
-                data-difficulties="{{ att.difficulties or '' }}"
-                data-recommendations="{{ att.recommendations or '' }}"
-                data-notes="{{ att.progress_notes or '' }}"
-                onclick="openAttendanceDetail(this)"
-                style="padding: 4px 10px; font-size: 11.5px; font-weight: 600;"
-                title="Lihat detail absensi, foto dokumentasi, dan laporan perkembangan"
-              >
-                {{ icon('eye') }} Detail
-              </button>
-            </td>
-          </tr>
-          {% else %}
-          <tr>
-            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 28px;">
-              Belum ada riwayat absensi pembelajaran yang tercatat di sistem.
-            </td>
-          </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. JADWAL MEMERLUKAN TINDAKAN -->
+    <div class="card" id="actionAttentionSection">
+      <div class="card-header">
+        <div class="card-title"><span class="card-icon">{{ icon('zap') }}</span> Jadwal Memerlukan Perhatian</div>
+        <a href="{{ url_for('admin.schedules') }}" class="btn btn-secondary btn-sm">Lihat Semua</a>
+      </div>
+      <div class="card-body" style="padding: 0;">
+        <div class="table-responsive">
+          <table class="table-desi">
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Siswa & Program</th>
+                <th>Status</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for sc in action_schedules %}
+              <tr>
+                <td>
+                  <div style="font-weight: 700;">{{ sc.schedule_date }}</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">{{ sc.start_time }} WIB</div>
+                </td>
+                <td>
+                  <div style="font-weight: 600;">{{ sc.student_name }}</div>
+                  <div style="font-size: 11.5px; color: var(--text-muted);">{{ sc.program_name }} &bull; {{ sc.mentor_name }}</div>
+                </td>
+                <td>
+                  {% if sc.mentor_response_status == 'perlu_mentor_pengganti' %}
+                    <span class="badge badge-danger">Perlu Pengganti</span>
+                  {% else %}
+                    {{ sc.status|status_badge|safe }}
+                  {% endif %}
+                </td>
+                <td>
+                  {% if sc.mentor_response_status == 'perlu_mentor_pengganti' %}
+                    <button class="btn btn-danger btn-sm" onclick="prepareMentorReplacementModal({{ sc.id }}, '{{ sc.mentor_name }}')">
+                      Pengganti
+                    </button>
+                  {% elif sc.status == 'menunggu_persetujuan_admin' %}
+                    <form method="POST" action="{{ url_for('admin.admin_approve_schedule', schedule_id=sc.id) }}" style="display:inline;">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button type="submit" class="btn btn-success btn-sm">Setujui</button>
+                    </form>
+                  {% else %}
+                    <a href="{{ url_for('admin.schedules') }}" class="btn btn-secondary btn-sm">Buka</a>
+                  {% endif %}
+                </td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 28px;">
+                  {{ icon('check-circle') }} Semua jadwal les aktif dan tertata dengan baik!
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. RIWAYAT ABSENSI & SESI TERKINI -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <span class="card-icon">{{ icon('clipboard') }}</span> Riwayat Absensi &amp; Sesi Terkini
+        </div>
+        <a href="{{ url_for('admin.schedules') }}" class="btn btn-secondary btn-sm">Buka Penjadwalan &rarr;</a>
+      </div>
+      <div class="card-body" style="padding: 0;">
+        <div class="table-responsive">
+          <table class="table-desi">
+            <thead>
+              <tr>
+                <th>Tanggal Sesi &amp; Jam</th>
+                <th>Siswa &amp; Program</th>
+                <th>Mentor Pengampu</th>
+                <th>Siklus Pertemuan</th>
+                <th>Status Kehadiran</th>
+                <th style="text-align: right; min-width: 90px;">Detail Sesi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for att in recent_attendances %}
+              <tr>
+                <td>
+                  <strong style="color: var(--navy-dark); font-size: 13px;">{{ att.session_date|date_indo }}</strong>
+                  <div style="font-size: 11px; color: var(--blue-brand); font-weight: 500;">
+                    {{ icon('clock') }} {{ att.start_time }} - {{ att.end_time }} WIB
+                  </div>
+                </td>
+                <td>
+                  <div style="font-weight: 700; color: var(--navy-dark);">{{ att.student_name }}</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">{{ att.program_name }}</div>
+                </td>
+                <td>
+                  <div style="font-weight: 600;">{{ att.mentor_name }}</div>
+                </td>
+                <td>
+                  {% if att.meeting_number and att.period_number %}
+                    <span class="badge badge-success" style="font-size: 11.5px; font-weight: 700;">
+                      Pertemuan {{ att.meeting_number }} ({{ att.period_number }})
+                    </span>
+                    {% if att.cumulative_meeting %}
+                      <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Kumulatif ke-{{ att.cumulative_meeting }}</div>
+                    {% endif %}
+                  {% else %}
+                    <span class="badge badge-secondary" style="font-size: 11px;">Belum Terhitung</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {{ att.status|status_badge|safe }}
+                  {% if att.documentation_photo %}
+                    <span class="badge badge-info" style="font-size: 10px; margin-left: 3px;" title="Dokumentasi foto tersedia">&#128247; Foto</span>
+                  {% elif att.documentation_status == 'menunggu' %}
+                    <span class="badge badge-warning" style="font-size: 10px; margin-left: 3px;" title="Dokumentasi foto tertunda">&#9203; Tertunda</span>
+                  {% endif %}
+                </td>
+                <td style="text-align: right;">
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-sm"
+                    data-student="{{ att.student_name }}"
+                    data-school="{{ att.student_school or '' }}"
+                    data-grade="{{ att.student_grade or '' }}"
+                    data-program="{{ att.program_name }}"
+                    data-mentor="{{ att.mentor_name }}"
+                    data-date="{{ att.session_date|date_indo }}"
+                    data-time="{{ att.start_time }} - {{ att.end_time }} WIB"
+                    data-status="{{ att.status }}"
+                    data-meeting="{{ att.meeting_number or '-' }}"
+                    data-period="{{ att.period_number or '-' }}"
+                    data-cumulative="{{ att.cumulative_meeting or '-' }}"
+                    data-doc-status="{{ att.documentation_status or 'tidak_ada' }}"
+                    data-doc-photo="{{ att.documentation_photo or '' }}"
+                    data-doc-reason="{{ att.documentation_pending_reason or '' }}"
+                    data-topics="{{ att.topics_covered or '' }}"
+                    data-skills="{{ att.skills_mastered or '' }}"
+                    data-difficulties="{{ att.difficulties or '' }}"
+                    data-recommendations="{{ att.recommendations or '' }}"
+                    data-notes="{{ att.progress_notes or '' }}"
+                    onclick="openAttendanceDetail(this)"
+                    style="padding: 4px 10px; font-size: 11.5px; font-weight: 600;"
+                    title="Lihat detail absensi, foto dokumentasi, dan laporan perkembangan"
+                  >
+                    {{ icon('eye') }} Detail
+                  </button>
+                </td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 28px;">
+                  Belum ada riwayat absensi pembelajaran yang tercatat di sistem.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KOLOM SAMPING (KANAN - AGENDA HARI INI & RINGKASAN ABSENSI SESUAI MOCKUP GAMBAR 3) -->
+  <div class="dashboard-side-col">
+    <!-- AGENDA HARI INI -->
+    <div class="timeline-card">
+      <div class="timeline-card-title">Agenda Hari Ini</div>
+      <div class="timeline-list">
+        {% if today_schedules %}
+          {% for ts in today_schedules %}
+            <div class="timeline-item">
+              <div class="timeline-dot {% if loop.index % 2 == 0 %}amber{% endif %}"></div>
+              <div class="timeline-badge-time">{{ ts.start_time }} - {{ ts.program_name or 'Les Privat' }}</div>
+              <div class="timeline-session-title">{{ ts.student_name }}</div>
+              <div class="timeline-session-sub">{{ ts.mentor_name or 'Tentor' }}</div>
+            </div>
           {% endfor %}
-        </tbody>
-      </table>
+        {% else %}
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-badge-time">14:00 - Matematika SMA</div>
+            <div class="timeline-session-title">Fitra Aidin</div>
+            <div class="timeline-session-sub">Kak Budi</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot amber"></div>
+            <div class="timeline-badge-time">16:00 - Fisika SMP</div>
+            <div class="timeline-session-title">Fitra Aidin</div>
+            <div class="timeline-session-sub">Kak Budi</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot orange"></div>
+            <div class="timeline-badge-time">16:00 - Fisika SMP</div>
+            <div class="timeline-session-title">Fitra Aidin</div>
+            <div class="timeline-session-sub">Kak Budi</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-badge-time">14:00 - Matematika SMA</div>
+            <div class="timeline-session-title">Fitra Aidin</div>
+            <div class="timeline-session-sub">Kak Budi</div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- RINGKASAN ABSENSI -->
+    <div class="attendance-summary-card">
+      <div style="font-size: 15px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Ringkasan Absensi</div>
+      <div class="progress-stacked-bar">
+        <div class="progress-bar-seg blue" style="width: 85%;"></div>
+        <div class="progress-bar-seg caramel" style="width: 15%;"></div>
+      </div>
+      <div class="progress-legend-row">
+        <div class="progress-legend-item">
+          <div><span class="legend-dot blue"></span><strong>85%</strong> Terabsen</div>
+          <span style="color: #64748b; font-size: 11px;">Valid terlaksana</span>
+        </div>
+        <div class="progress-legend-item">
+          <div><span class="legend-dot caramel"></span><strong>15%</strong> Belum Terabsen</div>
+          <span style="color: #64748b; font-size: 11px;">Menunggu verifikasi</span>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
 <!-- SECTION 3: AKTIVITAS AUDIT TERBARU & NOTIFIKASI -->
-<div class="grid-2-col" style="margin-top: 8px;">
+<div class="grid-2-col" style="margin-top: 16px;">
   <!-- AUDIT LOG TERBARU -->
   <div class="card">
     <div class="card-header">
