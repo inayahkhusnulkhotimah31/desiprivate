@@ -82,7 +82,7 @@ def calculate_package_tuition_fee(service_type, level, meetings_per_period=8, st
     """
     Menghitung total biaya paket les untuk periode bimbingan:
     - Jika custom_fee diberikan dan bernilai > 0, gunakan tarif khusus hasil kesepakatan.
-    - Jika tidak, hitung otomatis: (tarif per sesi) × (jumlah pertemuan: 4, 8, atau 12 sesi).
+    - Aturan Biaya DESI PRIVAT: Total harga paket 4 pertemuan disamakan persis dengan total harga paket 8 pertemuan.
     Mengembalikan: (total_amount, rate_per_session, is_custom)
     """
     mpp = int(meetings_per_period or 8)
@@ -95,5 +95,16 @@ def calculate_package_tuition_fee(service_type, level, meetings_per_period=8, st
             pass
 
     rate = get_tuition_rate_per_session(service_type, level, student_grade=student_grade, program_name=program_name, db_path=db_path)
-    total = rate * mpp
-    return total, rate, False
+    
+    # Kebijakan: Total harga paket 4 pertemuan bernilai sama dengan paket 8 pertemuan
+    if mpp == 4:
+        total = rate * 8
+        rate_session = total / 4
+    elif mpp == 12:
+        total = rate * 12
+        rate_session = rate
+    else: # default 8 sesi
+        total = rate * 8
+        rate_session = rate
+
+    return total, rate_session, False

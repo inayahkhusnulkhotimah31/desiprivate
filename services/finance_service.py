@@ -311,10 +311,14 @@ def get_mentor_honor_summary(mentor_id=None, start_date=None, end_date=None, rat
 
 
 def get_pending_new_students(db_path=None):
-    """Mengambil siswa baru yang berstatus 'menunggu_validasi' pembayaran sebelum diizinkan belajar."""
+    """
+    Mengambil data siswa yang telah ditambahkan jadwal belajarnya oleh Admin namun
+    pembayaran paketnya belum divalidasi oleh Pemilik (Owner).
+    Jika baru menginput data siswa saja (belum ada jadwal), tidak perlu validasi / tidak muncul di sini.
+    """
     return query_db("""
         SELECT st.*, p.full_name as parent_name, p.phone as parent_phone,
-               GROUP_CONCAT(pr.name, ', ') as enrolled_programs,
+               GROUP_CONCAT(DISTINCT pr.name) as enrolled_programs,
                b.id as initial_bill_id, b.total_amount as initial_bill_amount,
                b.paid_amount as initial_paid_amount, b.remaining_amount as initial_remaining,
                b.status as bill_status
@@ -323,7 +327,11 @@ def get_pending_new_students(db_path=None):
         LEFT JOIN student_programs sp ON st.id = sp.student_id
         LEFT JOIN programs pr ON sp.program_id = pr.id
         LEFT JOIN student_bills b ON st.id = b.student_id AND b.period_number = 1
-        WHERE (st.payment_status = 'menunggu_validasi' OR st.status = 'menunggu_validasi')
+        LEFT JOIN schedules s ON st.id = s.student_id
+        LEFT JOIN routine_schedules rs ON st.id = rs.student_id
+        WHERE (st.payment_validated_by IS NULL OR st.payment_status = 'menunggu_validasi')
+          AND (st.payment_status != 'lunas' OR st.payment_status IS NULL)
+          AND (s.id IS NOT NULL OR rs.id IS NOT NULL)
         GROUP BY st.id
         ORDER BY st.created_at DESC
     """, db_path=db_path)

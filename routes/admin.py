@@ -343,7 +343,7 @@ def create_student():
         INSERT INTO students (
             parent_id, full_name, school, grade, birth_date, address, latitude, longitude, notes, status, payment_status,
             initial_meeting_offset, initial_offset_notes, initial_offset_set_at, initial_offset_set_by, meetings_per_period
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'nonaktif', 'menunggu_validasi', ?, 'Pendaftaran murid baru (menunggu validasi pembayaran)', CURRENT_TIMESTAMP, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'aktif', 'belum_lunas', ?, 'Pendaftaran murid baru', CURRENT_TIMESTAMP, ?, ?)
     """, (parent_id, full_name, school, grade, birth_date, address, latitude, longitude, notes, initial_offset, session["user_id"], meetings_per_period))
 
     if program_id:
@@ -1609,11 +1609,10 @@ def admin_create_routine_schedule():
     subject_info = request.form.get("subject_info", "").strip()
     notes = request.form.get("notes", "").strip()
 
-    # Pengecekan validasi: Siswa baru tidak boleh mulai belajar sebelum divalidasi pembayarannya oleh Pemilik
-    st_check = query_db("SELECT full_name, status, payment_status FROM students WHERE id = ?", (student_id,), one=True)
-    if st_check and (st_check["payment_status"] == "menunggu_validasi" or st_check["status"] == "menunggu_validasi"):
-        flash(f"Pembelajaran belum dapat dimulai untuk {st_check['full_name']}. Siswa masih berstatus 'Menunggu Validasi Pembayaran oleh Pemilik'. Silakan tunggu validasi dari Pemilik terlebih dahulu.", "warning")
-        return redirect(url_for("admin.schedules"))
+    # Tandai siswa berstatus menunggu validasi pembayaran paket jadwal oleh Pemilik (Admin bebas membuat jadwal)
+    st_check = query_db("SELECT full_name, status, payment_status, payment_validated_by FROM students WHERE id = ?", (student_id,), one=True)
+    if st_check and st_check["payment_validated_by"] is None and st_check["payment_status"] != "lunas":
+        execute_db("UPDATE students SET payment_status = 'menunggu_validasi' WHERE id = ?", (student_id,))
 
     # Ambil daftar mentor: mentor_ids[] atau fallback ke mentor_id
     raw_mentors = request.form.getlist("mentor_ids[]") or request.form.getlist("mentor_ids")
@@ -1807,11 +1806,10 @@ def create_schedule():
         flash("Program, siswa, mentor, dan jam mulai wajib diisi.", "danger")
         return redirect(url_for("admin.schedules"))
 
-    # Pengecekan validasi: Siswa baru tidak boleh mulai belajar sebelum divalidasi pembayarannya oleh Pemilik
-    st_check = query_db("SELECT full_name, status, payment_status FROM students WHERE id = ?", (student_id,), one=True)
-    if st_check and (st_check["payment_status"] == "menunggu_validasi" or st_check["status"] == "menunggu_validasi"):
-        flash(f"Pembelajaran belum dapat dimulai untuk {st_check['full_name']}. Siswa masih berstatus 'Menunggu Validasi Pembayaran oleh Pemilik'. Silakan tunggu validasi dari Pemilik terlebih dahulu.", "warning")
-        return redirect(url_for("admin.schedules"))
+    # Tandai siswa berstatus menunggu validasi pembayaran paket jadwal oleh Pemilik (Admin bebas membuat jadwal)
+    st_check = query_db("SELECT full_name, status, payment_status, payment_validated_by FROM students WHERE id = ?", (student_id,), one=True)
+    if st_check and st_check["payment_validated_by"] is None and st_check["payment_status"] != "lunas":
+        execute_db("UPDATE students SET payment_status = 'menunggu_validasi' WHERE id = ?", (student_id,))
 
     end_time = calculate_end_time(start_time, duration_minutes)
 
