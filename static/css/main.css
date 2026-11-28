@@ -5927,8 +5927,8 @@ body.dp-page-leaving .dp-login-shell {
 
 .dp-hero-shell--centered .dp-metrics-grid {
   width: 100%;
-  max-width: 680px;
-  margin: 0 auto;
+  max-width: 720px;
+  margin: 80px auto 0 auto;
 }
 
 /* Section Spacing & Typography (Generous Whitespace) */
@@ -6758,10 +6758,10 @@ body {
   box-sizing: border-box;
 }
 
-.dp-hero-metrics-bar {
+.dp-hero-shell--centered .dp-metrics-grid.dp-hero-metrics-bar {
   width: 100%;
   max-width: 720px;
-  margin: 72px auto 0 auto;
+  margin: 80px auto 0 auto;
   padding-top: 0;
   border-top: none;
 }
@@ -6945,8 +6945,8 @@ body {
   .dp-hero-shell--centered {
     padding: 112px 18px 48px 18px;
   }
-  .dp-hero-metrics-bar {
-    margin-top: 48px;
+  .dp-hero-shell--centered .dp-metrics-grid.dp-hero-metrics-bar {
+    margin-top: 56px;
     padding-top: 0;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
