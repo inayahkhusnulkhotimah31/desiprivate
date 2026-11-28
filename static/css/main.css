@@ -8119,6 +8119,11 @@ img,
     transition: none !important;
   }
 
+  .dp-nav-bar.dp-nav-hero,
+  .dp-nav-bar.dp-nav-hero.is-scrolled {
+    transition: none !important;
+  }
+
   /* 2. Remove Top-Right X Close Buttons on Mobile (Thumb-Zone Comfort) */
   .modal-close-btn,
   .dp-drawer-close {

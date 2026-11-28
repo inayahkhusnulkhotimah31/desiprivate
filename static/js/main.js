@@ -305,6 +305,7 @@ function initMain() {
 
   const syncScrollUI = () => {
     scrollTick = false;
+    if (dpIsScrollLocked) return;
     const y = window.scrollY || 0;
     if (heroNav) heroNav.classList.toggle("is-scrolled", y > 48);
     if (floatBar) floatBar.classList.toggle("is-visible", y > 360);
