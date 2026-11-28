@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" type="image/webp" href="{{ url_for('static', filename='images/client/logo_desi_privat.webp') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=19">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=20">
   <script>
     (function () {
       try {
@@ -30,13 +30,10 @@
       <img src="{{ url_for('static', filename='images/client/galeri_02.webp') }}" alt="Suasana pendampingan belajar siswa DESI PRIVAT" width="720" height="540" draggable="false" decoding="async" fetchpriority="high">
       <div class="dp-login-photo-fade" aria-hidden="true"></div>
 
-      <div class="dp-login-photo-inner dp-gate-stagger" style="--stagger-i: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+      <div class="dp-login-photo-inner dp-gate-stagger" style="--stagger-i: 0; display: flex; align-items: center; gap: 16px;">
         <a href="/" class="dp-brand" style="color: #FFFFFF;" aria-label="DESI PRIVAT Beranda">
           <img src="{{ url_for('static', filename='images/client/logo_desi_privat.webp') }}" class="dp-brand-logo-photo" width="38" height="38" draggable="false" decoding="async" alt="Logo DESI PRIVAT">
           <div class="dp-brand-name" style="color: #FFFFFF;">DESI PRIVAT</div>
-        </a>
-        <a href="/" class="dp-btn dp-btn-ghost-light" style="min-height: 40px; padding: 8px 18px; font-size: 13.5px;">
-          Beranda
         </a>
       </div>
 
@@ -52,6 +49,14 @@
 
     <!-- GERBANG KANAN: PANEL PUTIH BERSIH, ELEMEN FORM MUNCUL SATU PER SATU BELAKANGAN -->
     <main class="dp-login-panel dp-login-gate-right">
+      <a href="/" class="dp-login-home-btn dp-gate-stagger" style="--stagger-i: 0;" aria-label="Kembali ke Beranda" title="Beranda">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 10.5L12 3l9 7.5"/>
+          <path d="M5 9.5V19a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9.5"/>
+          <path d="M9.5 21v-6a1.5 1.5 0 0 1 1.5-1.5h2a1.5 1.5 0 0 1 1.5 1.5v6"/>
+        </svg>
+      </a>
+
       <div class="dp-login-card">
         <h2 class="login-card-title dp-gate-stagger" style="--stagger-i: 1; margin: 0 0 24px 0; font-size: 24px; color: var(--text-main);">
           Masuk <span style="display:none;">Masuk ke Sistem</span>

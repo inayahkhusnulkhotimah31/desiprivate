@@ -7385,6 +7385,57 @@ img,
   flex-shrink: 0;
 }
 
+/* Login Page Top-Right Icon-Only Home Button */
+.dp-login-page .dp-login-panel {
+  position: relative;
+}
+
+.dp-login-home-btn {
+  position: absolute;
+  top: 28px;
+  right: 28px;
+  width: 44px;
+  height: 44px;
+  padding: 0 !important;
+  margin: 0;
+  line-height: 0 !important;
+  border-radius: 12px;
+  border: 1px solid var(--alpha-border);
+  background: #F7F7F5;
+  color: #111827;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  z-index: 4;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms var(--ease-snappy);
+}
+
+.dp-login-home-btn svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+.dp-login-home-btn:hover,
+.dp-login-home-btn:focus-visible {
+  background: #083A54;
+  border-color: #083A54;
+  color: #FFFFFF;
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.dp-login-home-btn:active {
+  transform: scale(0.96);
+}
+
+@media (max-width: 1024px) {
+  .dp-login-home-btn {
+    top: 16px;
+    right: 16px;
+  }
+}
+
 /* ==========================================================================
    V15 FIGCRAFT 1:1 DASHBOARD SHELL & GLOBAL COMPONENT UNIFICATION
    MATCHES `00 - desi private.figcraft` PAGES 02–06 (ADMIN, OWNER, MENTOR, PARENT)
