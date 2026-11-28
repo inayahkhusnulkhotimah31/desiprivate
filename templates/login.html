@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" type="image/webp" href="{{ url_for('static', filename='images/client/logo_desi_privat.webp') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=13">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=14">
   <script>
     (function () {
       try {
@@ -27,15 +27,15 @@
 
     <!-- GERBANG KIRI: FOTO + FADE BIRU, TEKS MUNCUL BELAKANGAN SATU PER SATU -->
     <section class="dp-login-photo dp-login-gate-left">
-      <img src="{{ url_for('static', filename='images/client/galeri_02.webp') }}" alt="Suasana pendampingan belajar siswa DESI PRIVAT" width="720" height="540" decoding="async" fetchpriority="high">
+      <img src="{{ url_for('static', filename='images/client/galeri_02.webp') }}" alt="Suasana pendampingan belajar siswa DESI PRIVAT" width="720" height="540" draggable="false" decoding="async" fetchpriority="high">
       <div class="dp-login-photo-fade" aria-hidden="true"></div>
 
       <div class="dp-login-photo-inner dp-gate-stagger" style="--stagger-i: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
-        <a href="{{ url_for('auth.index') }}" class="dp-brand" style="color: #FFFFFF;" aria-label="DESI PRIVAT Beranda">
-          <img src="{{ url_for('static', filename='images/client/logo_desi_privat.webp') }}" class="dp-brand-logo-photo" width="38" height="38" decoding="async" alt="Logo DESI PRIVAT">
+        <a href="/" class="dp-brand" style="color: #FFFFFF;" aria-label="DESI PRIVAT Beranda">
+          <img src="{{ url_for('static', filename='images/client/logo_desi_privat.webp') }}" class="dp-brand-logo-photo" width="38" height="38" draggable="false" decoding="async" alt="Logo DESI PRIVAT">
           <div class="dp-brand-name" style="color: #FFFFFF;">DESI PRIVAT</div>
         </a>
-        <a href="{{ url_for('auth.index') }}" class="dp-btn dp-btn-ghost-light" style="min-height: 40px; padding: 8px 18px; font-size: 13.5px;">
+        <a href="/" class="dp-btn dp-btn-ghost-light" style="min-height: 40px; padding: 8px 18px; font-size: 13.5px;">
           Beranda
         </a>
       </div>
@@ -167,6 +167,6 @@
     </div>
   </div>
 
-  <script src="{{ url_for('static', filename='js/main.js') }}?v=13" defer></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}?v=14" defer></script>
 </body>
 </html>

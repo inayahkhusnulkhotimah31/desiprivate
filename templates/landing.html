@@ -10,19 +10,20 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" type="image/webp" href="{{ url_for('static', filename='images/client/logo_desi_privat.webp') }}">
   <link rel="prefetch" href="{{ url_for('auth.login') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=13">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=14">
 </head>
 <body class="dp-landing-body" data-login-photo="{{ url_for('static', filename='images/client/galeri_02.webp') }}">
   <div id="dpScrollProgress" aria-hidden="true"></div>
 
   <header class="dp-nav-bar dp-nav-hero" id="dpLandingNav">
     <div class="dp-container dp-nav-inner">
-      <a href="{{ url_for('auth.index') }}" class="dp-brand" aria-label="DESI PRIVAT Beranda">
+      <a href="/" class="dp-brand" aria-label="DESI PRIVAT Beranda">
         <img
           src="{{ url_for('static', filename='images/client/logo_desi_privat.webp') }}"
           class="dp-brand-logo-photo"
           width="38"
           height="38"
+          draggable="false"
           decoding="async"
           fetchpriority="high"
           alt="Logo DESI PRIVAT"
@@ -40,13 +41,6 @@
       </nav>
 
       <div class="dp-nav-actions">
-        <button type="button" class="dp-mobile-menu-btn" id="landingMobileToggle" aria-label="Buka Menu" aria-expanded="false">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <line x1="4" y1="7" x2="20" y2="7"/>
-            <line x1="4" y1="12" x2="20" y2="12"/>
-            <line x1="4" y1="17" x2="20" y2="17"/>
-          </svg>
-        </button>
         <a href="{{ url_for('auth.login') }}" class="dp-btn dp-btn-caramel dp-nav-login-btn">
           Masuk
         </a>
@@ -340,12 +334,13 @@
         </div>
 
         <div class="dp-contact-strip" id="footerKontak">
-          <a href="{{ url_for('auth.index') }}" class="dp-contact-brand">
+          <a href="/" class="dp-contact-brand">
             <img
               src="{{ url_for('static', filename='images/client/logo_desi_privat.webp') }}"
               class="dp-contact-logo"
               width="30"
               height="30"
+              draggable="false"
               loading="lazy"
               decoding="async"
               alt="Logo DESI PRIVAT"
@@ -392,9 +387,9 @@
     </div>
   </aside>
 
-  <!-- MODAL PRATINJAU POSTER PENCAPAIAN (VIEWPORT-FIXED) -->
+  <!-- MODAL PRATINJAU POSTER PENCAPAIAN (VIEWPORT-FIXED, CONCENTRIC 28/20 RADIUS) -->
   <div class="modal-overlay" id="dpPosterModal" role="dialog" aria-modal="true" aria-labelledby="dpPosterModalTitle">
-    <div class="modal-dialog" style="max-width: 520px;">
+    <div class="modal-dialog dp-poster-modal-dialog" style="max-width: 520px;">
       <div class="modal-header">
         <div class="modal-title" id="dpPosterModalTitle">Pencapaian Siswa</div>
         <button type="button" class="modal-close-btn" onclick="closeModal('dpPosterModal')" aria-label="Tutup">
@@ -404,8 +399,10 @@
           </svg>
         </button>
       </div>
-      <div class="modal-body" style="padding: 12px;">
-        <img id="dpPosterModalImg" src="" alt="Poster Pencapaian DESI PRIVAT" class="dp-poster-modal-img">
+      <div class="modal-body dp-poster-modal-body">
+        <div class="dp-poster-modal-frame">
+          <img id="dpPosterModalImg" src="" alt="Poster Pencapaian DESI PRIVAT" class="dp-poster-modal-img" draggable="false">
+        </div>
       </div>
     </div>
   </div>
@@ -420,6 +417,6 @@
     </button>
   </div>
 
-  <script src="{{ url_for('static', filename='js/main.js') }}?v=13" defer></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}?v=14" defer></script>
 </body>
 </html>

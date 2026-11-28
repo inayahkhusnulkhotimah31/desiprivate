@@ -27,6 +27,30 @@ window.closeModal = function(modalId) {
 };
 
 function initMain() {
+  // 0. Normalize /landing -> / so Landing Page always displays root URL
+  if (window.location.pathname === "/landing" && window.history && typeof window.history.replaceState === "function") {
+    window.history.replaceState(null, "", "/" + window.location.search + window.location.hash);
+  }
+
+  // 0b. Global Anti-Drag & Anti-Save Image Protection
+  document.querySelectorAll("img").forEach((img) => {
+    img.setAttribute("draggable", "false");
+  });
+  document.addEventListener("dragstart", (e) => {
+    if (e.target && (e.target.tagName === "IMG" || e.target.closest("img"))) {
+      e.preventDefault();
+    }
+  });
+  document.addEventListener("contextmenu", (e) => {
+    if (
+      e.target &&
+      (e.target.tagName === "IMG" ||
+        e.target.closest(".dp-sophie-inner, .dp-poster-modal-frame, .dp-hero-mosaic-cell, .dp-closing-thumb-wrap, .dp-login-photo"))
+    ) {
+      e.preventDefault();
+    }
+  });
+
   // 1. Sidebar & Drawer Mobile/Tablet
   const toggleBtn = document.getElementById("mobileToggleBtn");
   const sidebar = document.getElementById("sidebar");
@@ -77,23 +101,7 @@ function initMain() {
     });
   }
 
-  // 3. Landing Mobile Menu Toggle
-  const landingToggle = document.getElementById("landingMobileToggle");
-  const landingMenu = document.getElementById("landingNavMenu");
-  if (landingToggle && landingMenu) {
-    landingToggle.addEventListener("click", () => {
-      const opened = landingMenu.classList.toggle("is-open");
-      landingToggle.setAttribute("aria-expanded", opened ? "true" : "false");
-    });
-    landingMenu.querySelectorAll("a").forEach((a) => {
-      a.addEventListener("click", () => {
-        landingMenu.classList.remove("is-open");
-        landingToggle.setAttribute("aria-expanded", "false");
-      });
-    });
-  }
-
-  // 4. Floating Navbar, Top Scroll Progress & Icon-Only Back-to-Top (Passive rAF-free scroll)
+  // 3. Floating Navbar, Top Scroll Progress & Icon-Only Back-to-Top (Passive rAF-free scroll)
   const heroNav = document.querySelector(".dp-nav-bar.dp-nav-hero");
   const floatBar = document.getElementById("dpFloatBar");
   const progressBar = document.getElementById("dpScrollProgress");

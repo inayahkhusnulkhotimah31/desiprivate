@@ -1183,11 +1183,12 @@ def build_page_01_public_auth(b: FigBuilder):
     b.rect(f2, 718, 0, 4, 920, fill="#38BDF866", radius=0, name="Closing Gate Center Seam")
 
     # --- 3. Post-Click Interactive Layers on Page 01 ---
-    ov_poster = b.frame("Overlay: Lightbox Poster Pencapaian", 1560, 1020, 480, 620, fill=SURFACE, radius=24, stroke=HAIRLINE)
+    ov_poster = b.frame("Overlay: Lightbox Poster Pencapaian", 1560, 1020, 480, 620, fill=SURFACE, radius=28, stroke=HAIRLINE)
     b.shadow(ov_poster, blur=20, y=8, opacity=0.14)
     b.text(ov_poster, "Poster Pencapaian Siswa", 24, 22, size=17, color=INK, weight="Bold", family=FONT_HEAD, width=360, max_lines=1)
     ov_poster_x = b.pill(ov_poster, 420, 16, 36, 36, "×", ALABASTER, INK, size=16, weight="Bold", stroke=HAIRLINE, radius=12)
     b.close_overlay_link(ov_poster_x)
+    b.rect(ov_poster, 24, 68, 432, 492, fill=ALABASTER, radius=20, stroke=HAIRLINE, name="Poster Rounded 20px Frame")
     b.image(ov_poster, "pencapaian_01.webp", 24, 68, 432, 492, mode="fill", name="Poster Lightbox Preview")
     b.text(ov_poster, "M. Ian Ramadhan, Juara 3 Olimpiade Matematika Expo SMAFT 2026", 24, 574, size=12.5, color=BODY, width=432, max_lines=1)
 
