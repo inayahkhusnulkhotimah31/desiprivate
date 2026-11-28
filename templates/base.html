@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>{% block title %}Sistem Informasi{% endblock %} - DESI PRIVAT</title>
   <meta name="description" content="Sistem Informasi Manajemen Tempat Les Privat DESI PRIVAT - Pengelolaan Siswa, Mentor, Penjadwalan, dan Perkembangan Belajar.">
-  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+  <link rel="icon" type="image/webp" href="{{ url_for('static', filename='images/client/logo_desi_privat.webp') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
   {% block extra_css %}{% endblock %}
 </head>
@@ -18,10 +18,9 @@
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
         <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
-          <img src="{{ url_for('static', filename='images/logo_symbol.svg') }}" class="sidebar-brand-img" alt="Logo DESI PRIVAT">
+          <img src="{{ url_for('static', filename='images/client/logo_desi_privat.webp') }}" class="dp-brand-logo-photo" alt="Logo DESI PRIVAT">
           <div style="min-width: 0;">
-            <div class="sidebar-brand-title"><span class="brand-desi" style="color: #0EA5E9;">DESI</span> <span class="brand-privat" style="color: #A66B37;">PRIVAT</span></div>
-            <div class="sidebar-brand-sub" style="font-size: 10px; font-weight: 700; letter-spacing: 0.8px; color: #64748B;">SISTEM MANAJEMEN LES</div>
+            <div class="sidebar-brand-title"><span class="brand-desi" style="color: var(--blue-primary);">DESI</span> <span class="brand-privat" style="color: var(--caramel);">PRIVAT</span></div>
           </div>
         </div>
         <button type="button" class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Tutup Menu">{{ icon('close') }}</button>
@@ -147,8 +146,8 @@
       </nav>
 
       <div class="sidebar-footer">
-        <div class="user-badge" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: #F8FAFC; border-radius: 12px; border: 1px solid #E2E8F0;">
-          <div class="user-avatar" style="width: 36px; height: 36px; border-radius: 50%; background: #0EA5E9; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">
+        <div class="user-badge" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: var(--bg-app); border-radius: 12px; border: 1px solid var(--border-subtle);">
+          <div class="user-avatar" style="width: 36px; height: 36px; border-radius: 50%; background: var(--blue-primary); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0;">
             {{ current_user.full_name[:1] if (current_user and current_user.full_name) else 'U' }}
           </div>
           <div class="user-info" style="min-width: 0; flex: 1;">
@@ -178,8 +177,8 @@
           
           <!-- BRAND LOGO UNTUK MOBILE TOPBAR -->
           <div class="mobile-brand-center" style="display: none;">
-            <img src="{{ url_for('static', filename='images/logo_symbol.svg') }}" style="width: 26px; height: auto;" alt="Logo DESI PRIVAT">
-            <span style="font-size: 15px; font-weight: 800;"><span style="color: #0EA5E9;">DESI</span> <span style="color: #A66B37;">PRIVAT</span></span>
+            <img src="{{ url_for('static', filename='images/client/logo_desi_privat.webp') }}" class="dp-brand-logo-photo dp-brand-logo-photo--sm" alt="Logo DESI PRIVAT">
+            <span style="font-size: 15px; font-weight: 800;"><span style="color: #0093D6;">DESI</span> <span style="color: #A66B37;">PRIVAT</span></span>
           </div>
 
           <div class="page-title-box">
@@ -218,7 +217,7 @@
         </div>
       </header>
 
-      <main class="content-body">
+      <main class="content-body dp-page-enter">
         <!-- FLASH MESSAGES -->
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
@@ -256,7 +255,7 @@
           <span class="bottom-icon">{{ icon('student') }}</span>
           <span>Siswa</span>
         </a>
-        <button type="button" class="mobile-bottom-item" onclick="var sb=document.getElementById('sidebar'); if(sb){sb.classList.toggle('show');} var bd=document.getElementById('sidebarBackdrop'); if(bd){bd.classList.toggle('show');}" style="background:none;border:none;cursor:pointer;">
+        <button type="button" class="mobile-bottom-item" onclick="var sb=document.getElementById('sidebar'); if(sb){sb.classList.toggle('show');} var bd=document.getElementById('sidebarBackdrop'); if(bd){bd.classList.toggle('active');}" style="background:none;border:none;cursor:pointer;">
           <span class="bottom-icon">{{ icon('menu') }}</span>
           <span>Menu</span>
         </button>
@@ -273,7 +272,7 @@
           <span class="bottom-icon">{{ icon('credit-card') }}</span>
           <span>Honor</span>
         </a>
-        <button type="button" class="mobile-bottom-item" onclick="var sb=document.getElementById('sidebar'); if(sb){sb.classList.toggle('show');} var bd=document.getElementById('sidebarBackdrop'); if(bd){bd.classList.toggle('show');}" style="background:none;border:none;cursor:pointer;">
+        <button type="button" class="mobile-bottom-item" onclick="var sb=document.getElementById('sidebar'); if(sb){sb.classList.toggle('show');} var bd=document.getElementById('sidebarBackdrop'); if(bd){bd.classList.toggle('active');}" style="background:none;border:none;cursor:pointer;">
           <span class="bottom-icon">{{ icon('menu') }}</span>
           <span>Menu</span>
         </button>
@@ -290,7 +289,7 @@
           <span class="bottom-icon">{{ icon('calendar') }}</span>
           <span>Jadwal</span>
         </a>
-        <button type="button" class="mobile-bottom-item" onclick="var sb=document.getElementById('sidebar'); if(sb){sb.classList.toggle('show');} var bd=document.getElementById('sidebarBackdrop'); if(bd){bd.classList.toggle('show');}" style="background:none;border:none;cursor:pointer;">
+        <button type="button" class="mobile-bottom-item" onclick="var sb=document.getElementById('sidebar'); if(sb){sb.classList.toggle('show');} var bd=document.getElementById('sidebarBackdrop'); if(bd){bd.classList.toggle('active');}" style="background:none;border:none;cursor:pointer;">
           <span class="bottom-icon">{{ icon('menu') }}</span>
           <span>Menu</span>
         </button>
@@ -298,7 +297,10 @@
     </nav>
   {% endif %}
 
+  <script src="{{ url_for('static', filename='vendor/gsap.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='vendor/ScrollTrigger.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/desi-gsap.js') }}"></script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

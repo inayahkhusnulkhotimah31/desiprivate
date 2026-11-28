@@ -1,220 +1,421 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-type="service">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>DESI PRIVAT - Bimbingan Belajar Privat yang Terarah &amp; Personal</title>
-  <meta name="description" content="Platform bimbingan belajar les privat terpercaya untuk SD, SMP, SMA, dan Bahasa Inggris dengan mentor berpengalaman.">
+  <title>DESI PRIVAT: Bimbingan Belajar Privat di Rumah</title>
+  <meta name="description" content="Bimbingan belajar les privat tatap muka di rumah untuk SD, SMP, SMA, SNBT, Bahasa Inggris, dan Calistung bersama mentor terkurasi.">
+  <meta name="page-type" content="service">
+  <meta name="site-kind" content="other">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/webp" href="{{ url_for('static', filename='images/client/logo_desi_privat.webp') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/scrollcraft.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/lenis.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
-<body class="landing-body" style="background: #F2F8FD; font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;">
+<body class="dp-landing-body dp-page-enter">
+  <div id="dpScrollProgress" aria-hidden="true"></div>
+  <div data-sc-progress aria-hidden="true"></div>
 
-  <!-- NAVBAR GLASSMORPHISM MENGAMBANG (SESUAI MOCKUP & SPESIFIKASI 3.A) -->
-  <div class="landing-nav-wrapper">
-    <header class="landing-navbar" style="background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(16px); border: 1px solid rgba(226, 232, 240, 0.85); box-shadow: 0 4px 20px rgba(14, 165, 233, 0.08);">
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <img src="{{ url_for('static', filename='images/logo_symbol.svg') }}" style="width: 36px; height: auto;" alt="Logo DESI PRIVAT">
-        <div>
-          <div style="font-size: 16px; font-weight: 900; line-height: 1.15; letter-spacing: 0.5px;">
-            <span style="color: #0EA5E9;">DESI</span> <span style="color: #A66B37;">PRIVAT</span>
-          </div>
-          <div style="font-size: 9.5px; font-weight: 700; color: #64748B; letter-spacing: 1px; text-transform: uppercase;">
-            SISTEM MANAJEMEN LES
-          </div>
+  <header class="dp-nav-bar dp-nav-hero">
+    <div class="dp-container dp-nav-inner">
+      <a href="#hero" class="dp-brand">
+        <img
+          src="{{ url_for('static', filename='images/client/logo_desi_privat.webp') }}"
+          class="dp-brand-logo-photo"
+          alt="Logo DESI PRIVAT"
+        >
+        <div class="dp-brand-name">
+          <span class="dp-brand-desi">DESI</span> <span class="dp-brand-privat">PRIVAT</span>
         </div>
-      </div>
+      </a>
 
-      <!-- DESKTOP NAV LINKS: KAPSUL MENU DI TENGAH -->
-      <nav class="landing-nav-links" id="landingNavMenu" style="background: rgba(241, 245, 249, 0.8); padding: 4px 12px; border-radius: 9999px; border: 1px solid #E2E8F0;">
-        <a href="#hero" class="landing-nav-link" style="color: #0284C7; font-weight: 700;">Beranda</a>
-        <a href="#profil" class="landing-nav-link" style="color: #334155;">Profil Usaha</a>
-        <a href="#program" class="landing-nav-link" style="color: #334155;">Program Les</a>
-        <a href="#dokumentasi" class="landing-nav-link" style="color: #334155;">Dokumentasi</a>
-        <a href="#kontak" class="landing-nav-link" style="color: #334155;">Kontak</a>
+      <nav class="dp-nav-links" id="landingNavMenu" aria-label="Navigasi Utama">
+        <a href="#hero" class="dp-nav-link">Beranda</a>
+        <a href="#pencapaian" class="dp-nav-link">Prestasi</a>
+        <a href="#program" class="dp-nav-link">Program</a>
+        <a href="#kontak" class="dp-nav-link">Kontak</a>
       </nav>
 
-      <!-- CTA LOGIN -->
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <a href="{{ url_for('auth.login') }}" class="btn-caramel btn-terracotta-pill" style="font-size: 13px; text-decoration: none;">
-          Masuk / Login
+      <div class="dp-nav-actions">
+        <button type="button" class="dp-mobile-menu-btn" id="landingMobileToggle" aria-label="Buka Menu" aria-expanded="false">
+          {{ icon('menu') }}
+        </button>
+        <a href="{{ url_for('auth.login') }}" class="dp-btn dp-btn-caramel" data-sc-magnet="0.18">
+          Masuk
         </a>
       </div>
-    </header>
-  </div>
+    </div>
+  </header>
 
-  <!-- HERO SECTION DENGAN MOSAIK FOTO BELAJAR (SESUAI MOCKUP GAMBAR 2) -->
-  <div class="landing-hero-container" id="hero" style="padding-top: 100px;">
-    <div class="landing-hero-card" style="position: relative; overflow: hidden; background: #0c4a6e; border-radius: 24px; box-shadow: 0 16px 40px rgba(14, 165, 233, 0.18);">
-      
-      <!-- MOSAIK FOTO KEGIATAN BELAJAR ASLI (TILTED / ROTATED PERSPECTIVE COLLAGE) -->
-      <div class="hero-photo-mosaic" style="position: absolute; inset: -30px; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 190px); gap: 14px; transform: rotate(-2.5deg) scale(1.06); pointer-events: none; z-index: 1;">
-        <div style="border-radius: 14px; overflow: hidden; background: #0284c7;"><img src="{{ url_for('static', filename='images/hero/tutor1.jpg') }}" alt="Sesi Les" style="width: 100%; height: 100%; object-fit: cover;"></div>
-        <div style="border-radius: 14px; overflow: hidden; background: #0284c7;"><img src="{{ url_for('static', filename='images/hero/student2.jpg') }}" alt="Siswa Belajar" style="width: 100%; height: 100%; object-fit: cover;"></div>
-        <div style="border-radius: 14px; overflow: hidden; background: #0284c7;"><img src="{{ url_for('static', filename='images/hero/student3.jpg') }}" alt="Pendampingan Mentor" style="width: 100%; height: 100%; object-fit: cover;"></div>
-        <div style="border-radius: 14px; overflow: hidden; background: #0284c7;"><img src="{{ url_for('static', filename='images/hero/tutor4.jpg') }}" alt="Belajar Interaktif" style="width: 100%; height: 100%; object-fit: cover;"></div>
-        <div style="border-radius: 14px; overflow: hidden; background: #0284c7;"><img src="{{ url_for('static', filename='images/hero/student5.jpg') }}" alt="Tutor Ramah" style="width: 100%; height: 100%; object-fit: cover;"></div>
-        <div style="border-radius: 14px; overflow: hidden; background: #0284c7;"><img src="{{ url_for('static', filename='images/hero/student6.jpg') }}" alt="Siswa Fokus" style="width: 100%; height: 100%; object-fit: cover;"></div>
-        <div style="border-radius: 14px; overflow: hidden; background: #0284c7;"><img src="{{ url_for('static', filename='images/hero/tutor7.jpg') }}" alt="Les Privat" style="width: 100%; height: 100%; object-fit: cover;"></div>
-        <div style="border-radius: 14px; overflow: hidden; background: #0284c7;"><img src="{{ url_for('static', filename='images/hero/doc1.jpg') }}" alt="Dokumentasi Les" style="width: 100%; height: 100%; object-fit: cover;"></div>
+  <main>
+    <!-- SCREEN 1: HERO DENGAN KOLASE 4x2 MIRING DI ATAS + WHITE SPACE (8 FOTO UNIK, ZERO DUPLIKAT) -->
+    <section class="dp-hero dp-hero--framed" id="hero" data-sc-act="pin" data-sc-span="1.55" data-sc-drift="#083A54">
+      <div class="dp-hero-stage dp-hero-stage--framed" data-sc-stage>
+        <div class="dp-hero-mosaic-bg dp-hero-mosaic-bg--4x2" aria-hidden="true">
+          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_01.webp') }}" alt=""></div>
+          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_02.webp') }}" alt=""></div>
+          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_03.webp') }}" alt=""></div>
+          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_04.webp') }}" alt=""></div>
+          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_05.webp') }}" alt=""></div>
+          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_06.webp') }}" alt=""></div>
+          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_07.webp') }}" alt=""></div>
+          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_08.webp') }}" alt=""></div>
+        </div>
+        <div class="dp-hero-mosaic-wash" aria-hidden="true"></div>
+
+        <div class="dp-container dp-hero-shell dp-hero-shell--centered">
+          <div class="dp-hero-beats">
+            <div class="dp-hero-beat dp-hero-beat--a" data-sc-cue="0 0.72 0">
+              <h1 class="dp-hero-title">
+                Bimbingan Privat yang Tenang &amp; Terarah di Rumah.
+              </h1>
+              <p class="dp-hero-lead">
+                Mentor terkurasi datang ke rumah dengan jadwal rapi dan laporan belajar langsung untuk orang tua.
+              </p>
+              <div class="dp-hero-actions">
+                <a href="#program" class="dp-btn dp-btn-caramel" data-sc-magnet="0.2">
+                  Lihat Program
+                </a>
+                <a href="#kontak" class="dp-btn dp-btn-ghost-light">
+                  Kontak
+                </a>
+              </div>
+            </div>
+
+            <div class="dp-hero-beat dp-hero-beat--b" data-sc-cue="0.54 1 0.22 0.14">
+              <h2 class="dp-hero-subhead">
+                Terpercaya oleh Keluarga.
+              </h2>
+              <div class="dp-metrics-grid">
+                <div>
+                  <div class="dp-metric-val">
+                    <span data-sc-count="0 {{ student_count|default(0) }}">{{ student_count|default(0) }}</span>{% if student_count and student_count > 0 %}+{% endif %}
+                  </div>
+                  <div class="dp-metric-lbl">Siswa Aktif</div>
+                </div>
+                <div>
+                  <div class="dp-metric-val">
+                    <span data-sc-count="0 {{ mentor_count|default(0) }}">{{ mentor_count|default(0) }}</span>{% if mentor_count and mentor_count > 0 %}+{% endif %}
+                  </div>
+                  <div class="dp-metric-lbl">Mentor</div>
+                </div>
+                <div>
+                  <div class="dp-metric-val">
+                    <span data-sc-count="0 {{ program_count|default(0) }}">{{ program_count|default(0) }}</span>{% if program_count and program_count > 0 %}+{% endif %}
+                  </div>
+                  <div class="dp-metric-lbl">Program</div>
+                </div>
+                <div>
+                  <div class="dp-metric-val">
+                    <span data-sc-count="0 {{ satisfaction_rate|default(98) }}">{{ satisfaction_rate|default(98) }}</span>%
+                  </div>
+                  <div class="dp-metric-lbl">Kepuasan Wali</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dp-seam-fade-to-alabaster" aria-hidden="true"></div>
       </div>
+    </section>
 
-      <!-- OVERLAY GRADASI BIRU TRANSPARAN SESUAI GAMBAR 2 -->
-      <div style="position: absolute; inset: 0; background: linear-gradient(135deg, rgba(2, 132, 199, 0.82) 0%, rgba(3, 105, 161, 0.86) 50%, rgba(12, 74, 110, 0.92) 100%); z-index: 2;"></div>
+    <!-- SCREEN 2: PENCAPAIAN SISWA (KARTU FROSTED GLASS SEPERTI GAMBAR 2, SEMUA 6 FOTO PENCAPAIAN) -->
+    <section class="dp-section-simple dp-section-alabaster" id="pencapaian" data-sc-act="flow" data-sc-drift="#F7F7F5">
+      <div class="dp-container">
+        <div class="dp-section-head">
+          <h2 class="dp-h2">Pencapaian Siswa.</h2>
+          <p class="dp-section-lead">Langkah nyata para siswa DESI PRIVAT di berbagai kompetisi akademik.</p>
+        </div>
 
-      <!-- KONTEN TEKS HERO TENGAH (SESUAI MOCKUP GAMBAR 2) -->
-      <div style="position: relative; z-index: 3; max-width: 840px; margin: 0 auto; text-align: center; padding: 76px 24px;">
-        <h1 class="landing-hero-title" style="color: #FFFFFF; font-weight: 800; font-size: 38px; line-height: 1.25; margin-bottom: 16px; letter-spacing: -0.5px;">
-          Bimbingan Belajar Privat<br>yang Terarah &amp; Personal
-        </h1>
-        <p class="landing-hero-desc" style="color: #E0F2FE; font-size: 15.5px; line-height: 1.6; max-width: 620px; margin: 0 auto 30px auto;">
-          Pendampingan belajar eksklusif bersama mentor terbaik untuk memaksimalkan potensi akademik putra putri Anda.
-        </p>
+        {% set verified_svg %}
+          <span class="dp-verified-check" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2l2.39 1.67 2.91-.37 1.24 2.66 2.66 1.24-.37 2.91L22 12l-1.17 1.89.37 2.91-2.66 1.24-1.24 2.66-2.91-.37L12 22l-2.39-1.67-2.91.37-1.24-2.66-2.66-1.24.37-2.91L2 12l1.17-1.89-.37-2.91 2.66-1.24 1.24-2.66 2.91.37L12 2zm-1.1 13.4l5.2-5.2-1.4-1.4-3.8 3.8-1.6-1.6-1.4 1.4 3 3z"/>
+            </svg>
+          </span>
+        {% endset %}
 
-        <div class="landing-hero-actions" style="display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;">
-          <a href="{{ url_for('auth.login') }}" class="btn-caramel btn-terracotta-pill" style="padding: 12px 30px; font-size: 15px; font-weight: 700; text-decoration: none; border-radius: 9999px; box-shadow: 0 4px 14px rgba(166, 107, 55, 0.35);">
-            Masuk Portal
-          </a>
-          <a href="#program" class="btn-outline-white" style="padding: 12px 28px; font-size: 15px; font-weight: 600; border-radius: 9999px; border: 1.5px solid #FFFFFF; color: #FFFFFF; text-decoration: none; background: rgba(255,255,255,0.08); backdrop-filter: blur(8px);">
-            Profil Usaha
-          </a>
+        {% set animated_eye_svg %}
+          <svg class="dp-eye-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path class="dp-eye-lid" d="M2.2 12C4.6 7.5 8.1 5.5 12 5.5C15.9 5.5 19.4 7.5 21.8 12C19.4 16.5 15.9 18.5 12 18.5C8.1 18.5 4.6 16.5 2.2 12Z"/>
+            <circle class="dp-eye-iris" cx="12" cy="12" r="3.2"/>
+            <circle class="dp-eye-pupil" cx="12" cy="12" r="1.15" fill="currentColor" stroke="none"/>
+          </svg>
+        {% endset %}
+
+        <div class="dp-achievement-grid">
+          <article class="dp-sophie-card dp-scroll-reveal">
+            <div class="dp-sophie-inner">
+              <img src="{{ url_for('static', filename='images/client/pencapaian_01.webp') }}" alt="Juara 3 Olimpiade Matematika SD Expo SMAFT 2026" class="dp-sophie-img" loading="lazy">
+              <div class="dp-sophie-frost">
+                <div class="dp-sophie-name-row">
+                  <h3 class="dp-sophie-name">Muhammad Ian Ramadhan</h3>
+                  {{ verified_svg }}
+                </div>
+                <p class="dp-sophie-desc">Juara 3 Olimpiade Matematika Tingkat SD pada Expo SMAFT 2026.</p>
+                <div class="dp-sophie-foot">
+                  <div class="dp-sophie-stats">
+                    <span class="dp-sophie-stat">Matematika</span>
+                    <span class="dp-sophie-stat">2026</span>
+                  </div>
+                  <button type="button" class="dp-eye-btn dp-poster-open-btn" data-poster-src="{{ url_for('static', filename='images/client/pencapaian_01.webp') }}" data-poster-title="Muhammad Ian Ramadhan" aria-label="Lihat poster pencapaian Muhammad Ian Ramadhan" title="Lihat poster">{{ animated_eye_svg }}</button>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="dp-sophie-card dp-scroll-reveal">
+            <div class="dp-sophie-inner">
+              <img src="{{ url_for('static', filename='images/client/pencapaian_02.webp') }}" alt="Predikat Silver IOB Rising Star Mathematics" class="dp-sophie-img" loading="lazy">
+              <div class="dp-sophie-frost">
+                <div class="dp-sophie-name-row">
+                  <h3 class="dp-sophie-name">Muhammad Ian Ramadhan</h3>
+                  {{ verified_svg }}
+                </div>
+                <p class="dp-sophie-desc">Meraih Predikat Silver IOB Rising Star Mathematics.</p>
+                <div class="dp-sophie-foot">
+                  <div class="dp-sophie-stats">
+                    <span class="dp-sophie-stat">Silver IOB</span>
+                    <span class="dp-sophie-stat">2026</span>
+                  </div>
+                  <button type="button" class="dp-eye-btn dp-poster-open-btn" data-poster-src="{{ url_for('static', filename='images/client/pencapaian_02.webp') }}" data-poster-title="Silver IOB Rising Star Mathematics" aria-label="Lihat poster Silver IOB Rising Star Mathematics" title="Lihat poster">{{ animated_eye_svg }}</button>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="dp-sophie-card dp-scroll-reveal">
+            <div class="dp-sophie-inner">
+              <img src="{{ url_for('static', filename='images/client/pencapaian_03.webp') }}" alt="Kontingen DESI PRIVAT KMSI 2026 Final Provinsi" class="dp-sophie-img" loading="lazy">
+              <div class="dp-sophie-frost">
+                <div class="dp-sophie-name-row">
+                  <h3 class="dp-sophie-name">Kontingen DESI PRIVAT</h3>
+                  {{ verified_svg }}
+                </div>
+                <p class="dp-sophie-desc">Para siswa DESI PRIVAT pada Ajang Lomba KMSI 2026 Babak Final Provinsi.</p>
+                <div class="dp-sophie-foot">
+                  <div class="dp-sophie-stats">
+                    <span class="dp-sophie-stat">Final Provinsi</span>
+                    <span class="dp-sophie-stat">2026</span>
+                  </div>
+                  <button type="button" class="dp-eye-btn dp-poster-open-btn" data-poster-src="{{ url_for('static', filename='images/client/pencapaian_03.webp') }}" data-poster-title="Kontingen DESI PRIVAT KMSI 2026" aria-label="Lihat poster Kontingen DESI PRIVAT KMSI 2026" title="Lihat poster">{{ animated_eye_svg }}</button>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="dp-sophie-card dp-scroll-reveal">
+            <div class="dp-sophie-inner">
+              <img src="{{ url_for('static', filename='images/client/pencapaian_04.webp') }}" alt="Gold Medals Venus Kompetisi Rayon Makassar" class="dp-sophie-img" loading="lazy">
+              <div class="dp-sophie-frost">
+                <div class="dp-sophie-name-row">
+                  <h3 class="dp-sophie-name">Muhammad Izhar Ismed</h3>
+                  {{ verified_svg }}
+                </div>
+                <p class="dp-sophie-desc">Gold Medals Penyisihan Venus Kompetisi ke-4 Rayon Makassar &amp; lolos Nasional.</p>
+                <div class="dp-sophie-foot">
+                  <div class="dp-sophie-stats">
+                    <span class="dp-sophie-stat">Gold Medal</span>
+                    <span class="dp-sophie-stat">2026</span>
+                  </div>
+                  <button type="button" class="dp-eye-btn dp-poster-open-btn" data-poster-src="{{ url_for('static', filename='images/client/pencapaian_04.webp') }}" data-poster-title="Muhammad Izhar Ismed - Gold Medals" aria-label="Lihat poster Gold Medals Muhammad Izhar Ismed" title="Lihat poster">{{ animated_eye_svg }}</button>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="dp-sophie-card dp-scroll-reveal">
+            <div class="dp-sophie-inner">
+              <img src="{{ url_for('static', filename='images/client/pencapaian_05.webp') }}" alt="Lomba Cerdas Cermat SEACOM 2026 Muhammad Izhar Ismed" class="dp-sophie-img" loading="lazy">
+              <div class="dp-sophie-frost">
+                <div class="dp-sophie-name-row">
+                  <h3 class="dp-sophie-name">Muhammad Izhar Ismed</h3>
+                  {{ verified_svg }}
+                </div>
+                <p class="dp-sophie-desc">Partisipasi Lomba Cerdas Cermat SEACOM 2026 kategori akademik.</p>
+                <div class="dp-sophie-foot">
+                  <div class="dp-sophie-stats">
+                    <span class="dp-sophie-stat">SEACOM</span>
+                    <span class="dp-sophie-stat">2026</span>
+                  </div>
+                  <button type="button" class="dp-eye-btn dp-poster-open-btn" data-poster-src="{{ url_for('static', filename='images/client/pencapaian_05.webp') }}" data-poster-title="Lomba Cerdas Cermat SEACOM 2026" aria-label="Lihat poster SEACOM 2026 Muhammad Izhar Ismed" title="Lihat poster">{{ animated_eye_svg }}</button>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="dp-sophie-card dp-scroll-reveal">
+            <div class="dp-sophie-inner">
+              <img src="{{ url_for('static', filename='images/client/pencapaian_06.webp') }}" alt="Lomba Cerdas Cermat SEACOM 2026 Muhammad Ian Ramadhan Hamzah" class="dp-sophie-img" loading="lazy">
+              <div class="dp-sophie-frost">
+                <div class="dp-sophie-name-row">
+                  <h3 class="dp-sophie-name">Muhammad Ian Ramadhan</h3>
+                  {{ verified_svg }}
+                </div>
+                <p class="dp-sophie-desc">Partisipasi Lomba Cerdas Cermat SEACOM 2026 kategori akademik.</p>
+                <div class="dp-sophie-foot">
+                  <div class="dp-sophie-stats">
+                    <span class="dp-sophie-stat">SEACOM</span>
+                    <span class="dp-sophie-stat">2026</span>
+                  </div>
+                  <button type="button" class="dp-eye-btn dp-poster-open-btn" data-poster-src="{{ url_for('static', filename='images/client/pencapaian_06.webp') }}" data-poster-title="Lomba Cerdas Cermat SEACOM 2026" aria-label="Lihat poster SEACOM 2026 Muhammad Ian Ramadhan" title="Lihat poster">{{ animated_eye_svg }}</button>
+                </div>
+              </div>
+            </div>
+          </article>
         </div>
       </div>
+    </section>
+
+    <!-- SCREEN 3: PROGRAM BIMBINGAN (RINGKAS 1 BARIS, 4 KARTU SERAGAM) -->
+    <section class="dp-section-simple dp-section-surface" id="program" data-sc-act="flow" data-sc-drift="#FFFFFF">
+      <div class="dp-container">
+        <div class="dp-section-head">
+          <h2 class="dp-h2">Program Bimbingan.</h2>
+          <p class="dp-section-lead">Setiap periode terdiri dari 8 pertemuan tatap muka berdurasi 90 menit.</p>
+        </div>
+
+        <div class="dp-program-simple-grid">
+          <article class="dp-program-simple-card">
+            <div class="dp-program-num">01</div>
+            <h3>Privat SD</h3>
+            <p>Tematik, berhitung dasar, dan pendampingan PR harian.</p>
+            <button type="button" class="dp-flight-cta dp-prog-open-btn" data-prog-title="Privat SD" data-prog-desc="Pendampingan belajar tematik harian di rumah bersama mentor sabar untuk membangun kebiasaan belajar mandiri." data-prog-focus="Matematika dasar, Bahasa Indonesia, IPA terpadu, serta pendampingan PR &amp; ulangan harian." data-prog-cadence="8 Sesi per periode (90 menit per sesi) dengan laporan perkembangan langsung.">
+              Rincian
+            </button>
+          </article>
+
+          <article class="dp-program-simple-card">
+            <div class="dp-program-num">02</div>
+            <h3>Privat SMP</h3>
+            <p>Matematika, IPA terpadu, dan kesiapan ujian sekolah.</p>
+            <button type="button" class="dp-flight-cta dp-prog-open-btn" data-prog-title="Privat SMP" data-prog-desc="Penguatan konsep inti Matematika, IPA, dan Bahasa Inggris dengan latihan soal terstruktur sesuai ritme siswa." data-prog-focus="Aljabar, geometri, fisika dasar, biologi terpadu, dan strategi pengerjaan asesmen sekolah." data-prog-cadence="8 Sesi per periode (90 menit per sesi) lengkap dengan evaluasi topik sulit.">
+              Rincian
+            </button>
+          </article>
+
+          <article class="dp-program-simple-card">
+            <div class="dp-program-num">03</div>
+            <h3>Privat SMA &amp; SNBT</h3>
+            <p>Pendalaman Saintek, Soshum, dan persiapan masuk PTN.</p>
+            <button type="button" class="dp-flight-cta dp-prog-open-btn" data-prog-title="Privat SMA &amp; SNBT" data-prog-desc="Bimbingan intensif peminatan SMA dan pemetaan strategi lolos PTN melalui bedah soal analitis." data-prog-focus="Matematika Lanjut, Fisika, Kimia, Ekonomi, Penalaran Umum, dan Literasi SNBT." data-prog-cadence="8 Sesi per periode (90 menit per sesi) disertai simulasi target capaian.">
+              Rincian
+            </button>
+          </article>
+
+          <article class="dp-program-simple-card">
+            <div class="dp-program-num">04</div>
+            <h3>Inggris &amp; Calistung</h3>
+            <p>Percakapan aktif serta dasar membaca, menulis, berhitung.</p>
+            <button type="button" class="dp-flight-cta dp-prog-open-btn" data-prog-title="Inggris &amp; Calistung" data-prog-desc="Program fondasi membaca, menulis, berhitung tanpa tekanan serta latihan berbicara Bahasa Inggris aktif." data-prog-focus="Fonik interaktif, motorik tulis, berhitung logis, dan percakapan sehari-hari." data-prog-cadence="8 Sesi per periode (90 menit per sesi) yang ramah bagi anak.">
+              Rincian
+            </button>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 4: PENUTUP & KONTAK TRANSPARAN (TANPA FOOTER WARNA SOLID) -->
+    <section class="dp-closing-minimal" id="kontak" data-sc-act="flow" data-sc-drift="#F7F7F5">
+      <div class="dp-container">
+        <div class="dp-closing-card dp-scroll-reveal">
+          <div class="dp-closing-card-lead">
+            <div class="dp-closing-thumb-wrap">
+              <img src="{{ url_for('static', filename='images/client/galeri_09.webp') }}" alt="Sesi belajar privat DESI PRIVAT di rumah" class="dp-closing-thumb" loading="lazy">
+            </div>
+            <div class="dp-closing-card-copy">
+              <h2 class="dp-h2" style="margin: 0 0 8px 0;">Pantau Jadwal &amp; Progres Belajar Anak.</h2>
+              <p class="dp-section-lead" style="margin: 0;">
+                Masuk ke portal wali murid, mentor, atau admin untuk melihat jadwal dan laporan belajar.
+              </p>
+            </div>
+          </div>
+          <div class="dp-closing-card-actions">
+            <a href="https://wa.me/6285242009811" target="_blank" rel="noopener noreferrer" class="dp-btn dp-btn-ghost-dark">
+              WhatsApp
+            </a>
+            <a href="{{ url_for('auth.login') }}" class="dp-btn dp-btn-caramel" data-sc-magnet="0.18">
+              Masuk Portal
+            </a>
+          </div>
+        </div>
+
+        <div class="dp-contact-strip" id="footerKontak">
+          <div class="dp-contact-brand">
+            <img
+              src="{{ url_for('static', filename='images/client/logo_desi_privat.webp') }}"
+              class="dp-contact-logo"
+              alt="Logo DESI PRIVAT"
+            >
+            <span>DESI PRIVAT</span>
+          </div>
+          <div class="dp-contact-links">
+            <a href="https://wa.me/6285242009811" target="_blank" rel="noopener noreferrer">0852-4200-9811</a>
+            <a href="https://instagram.com/desi_private" target="_blank" rel="noopener noreferrer">@desi_private</a>
+            <span>Makassar, Sulawesi Selatan</span>
+            <span>&copy; 2026 DESI PRIVAT</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- INTERACTIVE PROGRAM DETAIL DRAWER (UNIFIED DIALOG GRAMMAR) -->
+  <div class="dp-drawer-backdrop" id="dpDrawerBackdrop" aria-hidden="true"></div>
+  <aside class="dp-drawer-panel" id="dpProgramDrawer" role="dialog" aria-modal="true" aria-labelledby="dpDrawerTitle" aria-hidden="true">
+    <div class="dp-drawer-head">
+      <h3 class="dp-drawer-title" id="dpDrawerTitle">Program Bimbingan</h3>
+      <button type="button" class="dp-drawer-close" id="dpDrawerCloseBtn" aria-label="Tutup Rincian">&times;</button>
+    </div>
+    <div class="dp-drawer-body">
+      <p class="dp-drawer-desc" id="dpDrawerDesc"></p>
+      <div class="dp-drawer-block">
+        <div class="dp-drawer-label">Fokus Pembelajaran</div>
+        <p id="dpDrawerFocus"></p>
+      </div>
+      <div class="dp-drawer-block">
+        <div class="dp-drawer-label">Ritme Pertemuan</div>
+        <p id="dpDrawerCadence"></p>
+      </div>
+    </div>
+    <div class="dp-drawer-actions">
+      <button type="button" class="dp-btn dp-btn-ghost-dark" id="dpDrawerDismissBtn">Tutup</button>
+      <a href="https://wa.me/6285242009811" target="_blank" rel="noopener noreferrer" class="dp-btn dp-btn-caramel" id="dpDrawerConsultBtn">Konsultasi</a>
+    </div>
+  </aside>
+
+  <!-- MODAL PRATINJAU POSTER PENCAPAIAN (UNIFIED DIALOG) -->
+  <div class="modal-overlay" id="dpPosterModal" role="dialog" aria-modal="true" aria-labelledby="dpPosterModalTitle">
+    <div class="modal-dialog" style="max-width: 520px;">
+      <div class="modal-header">
+        <div class="modal-title" id="dpPosterModalTitle">Pencapaian Siswa</div>
+        <button type="button" class="modal-close-btn" onclick="closeModal('dpPosterModal')" aria-label="Tutup">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 16px;">
+        <img id="dpPosterModalImg" src="" alt="Poster Pencapaian DESI PRIVAT" class="dp-poster-modal-img">
+      </div>
     </div>
   </div>
 
-  <!-- BAR STATISTIK (#D8EEFE SESUAI SPESIFIKASI 3.A) -->
-  <div class="landing-stats-grid" style="background: #D8EEFE; border: 1px solid #BAE6FD; border-radius: 18px; box-shadow: 0 4px 16px rgba(14, 165, 233, 0.08); padding: 18px 24px; margin-top: 24px;">
-    <div class="landing-stat-box" style="background: #FFFFFF; border-radius: 14px; padding: 16px;">
-      <div class="landing-stat-icon" style="background: #E0F2FE; color: #0284C7;">
-        {{ icon('users') }}
-      </div>
-      <div>
-        <div class="landing-stat-val" style="color: #0F172A; font-weight: 800;">{{ student_count|default(0) }}{% if student_count and student_count > 0 %}+{% endif %}</div>
-        <div class="landing-stat-lbl" style="color: #64748B;">Siswa Aktif</div>
-      </div>
-    </div>
-
-    <div class="landing-stat-box" style="background: #FFFFFF; border-radius: 14px; padding: 16px;">
-      <div class="landing-stat-icon" style="background: #F5E6D3; color: #8C5628;">
-        {{ icon('mentor') }}
-      </div>
-      <div>
-        <div class="landing-stat-val" style="color: #0F172A; font-weight: 800;">{{ mentor_count|default(0) }}{% if mentor_count and mentor_count > 0 %}+{% endif %}</div>
-        <div class="landing-stat-lbl" style="color: #64748B;">Mentor Terverifikasi</div>
-      </div>
-    </div>
-
-    <div class="landing-stat-box" style="background: #FFFFFF; border-radius: 14px; padding: 16px;">
-      <div class="landing-stat-icon" style="background: #FEF3C7; color: #D97706;">
-        {{ icon('book') }}
-      </div>
-      <div>
-        <div class="landing-stat-val" style="color: #0F172A; font-weight: 800;">{{ program_count|default(0) }}{% if program_count and program_count > 0 %}+{% endif %}</div>
-        <div class="landing-stat-lbl" style="color: #64748B;">Program Les</div>
-      </div>
-    </div>
-
-    <div class="landing-stat-box" style="background: #FFFFFF; border-radius: 14px; padding: 16px;">
-      <div class="landing-stat-icon" style="background: #ECFDF5; color: #059669;">
-        {{ icon('check-circle') }}
-      </div>
-      <div>
-        <div class="landing-stat-val" style="color: #0F172A; font-weight: 800;">{{ satisfaction_rate|default(98) }}%</div>
-        <div class="landing-stat-lbl" style="color: #64748B;">Kepuasan Wali</div>
-      </div>
-    </div>
+  <!-- FLOATING BACK TO TOP (ICON ONLY) -->
+  <div class="dp-float-bar" id="dpFloatBar" role="region" aria-label="Kembali ke atas">
+    <button type="button" class="dp-float-icon-btn" id="dpFloatTopBtn" aria-label="Kembali ke atas" title="Kembali ke atas">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 19V5"/>
+        <path d="M5 12l7-7 7 7"/>
+      </svg>
+    </button>
   </div>
 
-  <!-- TENTANG & PROGRAM UNGGULAN (SESUAI MOCKUP GAMBAR 2 DENGAN MEDAL ICON) -->
-  <section class="landing-section" id="program" style="max-width: 1200px; margin: 56px auto 36px auto; padding: 0 20px;">
-    <div class="landing-section-header" style="text-align: center; margin-bottom: 36px;">
-      <h2 class="landing-section-title" style="font-size: 24px; font-weight: 800; color: #0F172A; letter-spacing: 0.5px;">TENTANG &amp; PROGRAM UNGGULAN</h2>
-      <p class="landing-section-sub" style="font-size: 14px; color: #64748B; margin-top: 6px;">Profil usaha DESI PRIVAT sebagai solusi bimbingan belajar terbaik untuk buah hati Anda.</p>
-    </div>
-
-    <div class="landing-programs-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
-      <div class="landing-program-card" style="background: #FFFFFF; border-radius: 18px; padding: 28px 20px; border: 1px solid #E2E8F0; box-shadow: 0 4px 16px rgba(14, 165, 233, 0.08); text-align: center; display: flex; flex-direction: column; align-items: center;">
-        <img src="{{ url_for('static', filename='images/medal_badge.svg') }}" style="width: 68px; height: 68px; margin-bottom: 16px;" alt="Medali Privat SD">
-        <div class="landing-program-name" style="font-size: 16px; font-weight: 800; color: #0F172A;">Privat SD</div>
-        <p style="font-size: 12.5px; color: #64748B; margin-top: 8px; line-height: 1.5;">
-          Pendampingan belajar tematik, matematika, dan IPA SD dengan metode personal ramah anak.
-        </p>
-      </div>
-
-      <div class="landing-program-card" style="background: #FFFFFF; border-radius: 18px; padding: 28px 20px; border: 1px solid #E2E8F0; box-shadow: 0 4px 16px rgba(14, 165, 233, 0.08); text-align: center; display: flex; flex-direction: column; align-items: center;">
-        <img src="{{ url_for('static', filename='images/medal_badge.svg') }}" style="width: 68px; height: 68px; margin-bottom: 16px;" alt="Medali Privat SMP">
-        <div class="landing-program-name" style="font-size: 16px; font-weight: 800; color: #0F172A;">Privat SMP</div>
-        <p style="font-size: 12.5px; color: #64748B; margin-top: 8px; line-height: 1.5;">
-          Penguatan pemahaman konsep matematika, IPA, dan bahasa untuk persiapan ujian sekolah berprestasi.
-        </p>
-      </div>
-
-      <div class="landing-program-card" style="background: #FFFFFF; border-radius: 18px; padding: 28px 20px; border: 1px solid #E2E8F0; box-shadow: 0 4px 16px rgba(14, 165, 233, 0.08); text-align: center; display: flex; flex-direction: column; align-items: center;">
-        <img src="{{ url_for('static', filename='images/medal_badge.svg') }}" style="width: 68px; height: 68px; margin-bottom: 16px;" alt="Medali Privat SMA">
-        <div class="landing-program-name" style="font-size: 16px; font-weight: 800; color: #0F172A;">Privat SMA &amp; SNBT</div>
-        <p style="font-size: 12.5px; color: #64748B; margin-top: 8px; line-height: 1.5;">
-          Pendalaman materi Saintek, Soshum, serta strategi sukses menghadapi ujian masuk perguruan tinggi negeri.
-        </p>
-      </div>
-
-      <div class="landing-program-card" style="background: #FFFFFF; border-radius: 18px; padding: 28px 20px; border: 1px solid #E2E8F0; box-shadow: 0 4px 16px rgba(14, 165, 233, 0.08); text-align: center; display: flex; flex-direction: column; align-items: center;">
-        <img src="{{ url_for('static', filename='images/medal_badge.svg') }}" style="width: 68px; height: 68px; margin-bottom: 16px;" alt="Medali Bahasa Inggris">
-        <div class="landing-program-name" style="font-size: 16px; font-weight: 800; color: #0F172A;">Bahasa Inggris &amp; Calistung</div>
-        <p style="font-size: 12.5px; color: #64748B; margin-top: 8px; line-height: 1.5;">
-          English kids conversation aktif serta pondasi membaca, menulis &amp; berhitung menyenangkan.
-        </p>
-      </div>
-    </div>
-  </section>
-
-  <!-- DOKUMENTASI KEGIATAN (SESUAI MOCKUP GAMBAR 2 DENGAN FOTO ASLI) -->
-  <section class="landing-section" id="dokumentasi" style="max-width: 1200px; margin: 48px auto; padding: 36px; background: #FFFFFF; border-radius: 20px; border: 1px solid #E2E8F0; box-shadow: 0 4px 16px rgba(14, 165, 233, 0.08);">
-    <div class="landing-section-header" style="text-align: center; margin-bottom: 28px;">
-      <h2 class="landing-section-title" style="font-size: 22px; font-weight: 800; color: #0F172A;">Dokumentasi Kegiatan Belajar</h2>
-      <p class="landing-section-sub" style="font-size: 13.5px; color: #64748B; margin-top: 4px;">Suasana sesi bimbingan belajar tatap muka yang interaktif, fokus, dan nyaman.</p>
-    </div>
-
-    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;" class="landing-doc-grid">
-      <div style="border-radius: 14px; overflow: hidden; height: 160px; border: 1px solid #E2E8F0; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-        <img src="{{ url_for('static', filename='images/hero/doc1.jpg') }}" alt="Dokumentasi Les 1" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-      </div>
-      <div style="border-radius: 14px; overflow: hidden; height: 160px; border: 1px solid #E2E8F0; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-        <img src="{{ url_for('static', filename='images/hero/doc2.jpg') }}" alt="Dokumentasi Les 2" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-      </div>
-      <div style="border-radius: 14px; overflow: hidden; height: 160px; border: 1px solid #E2E8F0; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-        <img src="{{ url_for('static', filename='images/hero/doc3.jpg') }}" alt="Dokumentasi Les 3" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-      </div>
-      <div style="border-radius: 14px; overflow: hidden; height: 160px; border: 1px solid #E2E8F0; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-        <img src="{{ url_for('static', filename='images/hero/doc4.jpg') }}" alt="Dokumentasi Les 4" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-      </div>
-    </div>
-  </section>
-
-  <!-- FOOTER -->
-  <footer style="max-width: 1200px; margin: 48px auto 24px auto; padding: 24px; text-align: center; border-top: 1px solid #E2E8F0; color: #64748B; font-size: 12.5px;" id="kontak">
-    <div style="font-weight: 800; font-size: 15px; color: #0F172A; margin-bottom: 6px;">
-      <span style="color: #0EA5E9;">DESI</span> <span style="color: #A66B37;">PRIVAT</span> - SISTEM MANAJEMEN LES
-    </div>
-    <p style="margin-bottom: 12px;">Pusat Pengelolaan Bimbingan Belajar Privat Terpercaya &amp; Terstruktur.</p>
-    <div>&copy; 2026 DESI PRIVAT. Hak cipta dilindungi undang-undang.</div>
-  </footer>
-
-  <style>
-    @media (max-width: 768px) {
-      .landing-nav-links { display: none !important; }
-      .landing-stats-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
-      .landing-programs-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
-      .landing-photo-mosaic { grid-template-columns: repeat(2, 1fr) !important; }
-      .landing-hero-title { font-size: 26px !important; }
-    }
-    @media (max-width: 480px) {
-      .landing-programs-grid { grid-template-columns: 1fr !important; }
-    }
-  </style>
-
+  <script src="{{ url_for('static', filename='vendor/lenis.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='vendor/gsap.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='vendor/ScrollTrigger.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/scrollcraft.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/desi-gsap.js') }}"></script>
 </body>
 </html>

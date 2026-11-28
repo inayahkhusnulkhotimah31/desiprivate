@@ -344,7 +344,7 @@
     const labelMasuk = document.getElementById("labelOpMasuk");
     const labelKeluar = select.closest("form").querySelector("input[value='keluar']").parentElement;
 
-    select.innerHTML = "";
+    select.replaceChildren();
     if (type === "keluar") {
       labelKeluar.style.borderColor = "#ef4444";
       labelKeluar.style.background = "#fef2f2";

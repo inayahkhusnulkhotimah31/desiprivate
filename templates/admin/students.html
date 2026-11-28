@@ -350,11 +350,11 @@
     if (!dupAlert || !dupList) return;
     if (activeMatches.length === 0) {
       dupAlert.style.display = "none";
-      dupList.innerHTML = "";
+      dupList.replaceChildren();
       return;
     }
 
-    dupList.innerHTML = "";
+    dupList.replaceChildren();
     activeMatches.forEach(st => {
       const item = document.createElement("div");
       item.style.cssText = "background: #ffffff; border: 1.5px solid #ffc107; border-radius: 8px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;";

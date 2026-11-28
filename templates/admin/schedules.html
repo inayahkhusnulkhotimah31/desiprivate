@@ -896,7 +896,7 @@
     const helper = document.getElementById("recHelperText");
     if (!container || !helper) return;
 
-    container.innerHTML = "";
+    container.replaceChildren();
 
     if (!recommendations || recommendations.length === 0) {
       helper.innerText = "Tidak ada mentor aktif yang ditemukan.";

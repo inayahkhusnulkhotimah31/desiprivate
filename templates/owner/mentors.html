@@ -256,7 +256,7 @@ async function loadMentorFeeData(mentorId) {
       return;
     }
 
-    tbody.innerHTML = "";
+    tbody.replaceChildren();
     items.forEach((item, index) => {
       const tr = document.createElement("tr");
       const mpp = item.meetings_per_period || 8;

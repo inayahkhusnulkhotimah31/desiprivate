@@ -4,122 +4,99 @@
 {% block page_subtitle %}Jadwal mengajar resmi (Fix), absensi otomatis, dan laporan perkembangan belajar siswa{% endblock %}
 
 {% block content %}
-<!-- QUICK ACTION BAR UNTUK HP / TABLET -->
-<div class="card" style="margin-bottom: 24px; background: linear-gradient(135deg, rgba(238, 246, 255, 0.95), rgba(243, 232, 255, 0.9)); border: 1px solid rgba(37, 99, 235, 0.15);">
-  <div class="card-body" style="padding: 16px 20px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-      <div>
-        <h4 style="margin: 0; font-size: 16px; color: var(--navy-dark); font-weight: 700;">
-          {{ icon('user') }} Selamat Bertugas, Mentor!
-        </h4>
-        <p style="margin: 2px 0 0 0; font-size: 12.5px; color: var(--navy-muted);">
-          Jadwal otomatis fix. Setiap 8 kehadiran valid otomatis terhitung 1 periode pembelajaran siswa.
-        </p>
+<!-- RINGKASAN PORTAL MENTOR (SERAGAM, BEBAS 3D & IKON BERLEBIH) -->
+<div class="dp-an-sheet">
+  <div class="dp-an-hero-grid">
+    <div>
+      <div class="dp-an-eyebrow">Portal Pengajaran DESI PRIVAT</div>
+      <div class="dp-an-kpi-big" style="margin-bottom: 10px;">
+        <span class="dp-an-kpi-num" style="font-size: 26px;">Selamat Bertugas, Mentor.</span>
+        <span class="dp-an-meta-text">{{ today_schedules|length }} sesi hari ini</span>
       </div>
-      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-        <a href="{{ url_for('mentor.attendance') }}" class="btn btn-primary btn-sm">
-          {{ icon('pencil') }} Catat Absensi &amp; Materi
-        </a>
-        <a href="{{ url_for('mentor.schedules') }}" class="btn btn-secondary btn-sm">
-          {{ icon('calendar') }} Jadwal Mengajar
-        </a>
-        <a href="{{ url_for('mentor.availability') }}" class="btn btn-secondary btn-sm">
-          {{ icon('clock') }} Ketersediaan Waktu
-        </a>
+      <p class="dp-ws-sub" style="margin-bottom: 16px;">
+        Jadwal tersusun rapi. Setiap 8 kehadiran valid terhitung 1 periode pembelajaran siswa.
+      </p>
+      <div class="dp-an-pill-row">
+        <a href="{{ url_for('mentor.attendance') }}" class="dp-an-pill dp-an-pill--accent">Catat Absen</a>
+        <a href="{{ url_for('mentor.progress') }}" class="dp-an-pill">Tulis Laporan</a>
+        <a href="{{ url_for('mentor.schedules') }}" class="dp-an-pill">Jadwal</a>
+        <a href="{{ url_for('mentor.availability') }}" class="dp-an-pill">Ketersediaan</a>
+        <a href="{{ url_for('mentor.students') }}" class="dp-an-pill">Siswa ({{ total_students }})</a>
       </div>
     </div>
   </div>
 </div>
 
 <!-- ======================================================= -->
-<!-- PERINGATAN / DAFTAR JADWAL MEMERLUKAN KONFIRMASI MENTOR -->
+<!-- KONFIRMASI KESANGGUPAN MENGAJAR -->
 <!-- ======================================================= -->
 {% if pending_confirmations %}
-<div class="card" style="margin-bottom: 24px; background: #fffbeb; border: 1.5px solid #fde68a; border-left: 5px solid #f59e0b;">
-  <div class="card-body" style="padding: 16px 20px;">
-    <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px;">
-      <div style="font-size: 26px; color: #d97706;">{{ icon('bell') }}</div>
-      <div>
-        <h4 style="margin: 0; font-size: 15.5px; font-weight: 700; color: #92400e;">
-          Konfirmasi Kesanggupan Mengajar Diperlukan ({{ pending_confirmations|length }} Jadwal Sesi)
-        </h4>
-        <p style="margin: 3px 0 0 0; font-size: 12.5px; color: #b45309;">
-          Admin telah menjadwalkan atau menugaskan Anda untuk sesi bimbingan berikut. Mohon segera berikan konfirmasi kesiapan Anda:
-        </p>
-      </div>
-    </div>
+<div class="dp-notice-card dp-notice-warm" style="display: block;">
+  <div style="margin-bottom: 12px;">
+    <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #8A5629;">
+      Konfirmasi Kesanggupan Mengajar ({{ pending_confirmations|length }} Sesi)
+    </h4>
+    <p style="margin: 4px 0 0 0; font-size: 12.5px; color: #6B7280;">
+      Admin telah menugaskan Anda pada sesi berikut. Silakan konfirmasi kesiapan mengajar:
+    </p>
+  </div>
 
-    <div style="display: flex; flex-direction: column; gap: 10px;">
-      {% for pc in pending_confirmations %}
-        <div style="background: #ffffff; border: 1px solid #fef3c7; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+  <div class="dp-flight-list">
+    {% for pc in pending_confirmations %}
+      <div class="dp-flight-card">
+        <div class="dp-flight-head">
           <div>
-            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <strong style="color: var(--navy-dark); font-size: 14.5px;">{{ pc.student_name }}</strong>
-              <span class="badge badge-info" style="font-size: 11px;">{{ pc.program_name }}</span>
-              {% if pc.session_notes %}
-                <span class="badge badge-warning" style="font-size: 11px;">{{ pc.session_notes }}</span>
-              {% endif %}
-            </div>
-            <div style="font-size: 12.5px; color: var(--blue-brand); font-weight: 600; margin-top: 4px;">
-              {{ icon('calendar') }} {{ pc.schedule_date|date_indo }} &bull; {{ pc.start_time }} - {{ pc.end_time }} WIB (90 Menit)
-            </div>
+            <div class="dp-flight-title">{{ pc.student_name }}</div>
+            <div class="dp-flight-sub">{{ pc.program_name }}{% if pc.session_notes %}, {{ pc.session_notes }}{% endif %}</div>
           </div>
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <form method="POST" action="{{ url_for('mentor.respond_schedule', schedule_id=pc.id) }}" style="display: inline;">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <input type="hidden" name="response_choice" value="dikonfirmasi">
-              <button type="submit" class="btn btn-success btn-sm" style="font-weight: 600; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
-                {{ icon('check') }} Siap Mengajar
-              </button>
-            </form>
-            <button
-              type="button"
-              class="btn btn-danger btn-sm"
-              onclick="openRejectModal({{ pc.id }}, '{{ pc.student_name|escape }}', '{{ pc.schedule_date|date_indo }}')"
-              style="font-size: 12px; display: inline-flex; align-items: center; gap: 4px;"
-            >
-              {{ icon('x') }} Berhalangan
-            </button>
-          </div>
+          <span class="dp-an-meta-text">{{ pc.schedule_date|date_indo }}</span>
         </div>
-      {% endfor %}
-    </div>
+        <div class="dp-flight-meta">
+          <span>{{ pc.start_time }} - {{ pc.end_time }} WIB</span>
+          <span>90 Menit Tatap Muka</span>
+        </div>
+        <div class="dp-flight-foot">
+          <form method="POST" action="{{ url_for('mentor.respond_schedule', schedule_id=pc.id) }}" style="flex: 1; display: flex;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="response_choice" value="dikonfirmasi">
+            <button type="submit" class="dp-flight-cta" style="width: 100%;">
+              Siap Mengajar
+            </button>
+          </form>
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm"
+            onclick="openRejectModal({{ pc.id }}, '{{ pc.student_name|escape }}', '{{ pc.schedule_date|date_indo }}')"
+          >
+            Berhalangan
+          </button>
+        </div>
+      </div>
+    {% endfor %}
   </div>
 </div>
 {% endif %}
 
-<!-- KARTU STATISTIK MENTOR -->
-<div class="stats-grid">
-  <div class="stat-card">
-    <div class="stat-icon">{{ icon('users') }}</div>
-    <div>
-      <div class="stat-value">{{ total_students }}</div>
-      <div class="stat-label">Siswa Bimbingan Aktif</div>
-    </div>
+<!-- KARTU STATISTIK MENTOR (SERAGAM #FFFFFF) -->
+<div class="dp-metrics-row cols-4">
+  <div class="dp-metric-tile">
+    <div class="dp-metric-val" data-gsap-count="{{ total_students }}">{{ total_students }}</div>
+    <div class="dp-metric-title">Siswa Bimbingan</div>
   </div>
 
-  <div class="stat-card success">
-    <div class="stat-icon">{{ icon('check-circle') }}</div>
-    <div>
-      <div class="stat-value">{{ total_sessions }}</div>
-      <div class="stat-label">Total Sesi Terlaksana</div>
-    </div>
+  <div class="dp-metric-tile">
+    <div class="dp-metric-val" data-gsap-count="{{ total_sessions }}">{{ total_sessions }}</div>
+    <div class="dp-metric-title">Sesi Terlaksana</div>
   </div>
 
-  <div class="stat-card info">
-    <div class="stat-icon">{{ icon('calendar') }}</div>
-    <div>
-      <div class="stat-value">{{ active_schedules_count or 0 }}</div>
-      <div class="stat-label">Jadwal Mengajar Aktif</div>
-    </div>
+  <div class="dp-metric-tile">
+    <div class="dp-metric-val" data-gsap-count="{{ active_schedules_count or 0 }}">{{ active_schedules_count or 0 }}</div>
+    <div class="dp-metric-title">Jadwal Aktif</div>
   </div>
 
-  <div class="stat-card info">
-    <div class="stat-icon">{{ icon('calendar') }}</div>
-    <div>
-      <div class="stat-value">{{ today_schedules|length }}</div>
-      <div class="stat-label">Sesi Hari Ini</div>
-    </div>
+  <div class="dp-metric-tile">
+    <div class="dp-metric-val" data-gsap-count="{{ today_schedules|length }}">{{ today_schedules|length }}</div>
+    <div class="dp-metric-title">Sesi Hari Ini</div>
   </div>
 </div>
 
@@ -372,10 +349,10 @@
   <div class="card-body">
     <div style="display: flex; flex-direction: column; gap: 10px;">
       {% for n in recent_notifs %}
-      <div style="padding: 10px 14px; background: rgba(238, 246, 255, 0.6); border-radius: var(--radius-md); border-left: 3px solid var(--blue-brand);">
-        <strong style="color: var(--navy-dark); font-size: 13px;">{{ n.title }}</strong>
-        <p style="font-size: 12.5px; color: var(--gray-700); margin: 4px 0;">{{ n.message }}</p>
-        <small style="color: var(--gray-500); font-size: 11px;">{{ n.created_at|date_indo }}</small>
+      <div style="padding: 12px 16px; background: #F7F7F5; border-radius: 12px; border: 1px solid #E5E7EB;">
+        <strong style="color: #111827; font-size: 13px;">{{ n.title }}</strong>
+        <p style="font-size: 12.5px; color: #374151; margin: 4px 0;">{{ n.message }}</p>
+        <small style="color: #6B7280; font-size: 11px;">{{ n.created_at|date_indo }}</small>
       </div>
       {% else %}
       <div style="text-align: center; color: var(--gray-500); padding: 20px;">
@@ -423,3 +400,5 @@
   }
 </script>
 {% endblock %}
+
+{% block extra_js %}{% endblock %}

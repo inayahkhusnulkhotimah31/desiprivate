@@ -41,7 +41,7 @@
           <option value="{{ m.id }}" {% if mentor_id == m.id|string %}selected{% endif %}>{{ m.full_name }}</option>
         {% endfor %}
       </select>
-      <input type="number" name="rate_per_session" value="{{ rate_per_session or '' }}" placeholder="Tarif simulasi (opsional)" class="form-control" style="max-width: 180px;">
+      <input type="number" name="rate_per_session" value="{{ rate_per_session or '' }}" placeholder="Tarif per sesi (opsional)" class="form-control" style="max-width: 180px;">
       <button type="submit" class="btn btn-secondary">Filter</button>
       {% if start_date or end_date or mentor_id or rate_per_session %}
         <a href="{{ url_for('admin.mentor_honor') }}" class="btn btn-secondary">Reset</a>
