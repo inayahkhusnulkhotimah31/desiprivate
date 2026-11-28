@@ -493,7 +493,7 @@ function initMain() {
       try { sessionStorage.setItem("dp_gate_arrived", "1"); } catch (_) {}
       window.setTimeout(() => {
         window.location.href = link.href;
-      }, 210);
+      }, 245);
       window.setTimeout(cleanupGateCurtain, 1800);
       return;
     }

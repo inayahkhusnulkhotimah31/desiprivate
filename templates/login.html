@@ -8,7 +8,16 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" type="image/webp" href="{{ url_for('static', filename='images/client/logo_desi_privat.webp') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=32">
+  <link rel="preload" as="image" type="image/webp" href="{{ url_for('static', filename='images/client/galeri_02.webp') }}" fetchpriority="high">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=35">
+  <style>
+    @media (min-width: 1025px) {
+      html.dp-from-gate,
+      html.dp-from-gate body {
+        background: linear-gradient(90deg, #075B8E 0, #075B8E calc(100% - clamp(540px, 40%, 580px)), #FFFFFF calc(100% - clamp(540px, 40%, 580px)), #FFFFFF 100%) !important;
+      }
+    }
+  </style>
   <script>
     (function () {
       try {
@@ -41,7 +50,7 @@
 
     <!-- GERBANG KIRI: FOTO + FADE BIRU, TEKS MUNCUL BELAKANGAN SATU PER SATU -->
     <section class="dp-login-photo dp-login-gate-left">
-      <img src="{{ url_for('static', filename='images/client/galeri_02.webp') }}" alt="Suasana pendampingan belajar siswa DESI PRIVAT" width="720" height="540" draggable="false" decoding="async" fetchpriority="high">
+      <img src="{{ url_for('static', filename='images/client/galeri_02.webp') }}" alt="Suasana pendampingan belajar siswa DESI PRIVAT" width="720" height="540" draggable="false" loading="eager" decoding="sync" fetchpriority="high">
       <div class="dp-login-photo-fade" aria-hidden="true"></div>
 
       <div class="dp-login-photo-inner dp-gate-stagger" style="--stagger-i: 0; display: flex; align-items: center; gap: 16px;">
@@ -172,6 +181,6 @@
     </div>
   </div>
 
-  <script src="{{ url_for('static', filename='js/main.js') }}?v=32" defer></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}?v=35" defer></script>
 </body>
 </html>

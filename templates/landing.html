@@ -14,7 +14,15 @@
   <link rel="preload" as="image" type="image/webp" href="{{ url_for('static', filename='images/client/galeri_03.webp') }}">
   <link rel="preload" as="image" type="image/webp" href="{{ url_for('static', filename='images/client/galeri_04.webp') }}">
   <link rel="prefetch" href="{{ url_for('auth.login') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=33">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=35">
+  <style>
+    @media (min-width: 1025px) {
+      html.dp-opening-gate,
+      html.dp-opening-gate body {
+        background: linear-gradient(90deg, #075B8E 0, #075B8E calc(100% - clamp(540px, 40%, 580px)), #FFFFFF calc(100% - clamp(540px, 40%, 580px)), #FFFFFF 100%) !important;
+      }
+    }
+  </style>
   <script>
     (function () {
       try {
@@ -39,7 +47,7 @@
 <body class="dp-landing-body" data-login-photo="{{ url_for('static', filename='images/client/galeri_02.webp') }}">
   <div class="dp-gate-curtain dp-gate-curtain--open" id="dpOpenGate" aria-hidden="true">
     <div class="dp-gate-door dp-gate-door--left">
-      <img class="dp-gate-door-photo" src="{{ url_for('static', filename='images/client/galeri_02.webp') }}" alt="" draggable="false">
+      <img class="dp-gate-door-photo" src="{{ url_for('static', filename='images/client/galeri_02.webp') }}" alt="" draggable="false" loading="eager" decoding="sync" fetchpriority="high">
       <div class="dp-gate-door-fade"></div>
     </div>
     <div class="dp-gate-door dp-gate-door--right"></div>
@@ -413,6 +421,6 @@
     </button>
   </div>
 
-  <script src="{{ url_for('static', filename='js/main.js') }}?v=34" defer></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}?v=35" defer></script>
 </body>
 </html>

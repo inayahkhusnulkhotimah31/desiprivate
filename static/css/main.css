@@ -6895,6 +6895,17 @@ html:has(.dp-login-page) {
 /* ==========================================================================
    LOGIN-MATCHED CLOSING GATE (1:1 EXACT MATCH TO .dp-login-shell & .dp-login-photo)
    ========================================================================== */
+/* Zero-Flash Cross-Document View Transition Handoff (holds closed gate frame until next page paints) */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none !important;
+  mix-blend-mode: normal;
+}
+
 :root {
   --dp-login-fade: linear-gradient(155deg, rgba(8, 58, 84, 0.94) 0%, rgba(0, 147, 214, 0.8) 65%, rgba(0, 147, 214, 0.62) 100%);
   --dp-login-panel-w: clamp(540px, 40%, 580px);
@@ -6947,7 +6958,7 @@ html:has(.dp-login-page) {
 
 .dp-gate-door--right {
   background: #FFFFFF;
-  border-left: none;
+  border-left: 1px solid #E5E7EB;
   transform: translate3d(100%, 0, 0);
 }
 
