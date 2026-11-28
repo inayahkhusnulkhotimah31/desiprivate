@@ -1,17 +1,20 @@
 {% extends "base.html" %}
 {% block title %}Dashboard Admin{% endblock %}
 {% block page_title %}Pusat Operasional DESI PRIVAT{% endblock %}
-{% block page_subtitle %}Ringkasan operasional bimbingan belajar, siklus periode, dan aktivitas hari ini{% endblock %}
+{% block page_subtitle %}Ringkasan jadwal hari ini, kehadiran sesi, dan tindakan cepat{% endblock %}
 
 {% block content %}
 {% set has_att_pct = (summary.total_attendance_records and summary.total_attendance_records > 0) %}
 {% set att_pct_val = summary.attendance_attended_pct if has_att_pct else 0 %}
 {% set abs_pct_val = summary.attendance_absent_pct if has_att_pct else 0 %}
-<div class="dashboard-layout-grid">
-  <!-- KOLOM UTAMA (TERATUR, KARTU SERAGAM & BEBAS IKON DEKORATIF) -->
+{% set overdue_cnt = overdue_responses|length if overdue_responses else 0 %}
+{% set attn_cnt = action_count|default(action_schedules|length) %}
+
+<div class="dashboard-layout-grid dp-admin-grid-v13">
+  <!-- KOLOM KIRI: SHEET KPI SERAGAM + PANEL OPERASIONAL TERPADU -->
   <div class="dashboard-main-col">
-    <!-- 1. RINGKASAN KARTU KPI SERAGAM -->
-    <div class="dp-an-sheet">
+    <!-- 1. SHEET RINGKASAN KPI SERAGAM (#FFFFFF, BEBAS IKON & WARNA BERLEBIH) -->
+    <section class="dp-an-sheet">
       <div class="dp-an-top-pills">
         <div class="dp-an-pill-row">
           <a href="{{ url_for('admin.schedules') }}" class="dp-an-pill dp-an-pill--accent" id="btnBannerAddSchedule">+ Jadwal</a>
@@ -20,46 +23,42 @@
           <a href="{{ url_for('admin.bills') }}" class="dp-an-pill">Tagihan</a>
           <a href="{{ url_for('admin.notifications_center') }}" class="dp-an-pill">Notifikasi</a>
         </div>
-        <span class="dp-an-meta-text">{{ current_user.full_name or 'Admin Pengelola DESI' }}</span>
+        <span class="dp-an-meta-text">{{ current_user.full_name or 'Admin Pengelola' }}</span>
       </div>
 
-      <div class="dp-an-hero-grid">
+      <div class="dp-an-kpi-row">
         <div>
-          <div class="dp-an-kpi-row">
-            <div>
-              <div class="dp-an-eyebrow">Total Sesi Terabsen</div>
-              <div class="dp-an-kpi-big">
-                <span class="dp-an-kpi-num" data-gsap-count="{{ summary.completed_sessions }}">{{ summary.completed_sessions }}</span>
-                <span class="dp-an-meta-text">
-                  <a href="{{ url_for('admin.schedules', status='disetujui') }}" class="dp-an-meta-link">{{ summary.monthly_sessions }} sesi bulan ini</a>,
-                  <a href="{{ url_for('admin.schedules', day=today_dow) }}" class="dp-an-meta-link">Sesi Hari Ini: {{ summary.today_schedules }}</a>
-                </span>
-              </div>
-            </div>
+          <div class="dp-an-eyebrow">Total Sesi Terabsen</div>
+          <div class="dp-an-kpi-big">
+            <span class="dp-an-kpi-num dp-tabular">{{ summary.completed_sessions }}</span>
+            <span class="dp-an-meta-text">
+              <a href="{{ url_for('admin.schedules', status='disetujui') }}" class="dp-an-meta-link">{{ summary.monthly_sessions }} sesi bulan ini</a>,
+              <a href="{{ url_for('admin.schedules', day=today_dow) }}" class="dp-an-meta-link">Sesi Hari Ini: {{ summary.today_schedules }}</a>
+            </span>
           </div>
-
-          <div class="dp-an-tiles">
-            <a href="{{ url_for('admin.students') }}" class="dp-an-tile stat-card stat-card-link" title="Buka Data Siswa">
-              <div class="dp-an-tile-lbl">Siswa Aktif</div>
-              <div class="dp-an-tile-val" data-gsap-count="{{ summary.active_students }}">{{ summary.active_students }}</div>
-              <div class="dp-an-tile-sub">Terdaftar resmi</div>
-            </a>
-
-            <a href="#actionAttentionSection" class="dp-an-tile stat-card stat-card-link" title="Buka Jadwal Memerlukan Perhatian">
-              <div class="dp-an-tile-lbl">Perlu Perhatian</div>
-              <div class="dp-an-tile-val" data-gsap-count="{{ action_count|default(action_schedules|length) }}">{{ action_count|default(action_schedules|length) }}</div>
-              <div class="dp-an-tile-sub">Kendala atau ganti mentor</div>
-            </a>
-
-            <a href="{{ url_for('admin.mentors') }}" class="dp-an-tile stat-card stat-card-link" title="Buka Data Mentor">
-              <div class="dp-an-tile-lbl">Mentor Aktif</div>
-              <div class="dp-an-tile-val" data-gsap-count="{{ summary.active_mentors }}">{{ summary.active_mentors }}</div>
-              <div class="dp-an-tile-sub">Tenaga pengajar</div>
-            </a>
-          </div>
-          <a href="{{ url_for('admin.programs') }}" class="stat-card stat-card-link" style="display:none;" aria-hidden="true" title="Buka Program Les">Program Les</a>
         </div>
       </div>
+
+      <div class="dp-an-tiles">
+        <a href="{{ url_for('admin.students') }}" class="dp-an-tile stat-card stat-card-link" title="Buka Data Siswa">
+          <div class="dp-an-tile-lbl">Siswa Aktif</div>
+          <div class="dp-an-tile-val dp-tabular">{{ summary.active_students }}</div>
+          <div class="dp-an-tile-sub">Terdaftar resmi</div>
+        </a>
+
+        <a href="#actionAttentionSection" class="dp-an-tile stat-card stat-card-link" title="Buka Jadwal Memerlukan Perhatian">
+          <div class="dp-an-tile-lbl">Perlu Perhatian</div>
+          <div class="dp-an-tile-val dp-tabular">{{ attn_cnt }}</div>
+          <div class="dp-an-tile-sub">Kendala atau ganti mentor</div>
+        </a>
+
+        <a href="{{ url_for('admin.mentors') }}" class="dp-an-tile stat-card stat-card-link" title="Buka Data Mentor">
+          <div class="dp-an-tile-lbl">Mentor Aktif</div>
+          <div class="dp-an-tile-val dp-tabular">{{ summary.active_mentors }}</div>
+          <div class="dp-an-tile-sub">Tenaga pengajar</div>
+        </a>
+      </div>
+      <a href="{{ url_for('admin.programs') }}" class="stat-card stat-card-link" style="display:none;" aria-hidden="true" title="Buka Program Les">Program Les</a>
 
       <div class="dp-seg-wrap">
         <div class="dp-seg-bar" aria-hidden="true">
@@ -71,77 +70,275 @@
           <span><strong>{{ abs_pct_val }}% Belum Terabsen</strong> ({{ summary.attendance_absent_count|default(0) }} sesi)</span>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- 2. PERINGATAN KETERLAMBATAN RESPONS MENTOR -->
-    <div class="overdue-alert-card card" style="overflow: hidden;">
-      <div class="overdue-alert-header" style="background: #FFFFFF; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #E5E7EB;">
-        <div class="overdue-alert-title" style="font-size: 14.5px; font-weight: 700; color: #8A5629; margin: 0;">
-          Mentor Belum Merespons Jadwal
+    <!-- 2. PANEL OPERASIONAL TERPADU (RINGKAS, TANPA BADGE SLOP, 4 TAB RAPI) -->
+    <section class="card dp-ops-card" id="actionAttentionSection">
+      <div class="dp-ops-header">
+        <div class="dp-ops-tabs" role="tablist">
+          <button type="button" class="dash-tab-pill active" id="tabBtnAttention" onclick="switchDashboardTab('tabAttention', this)">
+            Perlu Perhatian ({{ attn_cnt }})
+          </button>
+          <button type="button" class="dash-tab-pill" id="tabBtnOverdue" onclick="switchDashboardTab('tabOverdue', this)">
+            Belum Merespons ({{ overdue_cnt }})
+          </button>
+          <button type="button" class="dash-tab-pill" id="tabBtnAttendance" onclick="switchDashboardTab('tabAttendance', this)">
+            Riwayat Absensi
+          </button>
+          <button type="button" class="dash-tab-pill" id="tabBtnAudits" onclick="switchDashboardTab('tabAudits', this)">
+            Aktivitas
+          </button>
         </div>
-        <a href="{{ url_for('admin.schedules') }}" style="font-size: 12.5px; color: #0072A8; font-weight: 600; text-decoration: none;">Penjadwalan</a>
+        <a href="{{ url_for('admin.schedules') }}" class="dp-an-meta-link">Penjadwalan</a>
       </div>
-      <div class="overdue-alert-body" style="padding: 16px 20px; max-height: 320px; overflow-y: auto;">
-        <p style="font-size: 13px; color: #4B5563; margin-bottom: 14px;">
-          Jadwal resmi yang disetujui namun mentor belum memberi konfirmasi kesiapan mengajar:
-        </p>
-        <div class="table-responsive" style="max-height: 220px; overflow-y: auto;">
-          <table class="table-desi">
-            <thead>
-              <tr>
-                <th>TANGGAL &amp; JAM</th>
-                <th>SISWA</th>
-                <th>MENTOR</th>
-                <th>TELEPON MENTOR</th>
-                <th>TINDAKAN</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% if overdue_responses %}
-                {% for ov in overdue_responses[:3] %}
+
+      <div class="card-body" style="padding: 0;">
+        <!-- TAB 1: JADWAL PERLU PERHATIAN -->
+        <div id="tabAttention" class="dash-tab-pane">
+          <div class="table-responsive">
+            <table class="table-desi">
+              <thead>
                 <tr>
-                  <td><strong>{{ ov.schedule_date|date_indo }}</strong> ({{ ov.start_time }}-{{ ov.end_time }})</td>
-                  <td>{{ ov.student_name }}</td>
-                  <td><strong style="color: #8A5629;">{{ ov.mentor_name }}</strong></td>
-                  <td>{{ ov.mentor_phone or '-' }}</td>
+                  <th>Tanggal &amp; Jam</th>
+                  <th>Siswa &amp; Program</th>
+                  <th>Status</th>
+                  <th style="text-align: right;">Tindakan</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for sc in action_schedules %}
+                <tr>
                   <td>
-                    <button class="btn btn-terracotta btn-sm" onclick="prepareMentorReplacementModal({{ ov.id }}, '{{ ov.mentor_name }}')">
-                      Pengganti
-                    </button>
+                    <div class="dp-cell-main">{{ sc.schedule_date }}</div>
+                    <div class="dp-cell-sub">{{ sc.start_time }} WIB</div>
+                  </td>
+                  <td>
+                    <div class="dp-cell-main">{{ sc.student_name }}</div>
+                    <div class="dp-cell-sub">{{ sc.program_name }}, {{ sc.mentor_name }}</div>
+                  </td>
+                  <td>
+                    {% if sc.mentor_response_status == 'perlu_mentor_pengganti' %}
+                      <span class="dp-status-text is-danger">Perlu Pengganti</span>
+                    {% elif sc.status == 'menunggu_persetujuan_admin' %}
+                      <span class="dp-status-text is-warn">Menunggu Persetujuan</span>
+                    {% else %}
+                      <span class="dp-status-text is-info">{{ sc.status|replace('_', ' ')|title }}</span>
+                    {% endif %}
+                  </td>
+                  <td style="text-align: right;">
+                    {% if sc.mentor_response_status == 'perlu_mentor_pengganti' %}
+                      <button type="button" class="btn btn-danger btn-sm" onclick="prepareMentorReplacementModal({{ sc.id }}, '{{ sc.mentor_name }}')">Pengganti</button>
+                    {% elif sc.status == 'menunggu_persetujuan_admin' %}
+                      <form method="POST" action="{{ url_for('admin.admin_approve_schedule', schedule_id=sc.id) }}" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-primary btn-sm">Setujui</button>
+                      </form>
+                    {% else %}
+                      <a href="{{ url_for('admin.schedules') }}" class="btn btn-secondary btn-sm">Buka</a>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% else %}
+                <tr>
+                  <td colspan="4" class="dp-empty-row">
+                    Semua jadwal les aktif dan tertata dengan baik.
                   </td>
                 </tr>
                 {% endfor %}
-                {% if overdue_responses|length > 3 %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB 2: MENTOR BELUM MERESPONS -->
+        <div id="tabOverdue" class="dash-tab-pane" style="display: none;">
+          <div class="table-responsive">
+            <table class="table-desi">
+              <thead>
                 <tr>
-                  <td colspan="5" style="text-align: center; background: #F7F7F5; padding: 10px;">
-                    <a href="{{ url_for('admin.schedules') }}" style="font-size: 12px; color: #0072A8; text-decoration: none; font-weight: 600;">
-                      Lihat {{ overdue_responses|length - 3 }} jadwal mendesak lainnya di Penjadwalan
-                    </a>
-                  </td>
+                  <th>Tanggal &amp; Jam</th>
+                  <th>Siswa</th>
+                  <th>Mentor</th>
+                  <th>Telepon</th>
+                  <th style="text-align: right;">Tindakan</th>
                 </tr>
+              </thead>
+              <tbody>
+                {% if overdue_responses %}
+                  {% for ov in overdue_responses[:6] %}
+                  <tr>
+                    <td>
+                      <div class="dp-cell-main">{{ ov.schedule_date|date_indo }}</div>
+                      <div class="dp-cell-sub">{{ ov.start_time }} - {{ ov.end_time }} WIB</div>
+                    </td>
+                    <td><div class="dp-cell-main">{{ ov.student_name }}</div></td>
+                    <td><span class="dp-status-text is-warn">{{ ov.mentor_name }}</span></td>
+                    <td>{{ ov.mentor_phone or '-' }}</td>
+                    <td style="text-align: right;">
+                      <button type="button" class="btn btn-terracotta btn-sm" onclick="prepareMentorReplacementModal({{ ov.id }}, '{{ ov.mentor_name }}')">Pengganti</button>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="5" class="dp-empty-row">
+                      Tidak ada keterlambatan respons mentor saat ini.
+                    </td>
+                  </tr>
                 {% endif %}
-              {% else %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB 3: RIWAYAT ABSENSI TERBARU -->
+        <div id="tabAttendance" class="dash-tab-pane" style="display: none;">
+          <div class="table-responsive">
+            <table class="table-desi">
+              <thead>
                 <tr>
-                  <td colspan="5" style="text-align: center; color: #6B7280; padding: 24px 16px;">
-                    <strong style="color: #111827; font-size: 13.5px; display: block; margin-bottom: 4px;">Tidak Ada Keterlambatan Respons</strong>
-                    <span style="font-size: 12px; color: #6B7280;">Semua mentor telah merespons jadwal atau belum ada jadwal yang menunggu konfirmasi.</span>
+                  <th>Tanggal &amp; Jam</th>
+                  <th>Siswa &amp; Program</th>
+                  <th>Mentor</th>
+                  <th>Siklus</th>
+                  <th>Status</th>
+                  <th style="text-align: right;">Detail</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for att in recent_attendances %}
+                <tr>
+                  <td>
+                    <div class="dp-cell-main">{{ att.session_date|date_indo }}</div>
+                    <div class="dp-cell-sub">{{ att.start_time }} - {{ att.end_time }} WIB</div>
+                  </td>
+                  <td>
+                    <div class="dp-cell-main">{{ att.student_name }}</div>
+                    <div class="dp-cell-sub">{{ att.program_name }}</div>
+                  </td>
+                  <td>{{ att.mentor_name }}</td>
+                  <td>
+                    {% if att.meeting_number and att.period_number %}
+                      <span class="dp-cell-main">Pertemuan {{ att.meeting_number }} ({{ att.period_number }})</span>
+                    {% else %}
+                      <span class="dp-cell-sub">Belum terhitung</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if att.status == 'hadir' %}
+                      <span class="dp-status-text is-ok">Hadir</span>
+                    {% elif att.status == 'izin' %}
+                      <span class="dp-status-text is-warn">Izin</span>
+                    {% else %}
+                      <span class="dp-status-text is-danger">Tidak Hadir</span>
+                    {% endif %}
+                  </td>
+                  <td style="text-align: right;">
+                    <button
+                      type="button"
+                      class="btn btn-secondary btn-sm"
+                      data-student="{{ att.student_name }}"
+                      data-school="{{ att.student_school or '' }}"
+                      data-grade="{{ att.student_grade or '' }}"
+                      data-program="{{ att.program_name }}"
+                      data-mentor="{{ att.mentor_name }}"
+                      data-date="{{ att.session_date|date_indo }}"
+                      data-time="{{ att.start_time }} - {{ att.end_time }} WIB"
+                      data-status="{{ att.status }}"
+                      data-meeting="{{ att.meeting_number or '-' }}"
+                      data-period="{{ att.period_number or '-' }}"
+                      data-cumulative="{{ att.cumulative_meeting or '-' }}"
+                      data-doc-status="{{ att.documentation_status or 'tidak_ada' }}"
+                      data-doc-photo="{{ att.documentation_photo or '' }}"
+                      data-doc-reason="{{ att.documentation_pending_reason or '' }}"
+                      data-topics="{{ att.topics_covered or '' }}"
+                      data-skills="{{ att.skills_mastered or '' }}"
+                      data-difficulties="{{ att.difficulties or '' }}"
+                      data-recommendations="{{ att.recommendations or '' }}"
+                      data-notes="{{ att.progress_notes or '' }}"
+                      onclick="openAttendanceDetail(this)"
+                    >
+                      Detail
+                    </button>
                   </td>
                 </tr>
-              {% endif %}
-            </tbody>
-          </table>
+                {% else %}
+                <tr>
+                  <td colspan="6" class="dp-empty-row">
+                    Belum ada riwayat absensi tercatat.
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB 4: AKTIVITAS & NOTIFIKASI SISTEM -->
+        <div id="tabAudits" class="dash-tab-pane" style="display: none; padding: 20px;">
+          <div class="grid-2-col" style="gap: 20px;">
+            <div>
+              <div class="dp-sublist-head">
+                <span>Log Aktivitas</span>
+                <a href="{{ url_for('admin.audit_logs') }}" class="dp-an-meta-link">Semua Log</a>
+              </div>
+              <div class="dp-sublist-stack">
+                {% for a in recent_audits %}
+                <div class="dp-sublist-item">
+                  <div class="dp-sublist-top">
+                    <strong>{{ a.user_name or 'Sistem' }}</strong>
+                    <span>{{ a.created_at|date_indo }}</span>
+                  </div>
+                  <div class="dp-sublist-body">{{ a.details }}</div>
+                </div>
+                {% else %}
+                <div class="dp-empty-row">Belum ada riwayat aktivitas.</div>
+                {% endfor %}
+              </div>
+            </div>
+            <div>
+              <div class="dp-sublist-head">
+                <span>Notifikasi Sistem</span>
+                <a href="{{ url_for('admin.notifications_center') }}" class="dp-an-meta-link">Semua</a>
+              </div>
+              <div class="dp-sublist-stack">
+                {% for n in recent_notifs %}
+                <div class="dp-sublist-item {% if not n.is_read %}is-unread{% endif %}">
+                  <div class="dp-sublist-top">
+                    <strong>{{ n.title }}</strong>
+                    <span>{{ n.created_at|date_indo }}</span>
+                  </div>
+                  <div class="dp-sublist-body">{{ n.message }}</div>
+                </div>
+                {% else %}
+                <div class="dp-empty-row">Tidak ada notifikasi baru.</div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </section>
   </div>
 
-  <!-- KOLOM SAMPING (AGENDA HARI INI DENGAN SCROLL JIKA > 3 ITEM + RINGKASAN ABSENSI) -->
-  <div class="dashboard-side-col">
+  <!-- KOLOM KANAN: AGENDA HARI INI (SCROLLABLE JIKA > 3 SESI, TANPA KARTU DUPLIKAT) -->
+  <aside class="dashboard-side-col">
     <div class="dp-agenda-card">
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
-        <div class="timeline-card-title" style="font-size: 15px; font-weight: 700; color: #111827; margin: 0;">Agenda Hari Ini</div>
-        <span class="dp-an-meta-text">{{ today_schedules|length if today_schedules else 0 }} sesi</span>
+      <div class="dp-agenda-head">
+        <div class="dp-agenda-title">Agenda Hari Ini</div>
+        <span class="dp-an-meta-text dp-tabular">{{ today_schedules|length if today_schedules else 0 }} sesi</span>
       </div>
+
+      {% if overdue_cnt > 0 %}
+      <div class="dp-agenda-alert">
+        <div class="dp-agenda-alert-title">{{ overdue_cnt }} Mentor Belum Merespons</div>
+        <div class="dp-agenda-alert-desc">Perlu konfirmasi atau penunjukan mentor pengganti.</div>
+        <button type="button" class="btn btn-terracotta btn-sm" onclick="switchDashboardTab('tabOverdue', document.getElementById('tabBtnOverdue')); document.getElementById('actionAttentionSection').scrollIntoView({behavior:'smooth'});">
+          Tinjau
+        </button>
+      </div>
+      {% endif %}
+
       <div class="dp-agenda-scroll-wrap {% if today_schedules and today_schedules|length > 3 %}has-overflow{% endif %}">
         <div class="dp-agenda-scroll">
           {% if today_schedules and today_schedules|length > 0 %}
@@ -164,272 +361,30 @@
               </div>
             {% endfor %}
           {% else %}
-            <div style="text-align: center; padding: 24px 16px; color: #6B7280;">
-              <strong style="color: #111827; font-size: 13.5px; display: block; margin-bottom: 4px;">Tidak Ada Agenda Hari Ini</strong>
-              <span style="font-size: 12px; color: #6B7280;">Belum ada sesi pembelajaran terjadwal hari ini.</span>
+            <div class="dp-empty-row" style="padding: 28px 14px;">
+              Belum ada sesi pembelajaran terjadwal hari ini.
             </div>
           {% endif %}
         </div>
       </div>
+
       {% if today_schedules and today_schedules|length > 3 %}
         <div class="dp-agenda-scroll-hint">Gulir untuk melihat {{ today_schedules|length }} agenda hari ini</div>
       {% endif %}
+
       <a href="{{ url_for('admin.schedules') }}" class="dp-flight-cta" style="margin-top: 14px; width: 100%; background: #0093D6;">+ Jadwal</a>
     </div>
-
-    {% set has_attendance = (summary.total_attendance_records and summary.total_attendance_records > 0) %}
-    {% set att_pct = summary.attendance_attended_pct if has_attendance else 0 %}
-    {% set abs_pct = summary.attendance_absent_pct if has_attendance else 0 %}
-    <div class="attendance-summary-card" style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 12px; padding: 20px;">
-      <div style="font-size: 15px; font-weight: 700; color: #111827; margin-bottom: 16px;">Ringkasan Absensi</div>
-
-      <div style="margin-bottom: 16px;">
-        <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: #111827; margin-bottom: 8px;" class="dp-tabular">
-          <span>{{ att_pct }}% Terabsen</span>
-          <span style="font-size: 11.5px; color: #6B7280; font-weight: 500;">({{ summary.attendance_attended_count|default(0) }} sesi)</span>
-        </div>
-        <div style="height: 8px; background: #E5E7EB; border-radius: 9999px; overflow: hidden;">
-          <div style="width: {{ att_pct }}%; height: 100%; background: #0093D6; border-radius: 9999px;"></div>
-        </div>
-      </div>
-
-      <div>
-        <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: #111827; margin-bottom: 8px;" class="dp-tabular">
-          <span>{{ abs_pct }}% Belum Terabsen</span>
-          <span style="font-size: 11.5px; color: #6B7280; font-weight: 500;">({{ summary.attendance_absent_count|default(0) }} sesi)</span>
-        </div>
-        <div style="height: 8px; background: #E5E7EB; border-radius: 9999px; overflow: hidden;">
-          <div style="width: {{ abs_pct }}%; height: 100%; background: #083A54; border-radius: 9999px;"></div>
-        </div>
-      </div>
-
-      {% if not has_attendance %}
-      <div style="margin-top: 12px; font-size: 11.5px; color: #6B7280; text-align: center;">
-        Belum ada riwayat absensi tercatat
-      </div>
-      {% endif %}
-    </div>
-  </div>
-</div>
-
-<!-- PANEL OPERASIONAL TERPADU -->
-<div class="card" id="actionAttentionSection" style="margin-top: 24px; border-radius: 12px; border: 1px solid #E5E7EB; overflow: hidden;">
-  <div class="card-header" style="background: #FFFFFF; border-bottom: 1px solid #E5E7EB; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-    <div style="display: flex; gap: 8px; flex-wrap: wrap;" role="tablist">
-      <button type="button" class="dash-tab-pill active" id="tabBtnAttention" onclick="switchDashboardTab('tabAttention', this)" style="padding: 8px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 700; border: none; cursor: pointer; background: #EBF7FD; color: #0072A8;">
-        Jadwal Perlu Perhatian ({{ action_count|default(action_schedules|length) }})
-      </button>
-      <button type="button" class="dash-tab-pill" id="tabBtnAttendance" onclick="switchDashboardTab('tabAttendance', this)" style="padding: 8px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 600; border: 1px solid #E5E7EB; cursor: pointer; background: #FFFFFF; color: #4B5563;">
-        Riwayat Absensi
-      </button>
-      <button type="button" class="dash-tab-pill" id="tabBtnAudits" onclick="switchDashboardTab('tabAudits', this)" style="padding: 8px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 600; border: 1px solid #E5E7EB; cursor: pointer; background: #FFFFFF; color: #4B5563;">
-        Aktivitas Sistem
-      </button>
-    </div>
-    <a href="{{ url_for('admin.schedules') }}" class="btn btn-primary btn-sm" style="padding: 8px 14px; font-size: 12.5px; text-decoration: none;">
-      Penjadwalan
-    </a>
-  </div>
-  <div class="card-body" style="padding: 0;">
-    <div id="tabAttention" class="dash-tab-pane">
-      <div class="table-responsive">
-          <table class="table-desi">
-            <thead>
-              <tr>
-                <th>Tanggal</th>
-                <th>Siswa & Program</th>
-                <th>Status</th>
-                <th>Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for sc in action_schedules %}
-              <tr>
-                <td>
-                  <div style="font-weight: 700;">{{ sc.schedule_date }}</div>
-                  <div style="font-size: 11px; color: var(--text-muted);">{{ sc.start_time }} WIB</div>
-                </td>
-                <td>
-                  <div style="font-weight: 600;">{{ sc.student_name }}</div>
-                  <div style="font-size: 11.5px; color: var(--text-muted);">{{ sc.program_name }} &bull; {{ sc.mentor_name }}</div>
-                </td>
-                <td>
-                  {% if sc.mentor_response_status == 'perlu_mentor_pengganti' %}
-                    <span class="badge badge-danger">Perlu Pengganti</span>
-                  {% else %}
-                    {{ sc.status|status_badge|safe }}
-                  {% endif %}
-                </td>
-                <td>
-                  {% if sc.mentor_response_status == 'perlu_mentor_pengganti' %}
-                    <button class="btn btn-danger btn-sm" onclick="prepareMentorReplacementModal({{ sc.id }}, '{{ sc.mentor_name }}')">
-                      Pengganti
-                    </button>
-                  {% elif sc.status == 'menunggu_persetujuan_admin' %}
-                    <form method="POST" action="{{ url_for('admin.admin_approve_schedule', schedule_id=sc.id) }}" style="display:inline;">
-                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                      <button type="submit" class="btn btn-success btn-sm">Setujui</button>
-                    </form>
-                  {% else %}
-                    <a href="{{ url_for('admin.schedules') }}" class="btn btn-secondary btn-sm">Buka</a>
-                  {% endif %}
-                </td>
-              </tr>
-              {% else %}
-              <tr>
-                <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 28px;">
-                  {{ icon('check-circle') }} Semua jadwal les aktif dan tertata dengan baik!
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    <div id="tabAttendance" class="dash-tab-pane" style="display: none;">
-      <div class="table-responsive">
-          <table class="table-desi">
-            <thead>
-              <tr>
-                <th>Tanggal Sesi &amp; Jam</th>
-                <th>Siswa &amp; Program</th>
-                <th>Mentor Pengampu</th>
-                <th>Siklus Pertemuan</th>
-                <th>Status Kehadiran</th>
-                <th style="text-align: right; min-width: 90px;">Detail Sesi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for att in recent_attendances %}
-              <tr>
-                <td>
-                  <strong style="color: var(--navy-dark); font-size: 13px;">{{ att.session_date|date_indo }}</strong>
-                  <div style="font-size: 11px; color: var(--blue-brand); font-weight: 500;">
-                    {{ icon('clock') }} {{ att.start_time }} - {{ att.end_time }} WIB
-                  </div>
-                </td>
-                <td>
-                  <div style="font-weight: 700; color: var(--navy-dark);">{{ att.student_name }}</div>
-                  <div style="font-size: 11px; color: var(--text-muted);">{{ att.program_name }}</div>
-                </td>
-                <td>
-                  <div style="font-weight: 600;">{{ att.mentor_name }}</div>
-                </td>
-                <td>
-                  {% if att.meeting_number and att.period_number %}
-                    <span class="badge badge-success" style="font-size: 11.5px; font-weight: 700;">
-                      Pertemuan {{ att.meeting_number }} ({{ att.period_number }})
-                    </span>
-                    {% if att.cumulative_meeting %}
-                      <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Kumulatif ke-{{ att.cumulative_meeting }}</div>
-                    {% endif %}
-                  {% else %}
-                    <span class="badge badge-secondary" style="font-size: 11px;">Belum Terhitung</span>
-                  {% endif %}
-                </td>
-                <td>
-                  {{ att.status|status_badge|safe }}
-                  {% if att.documentation_photo %}
-                    <span class="badge badge-info" style="font-size: 10px; margin-left: 3px;" title="Dokumentasi foto tersedia">{{ icon('camera') }} Foto</span>
-                  {% elif att.documentation_status == 'menunggu' %}
-                    <span class="badge badge-warning" style="font-size: 10px; margin-left: 3px;" title="Dokumentasi foto tertunda">{{ icon('clock') }} Tertunda</span>
-                  {% endif %}
-                </td>
-                <td style="text-align: right;">
-                  <button
-                    type="button"
-                    class="btn btn-secondary btn-sm"
-                    data-student="{{ att.student_name }}"
-                    data-school="{{ att.student_school or '' }}"
-                    data-grade="{{ att.student_grade or '' }}"
-                    data-program="{{ att.program_name }}"
-                    data-mentor="{{ att.mentor_name }}"
-                    data-date="{{ att.session_date|date_indo }}"
-                    data-time="{{ att.start_time }} - {{ att.end_time }} WIB"
-                    data-status="{{ att.status }}"
-                    data-meeting="{{ att.meeting_number or '-' }}"
-                    data-period="{{ att.period_number or '-' }}"
-                    data-cumulative="{{ att.cumulative_meeting or '-' }}"
-                    data-doc-status="{{ att.documentation_status or 'tidak_ada' }}"
-                    data-doc-photo="{{ att.documentation_photo or '' }}"
-                    data-doc-reason="{{ att.documentation_pending_reason or '' }}"
-                    data-topics="{{ att.topics_covered or '' }}"
-                    data-skills="{{ att.skills_mastered or '' }}"
-                    data-difficulties="{{ att.difficulties or '' }}"
-                    data-recommendations="{{ att.recommendations or '' }}"
-                    data-notes="{{ att.progress_notes or '' }}"
-                    onclick="openAttendanceDetail(this)"
-                    style="padding: 6px 12px; font-size: 12px; font-weight: 600;"
-                    title="Lihat detail absensi, foto dokumentasi, dan laporan perkembangan"
-                  >
-                    Detail
-                  </button>
-                </td>
-              </tr>
-              {% else %}
-              <tr>
-                <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 28px;">
-                  Belum ada riwayat absensi pembelajaran yang tercatat di sistem.
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    <div id="tabAudits" class="dash-tab-pane" style="display: none; padding: 20px;">
-      <div class="grid-2-col" style="gap: 20px;">
-        <div>
-          <div style="font-weight: 800; font-size: 14px; color: #0F172A; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-            <span>{{ icon('history') }} Log Aktivitas Sistem</span>
-            <a href="{{ url_for('admin.audit_logs') }}" style="font-size: 11.5px; color: #0EA5E9; text-decoration: none;">Buka Log &rarr;</a>
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            {% for a in recent_audits %}
-            <div style="padding: 10px 14px; background: #F8FAFC; border-radius: 10px; border-left: 3px solid #0EA5E9; font-size: 12px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
-                <strong style="color: #0F172A;">{{ a.user_name or 'Sistem' }} &bull; <span class="badge badge-info" style="font-size: 10px;">{{ a.action_type }}</span></strong>
-                <span style="font-size: 10.5px; color: #64748B;">{{ a.created_at|date_indo }}</span>
-              </div>
-              <div style="color: #334155;">{{ a.details }}</div>
-            </div>
-            {% else %}
-            <div style="text-align: center; color: var(--text-muted); padding: 16px;">Belum ada riwayat aktivitas.</div>
-            {% endfor %}
-          </div>
-        </div>
-        <div>
-          <div style="font-weight: 800; font-size: 14px; color: #0F172A; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-            <span>{{ icon('bell') }} Notifikasi Sistem</span>
-            <a href="{{ url_for('admin.notifications_center') }}" style="font-size: 11.5px; color: #0EA5E9; text-decoration: none;">Pusat Notifikasi &rarr;</a>
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            {% for n in recent_notifs %}
-            <div style="padding: 10px 14px; background: {% if not n.is_read %}#E0F2FE{% else %}#F8FAFC{% endif %}; border-radius: 10px; border-left: 3px solid {% if not n.is_read %}#0EA5E9{% else %}#CBD5E1{% endif %}; font-size: 12px;">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <strong style="color: #0F172A;">{{ n.title }}</strong>
-                <span style="font-size: 10.5px; color: #64748B;">{{ n.created_at|date_indo }}</span>
-              </div>
-              <div style="color: #334155; margin-top: 2px;">{{ n.message }}</div>
-            </div>
-            {% else %}
-            <div style="text-align: center; color: var(--text-muted); padding: 16px;">Tidak ada notifikasi baru saat ini.</div>
-            {% endfor %}
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  </aside>
 </div>
 
 <!-- MODAL PERGANTIAN MENTOR -->
-<div class="modal-overlay" id="replacementModal">
+<div class="modal-overlay" id="replacementModal" role="dialog" aria-modal="true">
   <div class="modal-dialog">
     <div class="modal-header">
       <div class="modal-title">Ganti Mentor Pengganti</div>
-      <button class="modal-close-btn" onclick="closeModal('replacementModal')">&times;</button>
+      <button type="button" class="modal-close-btn" onclick="closeModal('replacementModal')" aria-label="Tutup">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
     <form method="POST" id="replaceMentorForm" action="">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -443,136 +398,98 @@
           <select class="form-select" id="replacementMentorSelect" name="replacement_mentor_id" required>
             <option value="">-- Memuat daftar mentor... --</option>
           </select>
-          <small style="color: var(--text-muted); font-size: 11px;">Hanya mentor aktif dan tidak bentrok yang dapat dipilih.</small>
+          <small style="color: var(--text-muted); font-size: 11.5px;">Hanya mentor aktif dan tidak bentrok yang dapat dipilih.</small>
         </div>
         <div class="form-group">
           <label class="form-label" for="replaceReasonInput">Alasan Pergantian Mentor (Wajib)</label>
-          <textarea class="form-control" id="replaceReasonInput" name="reason" placeholder="Contoh: Mentor awal berhalangan karena urusan mendadak, digantikan untuk kelancaran sesi..." required></textarea>
+          <textarea class="form-control" id="replaceReasonInput" name="reason" placeholder="Contoh: Mentor awal berhalangan, digantikan untuk kelancaran sesi..." required></textarea>
         </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" onclick="closeModal('replacementModal')">Batal</button>
-        <button type="submit" class="btn btn-primary">Simpan Pergantian Mentor</button>
+        <button type="submit" class="btn btn-primary">Simpan Pergantian</button>
       </div>
     </form>
   </div>
 </div>
 
 <!-- MODAL RINCIAN ABSENSI & LAPORAN PERKEMBANGAN -->
-<div class="modal-overlay" id="attendanceDetailModal">
-  <div class="modal-dialog" style="max-width: 680px;">
-    <div class="modal-header" style="background: linear-gradient(135deg, var(--navy-dark, #0f172a), var(--blue-brand, #2563eb)); color: white;">
-      <div class="modal-title" style="color: white; display: flex; align-items: center; gap: 8px;">
-        {{ icon('book') }} Rincian Sesi &amp; Laporan Perkembangan Belajar
-      </div>
-      <button class="modal-close-btn" onclick="closeModal('attendanceDetailModal')" style="color: white;">&times;</button>
+<div class="modal-overlay" id="attendanceDetailModal" role="dialog" aria-modal="true">
+  <div class="modal-dialog" style="max-width: 640px;">
+    <div class="modal-header">
+      <div class="modal-title">Rincian Sesi &amp; Laporan Belajar</div>
+      <button type="button" class="modal-close-btn" onclick="closeModal('attendanceDetailModal')" aria-label="Tutup">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
     <div class="modal-body" style="padding: 20px;">
-      <!-- BAGIAN 1: IDENTITAS PERTEMUAN & SIKLUS -->
-      <div style="background: var(--bg-soft, #f8fafc); border: 1px solid var(--border-subtle, #e2e8f0); border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+      <div style="background: #F7F7F5; border: 1px solid var(--alpha-border); border-radius: 12px; padding: 14px; margin-bottom: 14px;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
           <div>
-            <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px;">Siswa &amp; Program Les</div>
-            <strong id="detStudentName" style="font-size: 15px; color: var(--navy-dark);"></strong>
+            <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Siswa &amp; Program Les</div>
+            <strong id="detStudentName" style="font-size: 15px; color: #111827;"></strong>
             <span id="detStudentMeta" style="font-size: 12px; color: var(--text-muted); margin-left: 4px;"></span>
-            <div id="detProgramName" style="font-size: 13px; color: var(--blue-brand); font-weight: 600; margin-top: 2px;"></div>
+            <div id="detProgramName" style="font-size: 13px; color: #0072A8; font-weight: 600; margin-top: 2px;"></div>
           </div>
           <div style="text-align: right;">
             <div id="detMeetingBadge" style="margin-bottom: 4px;"></div>
             <div id="detStatusBadge"></div>
           </div>
         </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px; border-top: 1px solid var(--border-subtle, #e2e8f0); padding-top: 10px; margin-top: 8px;">
-          <div>
-            <span style="color: var(--text-muted);">Mentor Pengampu:</span><br>
-            <strong id="detMentorName" style="color: var(--text-main);"></strong>
-          </div>
-          <div>
-            <span style="color: var(--text-muted);">Jadwal Sesi:</span><br>
-            <strong id="detDateTime" style="color: var(--text-main);"></strong>
-          </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12.5px; border-top: 1px solid var(--alpha-border); padding-top: 10px;">
+          <div><span style="color: var(--text-muted);">Mentor Pengampu</span><br><strong id="detMentorName" style="color: #111827;"></strong></div>
+          <div><span style="color: var(--text-muted);">Jadwal Sesi</span><br><strong id="detDateTime" style="color: #111827;"></strong></div>
         </div>
       </div>
 
-      <!-- BAGIAN 2: DOKUMENTASI FOTO (KHUSUS ADMIN & OWNER) -->
-      <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <label style="font-size: 13px; font-weight: 700; color: var(--navy-dark); margin: 0; display: flex; align-items: center; gap: 6px;">
-            {{ icon('camera') }} Dokumentasi Foto Sesi Belajar
-          </label>
-          <span class="badge badge-info" style="font-size: 10px; padding: 3px 7px;">
-            {{ icon('lock') }} Hak Akses: Khusus Admin &amp; Owner
-          </span>
-        </div>
-
-        <div id="detDocPhotoBox" style="display: none; margin-top: 8px;">
+      <div style="background: #FFFFFF; border: 1px solid var(--alpha-border); border-radius: 12px; padding: 14px; margin-bottom: 14px;">
+        <div style="font-size: 13px; font-weight: 700; color: #111827; margin-bottom: 8px;">Dokumentasi Foto Sesi</div>
+        <div id="detDocPhotoBox" style="display: none;">
           <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
-            <a id="detPhotoLink" href="#" target="_blank" title="Klik untuk memperbesar foto">
-              <img id="detPhotoImg" src="" alt="Dokumentasi Sesi" style="max-height: 140px; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: 0 2px 6px rgba(0,0,0,0.06); object-fit: cover;">
+            <a id="detPhotoLink" href="#" target="_blank" rel="noopener noreferrer">
+              <img id="detPhotoImg" src="" alt="Dokumentasi Sesi" style="max-height: 140px; border-radius: 10px; border: 1px solid var(--alpha-border); object-fit: cover;">
             </a>
-            <div style="font-size: 11.5px; color: var(--text-muted);">
-              <div>Status: <span class="badge badge-success" style="font-size: 10.5px;">{{ icon('check') }} Foto Terverifikasi</span></div>
-              <div style="margin-top: 4px;">Foto dokumentasi resmi dari mentor saat mengajar.</div>
+            <div style="font-size: 12px; color: var(--text-muted);">
+              <div class="dp-status-text is-ok">Foto Terverifikasi</div>
               <div style="margin-top: 6px;">
-                <a id="detPhotoBtnLink" href="#" target="_blank" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 3px 8px;">
-                  Buka Ukuran Penuh &rarr;
-                </a>
+                <a id="detPhotoBtnLink" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Buka Ukuran Penuh</a>
               </div>
             </div>
           </div>
         </div>
-
-        <div id="detDocPendingBox" style="display: none; background: #F7F7F5; border: 1px solid #E5E7EB; border-radius: 12px; padding: 10px 12px; margin-top: 8px;">
-          <div style="font-size: 12px; color: #8A5629; font-weight: 600; display: flex; align-items: center; gap: 6px;">
-            {{ icon('clock') }} Dokumentasi Foto Tertunda (Kendala Teknis Kamera / Unggahan)
-          </div>
-          <div style="font-size: 11.5px; color: #92400e; margin-top: 4px;">
-            Alasan Mentor: <em id="detDocPendingReason"></em>
-          </div>
+        <div id="detDocPendingBox" style="display: none; background: #F7F7F5; border: 1px solid var(--alpha-border); border-radius: 10px; padding: 10px 12px;">
+          <div class="dp-status-text is-warn">Dokumentasi Foto Tertunda</div>
+          <div style="font-size: 12px; color: #4B5563; margin-top: 4px;">Alasan Mentor: <em id="detDocPendingReason"></em></div>
         </div>
-
-        <div id="detDocNoneBox" style="display: none; font-size: 12px; color: var(--text-muted); font-style: italic; margin-top: 6px;">
+        <div id="detDocNoneBox" style="display: none; font-size: 12px; color: var(--text-muted);">
           Tidak ada foto dokumentasi untuk sesi belajar ini.
         </div>
       </div>
 
-      <!-- BAGIAN 3: LAPORAN PERKEMBANGAN BELAJAR (ADMIN, ORANG TUA, OWNER) -->
-      <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-          <label style="font-size: 13px; font-weight: 700; color: var(--navy-dark); margin: 0; display: flex; align-items: center; gap: 6px;">
-            {{ icon('trending-up') }} Laporan Perkembangan Belajar
-          </label>
-          <span class="badge badge-primary" style="font-size: 10px; padding: 3px 7px;">
-            {{ icon('users') }} Akses: Admin, Orang Tua &amp; Owner
-          </span>
-        </div>
-
+      <div style="background: #FFFFFF; border: 1px solid var(--alpha-border); border-radius: 12px; padding: 14px;">
+        <div style="font-size: 13px; font-weight: 700; color: #111827; margin-bottom: 10px;">Laporan Perkembangan Belajar</div>
         <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
-          <div style="background: var(--bg-soft, #f8fafc); border-radius: 6px; padding: 10px;">
-            <div style="font-size: 11px; font-weight: 700; color: var(--navy-dark); text-transform: uppercase;">Materi yang Diajarkan:</div>
-            <div id="detTopics" style="font-size: 12.5px; color: var(--text-main); margin-top: 3px;">-</div>
+          <div style="background: #F7F7F5; border-radius: 10px; padding: 10px 12px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Materi Diajarkan</div>
+            <div id="detTopics" style="font-size: 13px; color: #111827; margin-top: 3px;">-</div>
           </div>
-
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 10px;">
-              <div style="font-size: 11px; font-weight: 700; color: #065f46; text-transform: uppercase;">Kemampuan Dikuasai:</div>
-              <div id="detSkills" style="font-size: 12px; color: #047857; margin-top: 3px;">-</div>
+            <div style="background: #F7F7F5; border-radius: 10px; padding: 10px 12px;">
+              <div style="font-size: 11px; font-weight: 700; color: #15803D; text-transform: uppercase;">Kemampuan Dikuasai</div>
+              <div id="detSkills" style="font-size: 12.5px; color: #111827; margin-top: 3px;">-</div>
             </div>
-            <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px;">
-              <div style="font-size: 11px; font-weight: 700; color: #92400e; text-transform: uppercase;">Kendala / Kesulitan:</div>
-              <div id="detDifficulties" style="font-size: 12px; color: #b45309; margin-top: 3px;">-</div>
+            <div style="background: #F7F7F5; border-radius: 10px; padding: 10px 12px;">
+              <div style="font-size: 11px; font-weight: 700; color: #8A5629; text-transform: uppercase;">Kendala Belajar</div>
+              <div id="detDifficulties" style="font-size: 12.5px; color: #111827; margin-top: 3px;">-</div>
             </div>
           </div>
-
-          <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 10px;">
-            <div style="font-size: 11px; font-weight: 700; color: #1e40af; text-transform: uppercase;">Rekomendasi dari Mentor:</div>
-            <div id="detRecommendations" style="font-size: 12px; color: #1d4ed8; margin-top: 3px;">-</div>
+          <div style="background: #F7F7F5; border-radius: 10px; padding: 10px 12px;">
+            <div style="font-size: 11px; font-weight: 700; color: #0072A8; text-transform: uppercase;">Rekomendasi Mentor</div>
+            <div id="detRecommendations" style="font-size: 12.5px; color: #111827; margin-top: 3px;">-</div>
           </div>
-
-          <div id="detNotesWrapper" style="display: none; background: #f1f5f9; border-radius: 6px; padding: 10px;">
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Catatan Tambahan Perkembangan:</div>
-            <div id="detNotes" style="font-size: 12px; color: var(--text-main); margin-top: 3px;">-</div>
+          <div id="detNotesWrapper" style="display: none; background: #F7F7F5; border-radius: 10px; padding: 10px 12px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Catatan Tambahan</div>
+            <div id="detNotes" style="font-size: 12.5px; color: #111827; margin-top: 3px;">-</div>
           </div>
         </div>
       </div>
@@ -586,43 +503,38 @@
 <script>
   function openAttendanceDetail(btn) {
     const d = btn.dataset;
-
     document.getElementById("detStudentName").innerText = d.student || "-";
     let meta = "";
     if (d.grade) meta += "Kelas " + d.grade;
-    if (d.school) meta += (meta ? " • " : "") + d.school;
+    if (d.school) meta += (meta ? ", " : "") + d.school;
     document.getElementById("detStudentMeta").innerText = meta ? "(" + meta + ")" : "";
     document.getElementById("detProgramName").innerText = d.program || "-";
     document.getElementById("detMentorName").innerText = d.mentor || "-";
-    document.getElementById("detDateTime").innerText = (d.date || "-") + " • " + (d.time || "-");
+    document.getElementById("detDateTime").innerText = (d.date || "-") + ", " + (d.time || "-");
 
-    // Siklus pertemuan
     const mNum = d.meeting;
     const pNum = d.period;
     const badgeContainer = document.getElementById("detMeetingBadge");
     if (mNum && mNum !== "-" && pNum && pNum !== "-") {
-      let cumText = d.cumulative && d.cumulative !== "-" ? " • Kumulatif ke-" + d.cumulative : "";
-      badgeContainer.innerHTML = '<span class="badge badge-success" style="font-size: 12px; font-weight: 700;">Pertemuan ' + mNum + ' (' + pNum + ')' + cumText + '</span>';
+      const cumText = d.cumulative && d.cumulative !== "-" ? ", Kumulatif ke-" + d.cumulative : "";
+      badgeContainer.innerHTML = '<span class="dp-status-text is-ok">Pertemuan ' + mNum + ' (' + pNum + ')' + cumText + '</span>';
     } else {
-      badgeContainer.innerHTML = '<span class="badge badge-secondary" style="font-size: 11px;">Belum Terhitung Siklus</span>';
+      badgeContainer.innerHTML = '<span class="dp-cell-sub">Belum Terhitung Siklus</span>';
     }
 
-    // Status kehadiran badge
     const stContainer = document.getElementById("detStatusBadge");
     const st = d.status || "hadir";
     if (st === "hadir") {
-      stContainer.innerHTML = '<span class="badge badge-success">Siswa Hadir</span>';
+      stContainer.innerHTML = '<span class="dp-status-text is-ok">Siswa Hadir</span>';
     } else if (st === "izin") {
-      stContainer.innerHTML = '<span class="badge badge-warning">Izin (Tidak Dihitung)</span>';
+      stContainer.innerHTML = '<span class="dp-status-text is-warn">Izin (Tidak Dihitung)</span>';
     } else {
-      stContainer.innerHTML = '<span class="badge badge-danger">Tidak Hadir (Tidak Dihitung)</span>';
+      stContainer.innerHTML = '<span class="dp-status-text is-danger">Tidak Hadir</span>';
     }
 
-    // Dokumentasi Foto (Khusus Admin & Owner)
     const photoBox = document.getElementById("detDocPhotoBox");
     const pendingBox = document.getElementById("detDocPendingBox");
     const noneBox = document.getElementById("detDocNoneBox");
-
     photoBox.style.display = "none";
     pendingBox.style.display = "none";
     noneBox.style.display = "none";
@@ -640,7 +552,6 @@
       noneBox.style.display = "block";
     }
 
-    // Laporan Perkembangan Belajar
     document.getElementById("detTopics").innerText = d.topics || "Materi tidak dicatat secara spesifik";
     document.getElementById("detSkills").innerText = d.skills || "Sedang dalam penguatan konsep dasar";
     document.getElementById("detDifficulties").innerText = d.difficulties || "Tidak ada kendala berarti";
@@ -653,7 +564,6 @@
     } else {
       notesWrap.style.display = "none";
     }
-
     openModal("attendanceDetailModal");
   }
 
@@ -661,19 +571,29 @@
     document.getElementById("replaceScheduleId").value = scheduleId;
     document.getElementById("currentMentorSpan").innerText = mentorName;
     const select = document.getElementById("replacementMentorSelect");
-    select.innerHTML = '<option value="">Memuat daftar mentor...</option>';
+    select.replaceChildren();
+    const loadOpt = document.createElement("option");
+    loadOpt.value = "";
+    loadOpt.textContent = "Memuat daftar mentor...";
+    select.appendChild(loadOpt);
     openModal("replacementModal");
 
     fetch("/admin/api/eligible-replacements/" + scheduleId)
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         select.replaceChildren();
         if (!data || data.length === 0) {
-          select.innerHTML = '<option value="">Tidak ada mentor lain yang tersedia pada jam ini</option>';
+          const emptyOpt = document.createElement("option");
+          emptyOpt.value = "";
+          emptyOpt.textContent = "Tidak ada mentor lain yang tersedia pada jam ini";
+          select.appendChild(emptyOpt);
           return;
         }
-        select.innerHTML = '<option value="">-- Pilih Mentor Pengganti --</option>';
-        data.forEach(m => {
+        const defOpt = document.createElement("option");
+        defOpt.value = "";
+        defOpt.textContent = "-- Pilih Mentor Pengganti --";
+        select.appendChild(defOpt);
+        data.forEach((m) => {
           const opt = document.createElement("option");
           opt.value = m.id;
           opt.textContent = m.full_name + " (" + (m.expertise || "Umum") + ")";
@@ -681,11 +601,15 @@
         });
       })
       .catch(() => {
-        select.innerHTML = '<option value="">Gagal memuat mentor pengganti</option>';
+        select.replaceChildren();
+        const errOpt = document.createElement("option");
+        errOpt.value = "";
+        errOpt.textContent = "Gagal memuat mentor pengganti";
+        select.appendChild(errOpt);
       });
   }
 
-  document.getElementById("replaceMentorForm").addEventListener("submit", function() {
+  document.getElementById("replaceMentorForm").addEventListener("submit", function () {
     const schedId = document.getElementById("replaceScheduleId").value;
     this.action = "/admin/schedules/" + schedId + "/replace-mentor";
   });
@@ -695,25 +619,15 @@
 {% block extra_js %}
 <script>
 function switchDashboardTab(tabId, el) {
-  document.querySelectorAll('.dash-tab-pane').forEach(function(pane) {
-    pane.style.display = 'none';
+  document.querySelectorAll(".dash-tab-pane").forEach(function (pane) {
+    pane.style.display = "none";
   });
-  document.querySelectorAll('.dash-tab-pill').forEach(function(btn) {
-    btn.style.background = '#FFFFFF';
-    btn.style.color = '#4B5563';
-    btn.style.border = '1px solid #E5E7EB';
-    btn.classList.remove('active');
+  document.querySelectorAll(".dash-tab-pill").forEach(function (btn) {
+    btn.classList.remove("active");
   });
   var target = document.getElementById(tabId);
-  if (target) {
-    target.style.display = 'block';
-  }
-  if (el) {
-    el.style.background = '#EBF7FD';
-    el.style.color = '#0072A8';
-    el.style.border = 'none';
-    el.classList.add('active');
-  }
+  if (target) target.style.display = "block";
+  if (el) el.classList.add("active");
 }
 </script>
 {% endblock %}

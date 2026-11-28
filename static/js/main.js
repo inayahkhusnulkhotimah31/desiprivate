@@ -215,12 +215,10 @@ function initMain() {
           document.body.appendChild(curtain);
         }
         try { sessionStorage.setItem("dp_gate_arrived", "1"); } catch (_) {}
-        window.requestAnimationFrame(() => {
-          window.requestAnimationFrame(() => curtain.classList.add("is-closing"));
-        });
+        window.requestAnimationFrame(() => curtain.classList.add("is-closing"));
         window.setTimeout(() => {
           window.location.href = link.href;
-        }, 380);
+        }, 210);
       }
     });
   }

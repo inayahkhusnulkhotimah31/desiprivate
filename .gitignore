@@ -25,6 +25,19 @@ test_*.db
 # Test Artifacts & Temporary Screenshots
 stage_screenshots/
 scratch/
+tests/
+
+# Local Agent Workspace Config & Local-Only Utility Scripts
+.agent/
+AGENTS.md
+scripts/audit_db.py
+scripts/backup_and_verify_production.py
+scripts/inspect_current_data.py
+scripts/inspect_schema.py
+scripts/replace_emojis.py
+scripts/test_supabase_connection.py
+scripts/verify_realtime_sync.py
+scripts/verify_zero_data_loss.py
 
 # IDE & Editors
 .vscode/

@@ -933,7 +933,7 @@ def build_page_00_design_system(b: FigBuilder):
 
     # 3. Full-Bleed Photo Fade + Clean Typography
     b.rect(f, 56, 498, 690, 296, fill=PRIMARY_DEEP, radius=18, stroke=HAIRLINE, name="Contoh Photo Fade Box")
-    b.image(f, "tutor1.webp", 56, 498, 690, 296, mode="fill", name="Contoh Faded Photo")
+    b.image(f, "galeri_01.webp", 56, 498, 690, 296, mode="fill", name="Contoh Faded Photo")
     b.gradient_rect(f, 56, 498, 690, 296, ["#083A54F2", "#0093D6B0", "#0093D610"], start=(0.0, 0.5), end=(1.0, 0.5), radius=18)
     b.text(f, "4. FULL FOTO + FADE + TEKS LANGSUNG", 86, 528, size=11, color="#BAE4F8", weight="Bold")
     b.text(f, "Teks Langsung di Atas Foto,\nTanpa Card Pembungkus.", 86, 560, size=24, color=SURFACE, weight="Bold", family=FONT_HEAD, width=420, line_h=32)
@@ -1937,7 +1937,7 @@ def build_page_04_owner(b: FigBuilder):
     b.text(ov_own_photo, "Bukti Foto Sesi: Naufal Pratama", 24, 22, size=16.5, color=INK, weight="Bold", family=FONT_HEAD, width=410, max_lines=1)
     ov_own_x = b.pill(ov_own_photo, 460, 18, 34, 34, "×", ALABASTER, INK, size=15, weight="Bold", stroke=HAIRLINE)
     b.close_overlay_link(ov_own_x)
-    b.image(ov_own_photo, "doc1.webp", 24, 70, 472, 260, mode="fill", name="Owner Verified Session Photo")
+    b.image(ov_own_photo, "galeri_05.webp", 24, 70, 472, 260, mode="fill", name="Owner Verified Session Photo")
     b.text(ov_own_photo, "25 Nov, 15:30 WIB, Kak Sarah, Materi Persamaan Linear", 24, 344, size=12.5, color=BODY, width=472, max_lines=1)
     ov_own_close = b.pill(ov_own_photo, 24, 382, 160, 38, "Tutup Pratinjau", ALABASTER, INK, size=12.5, weight="SemiBold", stroke=HAIRLINE)
     b.close_overlay_link(ov_own_close)
