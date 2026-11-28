@@ -417,15 +417,17 @@ function initMain() {
   };
 
   document.querySelectorAll(".dp-sophie-card").forEach((card) => {
-    const posterBtn = card.querySelector(".dp-poster-open-btn");
-    if (!posterBtn) return;
+    const posterTrigger = card.hasAttribute("data-poster-src")
+      ? card
+      : card.querySelector(".dp-poster-open-btn");
+    if (!posterTrigger) return;
     card.addEventListener("click", () => {
-      openPosterModal(posterBtn);
+      openPosterModal(posterTrigger);
     });
     card.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        openPosterModal(posterBtn);
+        openPosterModal(posterTrigger);
       }
     });
   });

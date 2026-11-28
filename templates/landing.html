@@ -159,16 +159,8 @@
           </span>
         {% endset %}
 
-        {% set animated_eye_svg %}
-          <svg class="dp-eye-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path class="dp-eye-lid" d="M2 12C4.5 7.5 8 5.5 12 5.5C16 5.5 19.5 7.5 22 12C19.5 16.5 16 18.5 12 18.5C8 18.5 4.5 16.5 2 12Z"/>
-            <circle class="dp-eye-iris" cx="12" cy="12" r="3.2"/>
-            <circle class="dp-eye-pupil" cx="12" cy="12" r="1.15" fill="currentColor" stroke="none"/>
-          </svg>
-        {% endset %}
-
         <div class="dp-achievement-grid">
-          <article class="dp-sophie-card dp-scroll-reveal" role="button" tabindex="0" aria-label="Lihat poster pencapaian Muhammad Ian Ramadhan">
+          <article class="dp-sophie-card dp-scroll-reveal" role="button" tabindex="0" data-poster-src="{{ url_for('static', filename='images/client/pencapaian_01.webp') }}" data-poster-title="Muhammad Ian Ramadhan" aria-label="Lihat poster pencapaian Muhammad Ian Ramadhan">
             <div class="dp-sophie-inner">
               <img src="{{ url_for('static', filename='images/client/pencapaian_01.webp') }}" alt="Juara 3 Olimpiade Matematika SD Expo SMAFT 2026" class="dp-sophie-img" width="640" height="800" loading="lazy" decoding="async">
               <div class="dp-sophie-frost">
@@ -182,13 +174,12 @@
                     <span class="dp-sophie-stat">Matematika</span>
                     <span class="dp-sophie-stat">2026</span>
                   </div>
-                  <button type="button" class="dp-eye-btn dp-poster-open-btn" data-poster-src="{{ url_for('static', filename='images/client/pencapaian_01.webp') }}" data-poster-title="Muhammad Ian Ramadhan" aria-label="Lihat poster pencapaian Muhammad Ian Ramadhan" title="Lihat poster">{{ animated_eye_svg }}</button>
                 </div>
               </div>
             </div>
           </article>
 
-          <article class="dp-sophie-card dp-scroll-reveal" role="button" tabindex="0" aria-label="Lihat poster Silver IOB Rising Star Mathematics">
+          <article class="dp-sophie-card dp-scroll-reveal" role="button" tabindex="0" data-poster-src="{{ url_for('static', filename='images/client/pencapaian_02.webp') }}" data-poster-title="Silver IOB Rising Star Mathematics" aria-label="Lihat poster Silver IOB Rising Star Mathematics">
             <div class="dp-sophie-inner">
               <img src="{{ url_for('static', filename='images/client/pencapaian_02.webp') }}" alt="Predikat Silver IOB Rising Star Mathematics" class="dp-sophie-img" width="640" height="800" loading="lazy" decoding="async">
               <div class="dp-sophie-frost">
@@ -202,13 +193,12 @@
                     <span class="dp-sophie-stat">Silver IOB</span>
                     <span class="dp-sophie-stat">2026</span>
                   </div>
-                  <button type="button" class="dp-eye-btn dp-poster-open-btn" data-poster-src="{{ url_for('static', filename='images/client/pencapaian_02.webp') }}" data-poster-title="Silver IOB Rising Star Mathematics" aria-label="Lihat poster Silver IOB Rising Star Mathematics" title="Lihat poster">{{ animated_eye_svg }}</button>
                 </div>
               </div>
             </div>
           </article>
 
-          <article class="dp-sophie-card dp-scroll-reveal" role="button" tabindex="0" aria-label="Lihat poster Kontingen DESI PRIVAT KMSI 2026">
+          <article class="dp-sophie-card dp-scroll-reveal" role="button" tabindex="0" data-poster-src="{{ url_for('static', filename='images/client/pencapaian_03.webp') }}" data-poster-title="Kontingen DESI PRIVAT KMSI 2026" aria-label="Lihat poster Kontingen DESI PRIVAT KMSI 2026">
             <div class="dp-sophie-inner">
               <img src="{{ url_for('static', filename='images/client/pencapaian_03.webp') }}" alt="Kontingen DESI PRIVAT KMSI 2026 Final Provinsi" class="dp-sophie-img" width="640" height="800" loading="lazy" decoding="async">
               <div class="dp-sophie-frost">
@@ -222,13 +212,12 @@
                     <span class="dp-sophie-stat">Final Provinsi</span>
                     <span class="dp-sophie-stat">2026</span>
                   </div>
-                  <button type="button" class="dp-eye-btn dp-poster-open-btn" data-poster-src="{{ url_for('static', filename='images/client/pencapaian_03.webp') }}" data-poster-title="Kontingen DESI PRIVAT KMSI 2026" aria-label="Lihat poster Kontingen DESI PRIVAT KMSI 2026" title="Lihat poster">{{ animated_eye_svg }}</button>
                 </div>
               </div>
             </div>
           </article>
 
-          <article class="dp-sophie-card dp-scroll-reveal" role="button" tabindex="0" aria-label="Lihat poster Gold Medals Muhammad Izhar Ismed">
+          <article class="dp-sophie-card dp-scroll-reveal" role="button" tabindex="0" data-poster-src="{{ url_for('static', filename='images/client/pencapaian_04.webp') }}" data-poster-title="Muhammad Izhar Ismed - Gold Medals" aria-label="Lihat poster Gold Medals Muhammad Izhar Ismed">
             <div class="dp-sophie-inner">
               <img src="{{ url_for('static', filename='images/client/pencapaian_04.webp') }}" alt="Gold Medals Venus Kompetisi Rayon Makassar" class="dp-sophie-img" width="640" height="800" loading="lazy" decoding="async">
               <div class="dp-sophie-frost">
@@ -242,13 +231,12 @@
                     <span class="dp-sophie-stat">Gold Medal</span>
                     <span class="dp-sophie-stat">2026</span>
                   </div>
-                  <button type="button" class="dp-eye-btn dp-poster-open-btn" data-poster-src="{{ url_for('static', filename='images/client/pencapaian_04.webp') }}" data-poster-title="Muhammad Izhar Ismed - Gold Medals" aria-label="Lihat poster Gold Medals Muhammad Izhar Ismed" title="Lihat poster">{{ animated_eye_svg }}</button>
                 </div>
               </div>
             </div>
           </article>
 
-          <article class="dp-sophie-card dp-scroll-reveal" role="button" tabindex="0" aria-label="Lihat poster SEACOM 2026 Muhammad Izhar Ismed">
+          <article class="dp-sophie-card dp-scroll-reveal" role="button" tabindex="0" data-poster-src="{{ url_for('static', filename='images/client/pencapaian_05.webp') }}" data-poster-title="Lomba Cerdas Cermat SEACOM 2026" aria-label="Lihat poster SEACOM 2026 Muhammad Izhar Ismed">
             <div class="dp-sophie-inner">
               <img src="{{ url_for('static', filename='images/client/pencapaian_05.webp') }}" alt="Lomba Cerdas Cermat SEACOM 2026 Muhammad Izhar Ismed" class="dp-sophie-img" width="640" height="800" loading="lazy" decoding="async">
               <div class="dp-sophie-frost">
@@ -262,13 +250,12 @@
                     <span class="dp-sophie-stat">SEACOM</span>
                     <span class="dp-sophie-stat">2026</span>
                   </div>
-                  <button type="button" class="dp-eye-btn dp-poster-open-btn" data-poster-src="{{ url_for('static', filename='images/client/pencapaian_05.webp') }}" data-poster-title="Lomba Cerdas Cermat SEACOM 2026" aria-label="Lihat poster SEACOM 2026 Muhammad Izhar Ismed" title="Lihat poster">{{ animated_eye_svg }}</button>
                 </div>
               </div>
             </div>
           </article>
 
-          <article class="dp-sophie-card dp-scroll-reveal" role="button" tabindex="0" aria-label="Lihat poster SEACOM 2026 Muhammad Ian Ramadhan">
+          <article class="dp-sophie-card dp-scroll-reveal" role="button" tabindex="0" data-poster-src="{{ url_for('static', filename='images/client/pencapaian_06.webp') }}" data-poster-title="Lomba Cerdas Cermat SEACOM 2026" aria-label="Lihat poster SEACOM 2026 Muhammad Ian Ramadhan">
             <div class="dp-sophie-inner">
               <img src="{{ url_for('static', filename='images/client/pencapaian_06.webp') }}" alt="Lomba Cerdas Cermat SEACOM 2026 Muhammad Ian Ramadhan Hamzah" class="dp-sophie-img" width="640" height="800" loading="lazy" decoding="async">
               <div class="dp-sophie-frost">
@@ -282,7 +269,6 @@
                     <span class="dp-sophie-stat">SEACOM</span>
                     <span class="dp-sophie-stat">2026</span>
                   </div>
-                  <button type="button" class="dp-eye-btn dp-poster-open-btn" data-poster-src="{{ url_for('static', filename='images/client/pencapaian_06.webp') }}" data-poster-title="Lomba Cerdas Cermat SEACOM 2026" aria-label="Lihat poster SEACOM 2026 Muhammad Ian Ramadhan" title="Lihat poster">{{ animated_eye_svg }}</button>
                 </div>
               </div>
             </div>
@@ -427,6 +413,6 @@
     </button>
   </div>
 
-  <script src="{{ url_for('static', filename='js/main.js') }}?v=33" defer></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}?v=34" defer></script>
 </body>
 </html>
