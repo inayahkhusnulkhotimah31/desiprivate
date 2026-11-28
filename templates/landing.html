@@ -14,10 +14,16 @@
   <link rel="preload" as="image" type="image/webp" href="{{ url_for('static', filename='images/client/galeri_03.webp') }}">
   <link rel="preload" as="image" type="image/webp" href="{{ url_for('static', filename='images/client/galeri_04.webp') }}">
   <link rel="prefetch" href="{{ url_for('auth.login') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=28">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=31">
   <script>
     (function () {
       try {
+        var isMobile = window.matchMedia && (window.matchMedia("(max-width: 1024px)").matches || window.matchMedia("(hover: none) and (pointer: coarse)").matches);
+        if (isMobile) {
+          sessionStorage.removeItem("dp_gate_open");
+          sessionStorage.removeItem("dp_left_login");
+          return;
+        }
         var openFlag = sessionStorage.getItem("dp_gate_open") === "1";
         var leftTs = Number(sessionStorage.getItem("dp_left_login") || "0");
         var freshBack = leftTs > 0 && Date.now() - leftTs < 4000;
@@ -421,6 +427,6 @@
     </button>
   </div>
 
-  <script src="{{ url_for('static', filename='js/main.js') }}?v=30" defer></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}?v=31" defer></script>
 </body>
 </html>

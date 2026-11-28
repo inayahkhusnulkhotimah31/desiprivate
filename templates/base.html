@@ -9,10 +9,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=29">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=31">
   <script>
     (function () {
       try {
+        var isMobile = window.matchMedia && (window.matchMedia("(max-width: 1024px)").matches || window.matchMedia("(hover: none) and (pointer: coarse)").matches);
+        if (isMobile) {
+          sessionStorage.removeItem("dp_gate_open");
+          return;
+        }
         if (sessionStorage.getItem("dp_gate_open") === "1") {
           sessionStorage.removeItem("dp_gate_open");
           document.documentElement.classList.add("dp-opening-gate");
@@ -34,7 +39,7 @@
     <!-- SIDEBAR NAVIGASI (DESKTOP & DRAWER MOBILE) -->
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
-        <a href="/" class="dp-brand-home-link" aria-label="Kembali ke Beranda DESI PRIVAT" title="Kembali ke Beranda">
+        <a href="/" class="dp-brand-home-link" data-logout-url="{{ url_for('auth.logout') }}" aria-label="Kembali ke Beranda DESI PRIVAT" title="Kembali ke Beranda">
           <img src="{{ url_for('static', filename='images/client/logo_desi_privat.webp') }}" class="dp-brand-logo-photo" width="38" height="38" draggable="false" decoding="async" alt="Logo DESI PRIVAT">
           <div style="min-width: 0;">
             <div class="sidebar-brand-title"><span class="brand-desi" style="color: var(--blue-primary);">DESI</span> <span class="brand-privat" style="color: var(--caramel);">PRIVAT</span></div>
@@ -179,7 +184,7 @@
       <header class="top-navbar dp-fc-topbar">
         <div class="top-navbar-left">
           <!-- BRAND LOGO UNTUK MOBILE TOPBAR (KLIK KEMBALI KE HOME) -->
-          <a href="/" class="mobile-brand-center dp-brand-home-link" style="display: none;" aria-label="Kembali ke Beranda DESI PRIVAT" title="Kembali ke Beranda">
+          <a href="/" class="mobile-brand-center dp-brand-home-link" data-logout-url="{{ url_for('auth.logout') }}" style="display: none;" aria-label="Kembali ke Beranda DESI PRIVAT" title="Kembali ke Beranda">
             <img src="{{ url_for('static', filename='images/client/logo_desi_privat.webp') }}" class="dp-brand-logo-photo dp-brand-logo-photo--sm" width="30" height="30" draggable="false" decoding="async" alt="Logo DESI PRIVAT">
             <span style="font-size: 15px; font-weight: 800;"><span style="color: #0093D6;">DESI</span> <span style="color: #A66B37;">PRIVAT</span></span>
           </a>
@@ -305,7 +310,7 @@
     </nav>
   {% endif %}
 
-  <script src="{{ url_for('static', filename='js/main.js') }}?v=29" defer></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}?v=31" defer></script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

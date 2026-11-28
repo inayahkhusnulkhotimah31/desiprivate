@@ -8096,6 +8096,171 @@ img,
   }
 }
 
+/* ==========================================================================
+   V31 MOBILE PERFORMANCE, THUMB-ZONE SHEETS & ZERO-HOVER / ZERO-GATE MODE
+   ========================================================================== */
+@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+  /* 1. Zero Gate Animations on Mobile (instant, reliable navigation) */
+  .dp-gate-curtain,
+  .dp-gate-curtain--open,
+  html.dp-opening-gate .dp-gate-curtain--open,
+  .dp-gate-seam {
+    display: none !important;
+  }
+
+  .dp-login-gate-left,
+  .dp-login-gate-right,
+  .dp-gate-stagger,
+  body.dp-login-leaving .dp-gate-stagger,
+  body.dp-login-leaving .dp-login-card {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  /* 2. Remove Top-Right X Close Buttons on Mobile (Thumb-Zone Comfort) */
+  .modal-close-btn,
+  .dp-drawer-close {
+    display: none !important;
+  }
+
+  /* 3. Thumb-Friendly Bottom Sheet for Program Detail Drawer */
+  .dp-drawer-panel {
+    top: auto !important;
+    left: 10px !important;
+    right: 10px !important;
+    bottom: 10px !important;
+    width: auto !important;
+    max-height: 82dvh;
+    border-radius: 22px !important;
+    transform: translateY(108%);
+    transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .dp-drawer-panel.is-open {
+    transform: translateY(0);
+  }
+
+  .dp-drawer-panel::before {
+    content: "";
+    display: block;
+    width: 36px;
+    height: 4px;
+    border-radius: 9999px;
+    background: #D1D5DB;
+    margin: 10px auto 2px auto;
+    flex-shrink: 0;
+  }
+
+  .dp-drawer-head {
+    padding: 10px 20px 14px 20px;
+    justify-content: flex-start;
+  }
+
+  .dp-drawer-body {
+    padding: 16px 20px;
+  }
+
+  .dp-drawer-actions {
+    padding: 14px 20px calc(14px + env(safe-area-inset-bottom, 0px)) 20px;
+  }
+
+  /* 4. Adjusted Mobile Cards & Modals without X (Swipe Down or Tap Outside) */
+  .modal-overlay {
+    align-items: flex-end !important;
+    padding: 16px 10px calc(10px + env(safe-area-inset-bottom, 0px)) 10px !important;
+  }
+
+  .modal-dialog {
+    width: 100% !important;
+    max-width: 480px !important;
+    max-height: 86dvh !important;
+    border-radius: 22px !important;
+    margin: 0 auto !important;
+  }
+
+  .modal-dialog::before {
+    content: "";
+    display: block;
+    width: 36px;
+    height: 4px;
+    border-radius: 9999px;
+    background: #D1D5DB;
+    margin: 10px auto 0 auto;
+    flex-shrink: 0;
+  }
+
+  .modal-header {
+    padding: 12px 18px 12px 18px !important;
+    justify-content: flex-start !important;
+  }
+
+  .dp-poster-modal-dialog {
+    max-width: 380px !important;
+  }
+
+  .dp-poster-modal-dialog .modal-header {
+    padding: 10px 18px 10px 18px !important;
+  }
+
+  /* 5. Eliminate Sticky Hover Effects & Idle Decorative Loops on Mobile */
+  .dp-sophie-card:hover,
+  .dp-program-simple-card:hover,
+  .card:hover,
+  .stat-card:hover,
+  .kpi-card:hover,
+  .dp-agenda-item:hover,
+  .dp-btn:hover,
+  .btn:hover,
+  .dp-flight-cta:hover,
+  .dp-login-home-btn:hover,
+  .dp-login-home-btn:hover svg,
+  .dp-login-fb-outline-btn:hover,
+  .dp-eye-btn:hover {
+    transform: none !important;
+  }
+
+  .dp-sophie-card:hover .dp-sophie-img {
+    transform: none !important;
+  }
+
+  .dp-sophie-card:hover,
+  .dp-program-simple-card:hover {
+    border-color: var(--alpha-border) !important;
+    box-shadow: 0 2px 8px rgba(17, 24, 39, 0.04) !important;
+  }
+
+  .dp-sophie-card[role="button"]:hover .dp-eye-btn {
+    background: #FFFFFF !important;
+    border-color: var(--alpha-border) !important;
+    color: #083A54 !important;
+  }
+
+  .dp-program-simple-card[role="button"]:hover .dp-flight-cta {
+    background: #083A54 !important;
+  }
+
+  .dp-nav-link:hover::after {
+    transform: scaleX(0) !important;
+  }
+
+  .dp-eye-lid {
+    animation: none !important;
+  }
+
+  /* Clean instant tap feedback only */
+  .dp-btn:active,
+  .btn:active,
+  .dp-flight-cta:active,
+  .dp-sophie-card[role="button"]:active,
+  .dp-program-simple-card[role="button"]:active,
+  .dp-login-home-btn:active,
+  .dp-login-fb-outline-btn:active {
+    opacity: 0.88;
+  }
+}
+
 
 
 

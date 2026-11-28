@@ -28,6 +28,35 @@ window.closeModal = function(modalId) {
 
 let dpOpenGateTimer = null;
 
+function isMobileFastMode() {
+  return Boolean(
+    window.matchMedia &&
+      (window.matchMedia("(max-width: 1024px)").matches ||
+        window.matchMedia("(hover: none) and (pointer: coarse)").matches)
+  );
+}
+
+function mountClosingGate() {
+  let curtain = document.getElementById("dpGateCurtain");
+  if (!curtain) {
+    const photoUrl =
+      (document.body && document.body.getAttribute("data-login-photo")) ||
+      "/static/images/client/galeri_02.webp";
+    curtain = document.createElement("div");
+    curtain.id = "dpGateCurtain";
+    curtain.className = "dp-gate-curtain";
+    curtain.innerHTML =
+      '<div class="dp-gate-door dp-gate-door--left">' +
+        '<img class="dp-gate-door-photo" src="' + photoUrl + '" alt="">' +
+        '<div class="dp-gate-door-fade"></div>' +
+      '</div>' +
+      '<div class="dp-gate-door dp-gate-door--right"></div>';
+    document.body.appendChild(curtain);
+  }
+  window.requestAnimationFrame(() => curtain.classList.add("is-closing"));
+  return curtain;
+}
+
 function cleanupGateCurtain() {
   const curtain = document.getElementById("dpGateCurtain");
   if (curtain) curtain.remove();
@@ -50,7 +79,7 @@ function cleanupGateCurtain() {
 function playOpenGateAnimation() {
   const openGate = document.getElementById("dpOpenGate");
   const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (!openGate || reduced) {
+  if (!openGate || reduced || isMobileFastMode()) {
     document.documentElement.classList.remove("dp-opening-gate");
     return;
   }
@@ -79,7 +108,7 @@ let dpLoginSubmitting = false;
 window.addEventListener("pageshow", (e) => {
   const isLanding = document.body && document.body.classList.contains("dp-landing-body") && !document.body.classList.contains("dp-login-page");
   const openGate = document.getElementById("dpOpenGate");
-  const shouldKeepOpening = Boolean(openGate) && document.documentElement.classList.contains("dp-opening-gate");
+  const shouldKeepOpening = !isMobileFastMode() && Boolean(openGate) && document.documentElement.classList.contains("dp-opening-gate");
 
   // Always remove any leftover closing curtain without interrupting an active opening gate
   const curtain = document.getElementById("dpGateCurtain");
@@ -87,6 +116,11 @@ window.addEventListener("pageshow", (e) => {
   document.body.classList.remove("dp-page-leaving", "dp-login-leaving");
   if (!document.querySelector(".modal-overlay.active, .dp-drawer-panel.is-open")) {
     document.body.style.overflow = "";
+  }
+
+  if (isMobileFastMode()) {
+    document.documentElement.classList.remove("dp-opening-gate");
+    return;
   }
 
   let fromLoginBack = false;
@@ -109,7 +143,7 @@ window.addEventListener("pageshow", (e) => {
 
 window.addEventListener("pagehide", () => {
   cleanupGateCurtain();
-  if (document.body && document.body.classList.contains("dp-login-page") && !dpLoginSubmitting) {
+  if (!isMobileFastMode() && document.body && document.body.classList.contains("dp-login-page") && !dpLoginSubmitting) {
     try { sessionStorage.setItem("dp_left_login", String(Date.now())); } catch (_) {}
   }
 });
@@ -117,7 +151,7 @@ window.addEventListener("pagehide", () => {
 function initMain() {
   const isLanding = document.body && document.body.classList.contains("dp-landing-body") && !document.body.classList.contains("dp-login-page");
   const openGate = document.getElementById("dpOpenGate");
-  const hasOpeningFlag = Boolean(openGate) && document.documentElement.classList.contains("dp-opening-gate");
+  const hasOpeningFlag = !isMobileFastMode() && Boolean(openGate) && document.documentElement.classList.contains("dp-opening-gate");
   if (!hasOpeningFlag) {
     cleanupGateCurtain();
   } else {
@@ -137,7 +171,7 @@ function initMain() {
         if (dpLoginSubmitting) return;
         if (typeof f.checkValidity === "function" && !f.checkValidity()) return;
         dpLoginSubmitting = true;
-        if (!reduced) {
+        if (!reduced && !isMobileFastMode()) {
           e.preventDefault();
           document.body.classList.add("dp-login-leaving");
           try { sessionStorage.setItem("dp_gate_open", "1"); } catch (_) {}
@@ -365,68 +399,131 @@ function initMain() {
     });
   });
 
-  // 7. Login-Matched Closing Gate Transition (Left photo panel + Right clean white panel, text enters after)
+  // 7. Navigation Gate Transitions (Desktop only; instant on mobile for speed & reliability)
   const prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (!prefersReduced) {
-    document.addEventListener("click", (e) => {
-      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      const link = e.target.closest("a[href]");
-      if (!link) return;
-      const href = link.getAttribute("href") || "";
-      if (!href || href.startsWith("#") || href.startsWith("javascript:") || href.startsWith("mailto:") || href.startsWith("tel:")) return;
-      if (link.target === "_blank" || link.hasAttribute("download")) return;
-      let destPath = "";
-      try {
-        const dest = new URL(link.href, window.location.origin);
-        if (dest.origin !== window.location.origin || (dest.pathname === window.location.pathname && dest.search === window.location.search)) return;
-        destPath = dest.pathname || "";
-      } catch (_) {
+  document.addEventListener("click", (e) => {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+    // 7a. Dashboard Brand Logo -> Logout + Return to Landing Page (Gate Close -> Gate Open on Desktop; instant on Mobile)
+    const brandLogoutLink = e.target.closest("a.dp-brand-home-link[data-logout-url]");
+    if (brandLogoutLink) {
+      e.preventDefault();
+      if (brandLogoutLink.dataset.loggingOut === "1") return;
+      brandLogoutLink.dataset.loggingOut = "1";
+      const logoutUrl = brandLogoutLink.getAttribute("data-logout-url") || "/logout";
+      if (prefersReduced || isMobileFastMode()) {
+        fetch(logoutUrl, { credentials: "same-origin", redirect: "follow" })
+          .catch(() => {})
+          .finally(() => {
+            window.location.href = "/";
+          });
         return;
       }
+      mountClosingGate();
+      try { sessionStorage.setItem("dp_gate_open", "1"); } catch (_) {}
+      Promise.all([
+        fetch(logoutUrl, { credentials: "same-origin", redirect: "follow" }).catch(() => {}),
+        new Promise((resolve) => window.setTimeout(resolve, 230))
+      ]).finally(() => {
+        window.location.href = "/";
+      });
+      window.setTimeout(cleanupGateCurtain, 2400);
+      return;
+    }
 
-      if (destPath === "/login" || destPath.endsWith("/login")) {
-        e.preventDefault();
-        let curtain = document.getElementById("dpGateCurtain");
-        if (!curtain) {
-          const photoUrl = document.body.getAttribute("data-login-photo") || "/static/images/client/galeri_02.webp";
-          curtain = document.createElement("div");
-          curtain.id = "dpGateCurtain";
-          curtain.className = "dp-gate-curtain";
-          curtain.innerHTML =
-            '<div class="dp-gate-door dp-gate-door--left">' +
-              '<img class="dp-gate-door-photo" src="' + photoUrl + '" alt="">' +
-              '<div class="dp-gate-door-fade"></div>' +
-            '</div>' +
-            '<div class="dp-gate-door dp-gate-door--right"></div>';
-          document.body.appendChild(curtain);
-        }
-        try { sessionStorage.setItem("dp_gate_arrived", "1"); } catch (_) {}
-        window.requestAnimationFrame(() => curtain.classList.add("is-closing"));
-        window.setTimeout(() => {
-          window.location.href = link.href;
-        }, 210);
-        // Safety fallback if navigation is cancelled or restored without pagehide
-        window.setTimeout(cleanupGateCurtain, 1800);
-        return;
+    if (prefersReduced || isMobileFastMode()) return;
+
+    const link = e.target.closest("a[href]");
+    if (!link) return;
+    const href = link.getAttribute("href") || "";
+    if (!href || href.startsWith("#") || href.startsWith("javascript:") || href.startsWith("mailto:") || href.startsWith("tel:")) return;
+    if (link.target === "_blank" || link.hasAttribute("download")) return;
+    let destPath = "";
+    try {
+      const dest = new URL(link.href, window.location.origin);
+      if (dest.origin !== window.location.origin || (dest.pathname === window.location.pathname && dest.search === window.location.search)) return;
+      destPath = dest.pathname || "";
+    } catch (_) {
+      return;
+    }
+
+    if (destPath === "/login" || destPath.endsWith("/login")) {
+      e.preventDefault();
+      mountClosingGate();
+      try { sessionStorage.setItem("dp_gate_arrived", "1"); } catch (_) {}
+      window.setTimeout(() => {
+        window.location.href = link.href;
+      }, 210);
+      window.setTimeout(cleanupGateCurtain, 1800);
+      return;
+    }
+
+    // Login -> Home: fade out login texts first, then open gate cleanly on Landing Page
+    if (document.body.classList.contains("dp-login-page") && (destPath === "/" || destPath === "/landing")) {
+      e.preventDefault();
+      document.body.classList.add("dp-login-leaving");
+      try { sessionStorage.setItem("dp_gate_open", "1"); } catch (_) {}
+      window.setTimeout(() => {
+        window.location.href = "/";
+      }, 140);
+    }
+  });
+
+  // 8. Modal Overlay Backdrop, Touch Swipe-Down Dismiss (Mobile Thumb UX) & Escape Close
+  const attachSwipeDismiss = (el, scrollChildSelector, onDismiss) => {
+    if (!el) return;
+    let startY = 0;
+    let deltaY = 0;
+    let tracking = false;
+    el.addEventListener("touchstart", (e) => {
+      if (!isMobileFastMode() || e.touches.length !== 1) return;
+      const scroller = scrollChildSelector ? el.querySelector(scrollChildSelector) : null;
+      if (scroller && scroller.scrollTop > 4) return;
+      startY = e.touches[0].clientY;
+      deltaY = 0;
+      tracking = true;
+    }, { passive: true });
+    el.addEventListener("touchmove", (e) => {
+      if (!tracking || e.touches.length !== 1) return;
+      deltaY = e.touches[0].clientY - startY;
+      if (deltaY > 8) {
+        el.style.transition = "none";
+        el.style.transform = `translateY(${Math.min(deltaY, 180)}px)`;
       }
+    }, { passive: true });
+    const finishSwipe = () => {
+      if (!tracking) return;
+      tracking = false;
+      el.style.transition = "";
+      el.style.transform = "";
+      if (deltaY > 56) {
+        onDismiss();
+      }
+    };
+    el.addEventListener("touchend", finishSwipe, { passive: true });
+    el.addEventListener("touchcancel", finishSwipe, { passive: true });
+  };
 
-      // Login -> Home: fade out login texts first, then open gate cleanly on Landing Page
-      if (document.body.classList.contains("dp-login-page") && (destPath === "/" || destPath === "/landing")) {
-        e.preventDefault();
-        document.body.classList.add("dp-login-leaving");
-        try { sessionStorage.setItem("dp_gate_open", "1"); } catch (_) {}
-        window.setTimeout(() => {
-          window.location.href = "/";
-        }, 140);
+  if (drawer && drawerBd) {
+    attachSwipeDismiss(drawer, ".dp-drawer-body", () => {
+      drawer.classList.remove("is-open");
+      drawerBd.classList.remove("is-open");
+      drawer.setAttribute("aria-hidden", "true");
+      drawerBd.setAttribute("aria-hidden", "true");
+      if (!document.querySelector(".modal-overlay.active")) {
+        document.body.style.overflow = "";
       }
     });
   }
 
-  // 8. Modal Overlay Backdrop & Escape Close
   document.querySelectorAll(".modal-overlay").forEach((overlay) => {
     overlay.addEventListener("click", (e) => {
       if (e.target === overlay) window.closeModal(overlay.id);
     });
+    const dialog = overlay.querySelector(".modal-dialog");
+    if (dialog) {
+      attachSwipeDismiss(dialog, ".modal-body", () => window.closeModal(overlay.id));
+    }
   });
 
   document.addEventListener("keydown", (e) => {
