@@ -8,11 +8,50 @@
  * - Live schedule conflict & mentor replacement handlers
  */
 
+let dpLockedScrollY = 0;
+let dpIsScrollLocked = false;
+
+function lockPageScroll() {
+  if (dpIsScrollLocked) return;
+  dpLockedScrollY = window.scrollY || window.pageYOffset || 0;
+  dpIsScrollLocked = true;
+  document.documentElement.classList.add("dp-scroll-lock");
+  document.body.style.position = "fixed";
+  document.body.style.top = `-${dpLockedScrollY}px`;
+  document.body.style.left = "0";
+  document.body.style.right = "0";
+  document.body.style.width = "100%";
+  document.body.style.overflow = "hidden";
+}
+
+function unlockPageScroll() {
+  if (document.querySelector(".modal-overlay.active, .dp-drawer-panel.is-open, .dp-mobile-menu-sheet.is-open")) {
+    return;
+  }
+  if (!dpIsScrollLocked) {
+    document.documentElement.classList.remove("dp-scroll-lock");
+    document.body.style.overflow = "";
+    return;
+  }
+  dpIsScrollLocked = false;
+  document.documentElement.classList.remove("dp-scroll-lock");
+  const prevBehavior = document.documentElement.style.scrollBehavior;
+  document.documentElement.style.scrollBehavior = "auto";
+  document.body.style.position = "";
+  document.body.style.top = "";
+  document.body.style.left = "";
+  document.body.style.right = "";
+  document.body.style.width = "";
+  document.body.style.overflow = "";
+  window.scrollTo(0, dpLockedScrollY);
+  document.documentElement.style.scrollBehavior = prevBehavior;
+}
+
 window.openModal = function(modalId) {
   const modal = document.getElementById(modalId);
   if (!modal) return;
   modal.classList.add("active");
-  document.body.style.overflow = "hidden";
+  lockPageScroll();
   const bodyEl = modal.querySelector(".modal-body");
   if (bodyEl) bodyEl.scrollTop = 0;
 };
@@ -21,9 +60,7 @@ window.closeModal = function(modalId) {
   const modal = document.getElementById(modalId);
   if (!modal) return;
   modal.classList.remove("active");
-  if (!document.querySelector(".modal-overlay.active")) {
-    document.body.style.overflow = "";
-  }
+  unlockPageScroll();
 };
 
 let dpOpenGateTimer = null;
@@ -293,7 +330,7 @@ function initMain() {
     });
   }
 
-  // 5. Program Detail Drawer (Viewport-Fixed, stays on user's screen)
+  // 5. Program Detail Drawer (Viewport-Fixed, locks background scroll on mobile)
   const drawer = document.getElementById("dpProgramDrawer");
   const drawerBd = document.getElementById("dpDrawerBackdrop");
   const drawerClose = document.getElementById("dpDrawerCloseBtn");
@@ -304,9 +341,7 @@ function initMain() {
       drawerBd.classList.remove("is-open");
       drawer.setAttribute("aria-hidden", "true");
       drawerBd.setAttribute("aria-hidden", "true");
-      if (!document.querySelector(".modal-overlay.active")) {
-        document.body.style.overflow = "";
-      }
+      unlockPageScroll();
     };
     const openProgramDrawer = (btn) => {
       if (!btn) return;
@@ -334,7 +369,9 @@ function initMain() {
       drawerBd.classList.add("is-open");
       drawer.setAttribute("aria-hidden", "false");
       drawerBd.setAttribute("aria-hidden", "false");
-      document.body.style.overflow = "hidden";
+      lockPageScroll();
+      const bodyEl = drawer.querySelector(".dp-drawer-body");
+      if (bodyEl) bodyEl.scrollTop = 0;
     };
 
     document.querySelectorAll(".dp-program-simple-card").forEach((card) => {
@@ -505,14 +542,103 @@ function initMain() {
   };
 
   if (drawer && drawerBd) {
+    drawerBd.addEventListener("touchmove", (e) => {
+      if (e.target === drawerBd) e.preventDefault();
+    }, { passive: false });
     attachSwipeDismiss(drawer, ".dp-drawer-body", () => {
       drawer.classList.remove("is-open");
       drawerBd.classList.remove("is-open");
       drawer.setAttribute("aria-hidden", "true");
       drawerBd.setAttribute("aria-hidden", "true");
-      if (!document.querySelector(".modal-overlay.active")) {
-        document.body.style.overflow = "";
+      unlockPageScroll();
+    });
+  }
+
+  // 8b. Dashboard Mobile Bottom-Sheet Menu (replaces clunky sidebar on mobile)
+  const menuSheet = document.getElementById("dpMobileMenuSheet");
+  const menuBackdrop = document.getElementById("dpMobileMenuBackdrop");
+  const menuBody = document.getElementById("dpMobileMenuBody");
+  const menuTriggers = document.querySelectorAll(".dp-mobile-menu-trigger");
+  if (menuSheet && menuBackdrop && menuBody && menuTriggers.length > 0) {
+    // Populate clean 2-column menu sheet from sidebar nav (100% RBAC parity)
+    const sidebarNav = document.querySelector("#sidebar .sidebar-nav");
+    if (sidebarNav && !menuBody.childElementCount) {
+      const grid = document.createElement("div");
+      grid.className = "dp-mobile-menu-grid";
+      sidebarNav.querySelectorAll("a.nav-link").forEach((link) => {
+        const tile = document.createElement("a");
+        tile.href = link.getAttribute("href") || "#";
+        tile.className = "dp-mobile-menu-tile" + (link.classList.contains("active") ? " is-active" : "");
+        const iconNode = link.querySelector(".nav-icon");
+        if (iconNode) {
+          const ic = iconNode.cloneNode(true);
+          ic.className = "dp-mobile-menu-tile-ic";
+          tile.appendChild(ic);
+        }
+        const lbl = document.createElement("span");
+        lbl.className = "dp-mobile-menu-tile-lbl";
+        lbl.textContent = link.textContent.trim();
+        tile.appendChild(lbl);
+        grid.appendChild(tile);
+      });
+      menuBody.appendChild(grid);
+
+      const logoutLink = document.querySelector("#sidebar .dp-fc-logout-link");
+      if (logoutLink) {
+        const foot = document.createElement("div");
+        foot.className = "dp-mobile-menu-foot";
+        const outBtn = document.createElement("a");
+        outBtn.href = logoutLink.getAttribute("href") || "/logout";
+        outBtn.className = "dp-mobile-menu-logout";
+        outBtn.textContent = "Keluar dari Akun";
+        foot.appendChild(outBtn);
+        menuBody.appendChild(foot);
       }
+    }
+
+    const closeMenuSheet = () => {
+      menuSheet.classList.remove("is-open");
+      menuBackdrop.classList.remove("is-open");
+      menuSheet.setAttribute("aria-hidden", "true");
+      menuBackdrop.setAttribute("aria-hidden", "true");
+      menuTriggers.forEach((b) => {
+        b.classList.remove("active");
+        b.setAttribute("aria-expanded", "false");
+      });
+      unlockPageScroll();
+    };
+
+    const openMenuSheet = () => {
+      menuSheet.classList.add("is-open");
+      menuBackdrop.classList.add("is-open");
+      menuSheet.setAttribute("aria-hidden", "false");
+      menuBackdrop.setAttribute("aria-hidden", "false");
+      menuTriggers.forEach((b) => {
+        b.classList.add("active");
+        b.setAttribute("aria-expanded", "true");
+      });
+      lockPageScroll();
+      menuBody.scrollTop = 0;
+    };
+
+    menuTriggers.forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        if (menuSheet.classList.contains("is-open")) closeMenuSheet();
+        else openMenuSheet();
+      });
+    });
+
+    menuBackdrop.addEventListener("click", closeMenuSheet);
+    menuBackdrop.addEventListener("touchmove", (e) => {
+      if (e.target === menuBackdrop) e.preventDefault();
+    }, { passive: false });
+    attachSwipeDismiss(menuSheet, ".dp-mobile-menu-sheet-body", closeMenuSheet);
+    window.addEventListener("resize", () => {
+      if (window.innerWidth > 1023 && menuSheet.classList.contains("is-open")) closeMenuSheet();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && menuSheet.classList.contains("is-open")) closeMenuSheet();
     });
   }
 
@@ -520,6 +646,9 @@ function initMain() {
     overlay.addEventListener("click", (e) => {
       if (e.target === overlay) window.closeModal(overlay.id);
     });
+    overlay.addEventListener("touchmove", (e) => {
+      if (e.target === overlay) e.preventDefault();
+    }, { passive: false });
     const dialog = overlay.querySelector(".modal-dialog");
     if (dialog) {
       attachSwipeDismiss(dialog, ".modal-body", () => window.closeModal(overlay.id));
@@ -531,7 +660,7 @@ function initMain() {
       const activeModals = document.querySelectorAll(".modal-overlay.active");
       if (activeModals.length > 0) {
         activeModals.forEach((m) => m.classList.remove("active"));
-        document.body.style.overflow = "";
+        unlockPageScroll();
       }
       if (sidebar && sidebar.classList.contains("show")) closeSidebar();
     }

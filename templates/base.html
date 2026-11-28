@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=31">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=32">
   <script>
     (function () {
       try {
@@ -252,8 +252,17 @@
     </div>
   </div>
 
-  <!-- FIXED BOTTOM NAVIGATION BAR KHUSUS SMARTPHONE (SESUAI SPESIFIKASI 2) -->
+  <!-- MOBILE THUMB-ZONE MENU BOTTOM SHEET (PENGGANTI SIDEBAR DI MOBILE) -->
   {% if current_user %}
+    <div class="dp-mobile-menu-backdrop" id="dpMobileMenuBackdrop" aria-hidden="true"></div>
+    <div class="dp-mobile-menu-sheet" id="dpMobileMenuSheet" role="dialog" aria-modal="true" aria-label="Menu Navigasi" aria-hidden="true">
+      <div class="dp-mobile-menu-sheet-head">
+        <span class="dp-mobile-menu-sheet-title">Menu</span>
+      </div>
+      <div class="dp-mobile-menu-sheet-body" id="dpMobileMenuBody"></div>
+    </div>
+
+    <!-- FIXED BOTTOM NAVIGATION BAR KHUSUS SMARTPHONE -->
     <nav class="mobile-bottom-nav">
       {% if current_user.role == 'admin' %}
         <a href="{{ url_for('admin.dashboard') }}" class="mobile-bottom-item {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
@@ -268,7 +277,7 @@
           <span class="bottom-icon">{{ icon('student') }}</span>
           <span>Siswa</span>
         </a>
-        <button type="button" class="mobile-bottom-item" onclick="var sb=document.getElementById('sidebar'); if(sb){sb.classList.toggle('show');} var bd=document.getElementById('sidebarBackdrop'); if(bd){bd.classList.toggle('active');}" style="background:none;border:none;cursor:pointer;">
+        <button type="button" class="mobile-bottom-item dp-mobile-menu-trigger" aria-expanded="false" aria-controls="dpMobileMenuSheet" style="background:none;border:none;cursor:pointer;">
           <span class="bottom-icon">{{ icon('menu') }}</span>
           <span>Menu</span>
         </button>
@@ -285,7 +294,7 @@
           <span class="bottom-icon">{{ icon('credit-card') }}</span>
           <span>Honor</span>
         </a>
-        <button type="button" class="mobile-bottom-item" onclick="var sb=document.getElementById('sidebar'); if(sb){sb.classList.toggle('show');} var bd=document.getElementById('sidebarBackdrop'); if(bd){bd.classList.toggle('active');}" style="background:none;border:none;cursor:pointer;">
+        <button type="button" class="mobile-bottom-item dp-mobile-menu-trigger" aria-expanded="false" aria-controls="dpMobileMenuSheet" style="background:none;border:none;cursor:pointer;">
           <span class="bottom-icon">{{ icon('menu') }}</span>
           <span>Menu</span>
         </button>
@@ -302,7 +311,24 @@
           <span class="bottom-icon">{{ icon('calendar') }}</span>
           <span>Jadwal</span>
         </a>
-        <button type="button" class="mobile-bottom-item" onclick="var sb=document.getElementById('sidebar'); if(sb){sb.classList.toggle('show');} var bd=document.getElementById('sidebarBackdrop'); if(bd){bd.classList.toggle('active');}" style="background:none;border:none;cursor:pointer;">
+        <button type="button" class="mobile-bottom-item dp-mobile-menu-trigger" aria-expanded="false" aria-controls="dpMobileMenuSheet" style="background:none;border:none;cursor:pointer;">
+          <span class="bottom-icon">{{ icon('menu') }}</span>
+          <span>Menu</span>
+        </button>
+      {% elif current_user.role == 'parent' %}
+        <a href="{{ url_for('parent.dashboard') }}" class="mobile-bottom-item {% if request.endpoint == 'parent.dashboard' %}active{% endif %}">
+          <span class="bottom-icon">{{ icon('home') }}</span>
+          <span>Beranda</span>
+        </a>
+        <a href="{{ url_for('parent.schedules') }}" class="mobile-bottom-item {% if request.endpoint == 'parent.schedules' %}active{% endif %}">
+          <span class="bottom-icon">{{ icon('calendar') }}</span>
+          <span>Jadwal</span>
+        </a>
+        <a href="{{ url_for('parent.bills') }}" class="mobile-bottom-item {% if request.endpoint == 'parent.bills' %}active{% endif %}">
+          <span class="bottom-icon">{{ icon('credit-card') }}</span>
+          <span>Tagihan</span>
+        </a>
+        <button type="button" class="mobile-bottom-item dp-mobile-menu-trigger" aria-expanded="false" aria-controls="dpMobileMenuSheet" style="background:none;border:none;cursor:pointer;">
           <span class="bottom-icon">{{ icon('menu') }}</span>
           <span>Menu</span>
         </button>
@@ -310,7 +336,7 @@
     </nav>
   {% endif %}
 
-  <script src="{{ url_for('static', filename='js/main.js') }}?v=31" defer></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}?v=32" defer></script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>
