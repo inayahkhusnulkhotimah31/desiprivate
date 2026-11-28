@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=14">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=15">
   {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -145,24 +145,13 @@
         {% endif %}
       </nav>
 
-      <div class="sidebar-footer">
-        <div class="user-badge" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: var(--bg-app); border-radius: 12px; border: 1px solid var(--border-subtle);">
-          <div class="user-avatar" style="width: 36px; height: 36px; border-radius: 50%; background: var(--blue-primary); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0;">
-            {{ current_user.full_name[:1] if (current_user and current_user.full_name) else 'U' }}
-          </div>
-          <div class="user-info" style="min-width: 0; flex: 1;">
-            <div class="user-name" style="font-size: 13px; font-weight: 700; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-              {{ current_user.full_name if (current_user and current_user.full_name) else 'Pengguna' }}
-            </div>
-            <div class="user-role-label" style="font-size: 11px; color: #64748B;">
-              {% if current_user.role == 'admin' %}Admin Pengelola
-              {% elif current_user.role == 'owner' %}Pemilik
-              {% elif current_user.role == 'mentor' %}Mentor
-              {% elif current_user.role == 'parent' %}Orang Tua / Wali
-              {% endif %}
-            </div>
-          </div>
-        </div>
+      <div class="sidebar-footer dp-fc-sidebar-footer">
+        {% if current_user %}
+          <a href="{{ url_for('auth.logout') }}" class="dp-fc-logout-link" title="Keluar dari sistem">
+            <span class="nav-icon">{{ icon('logout') }}</span>
+            <span>Keluar</span>
+          </a>
+        {% endif %}
       </div>
     </aside>
 
@@ -171,7 +160,7 @@
 
     <!-- KONTEN UTAMA -->
     <div class="main-wrapper">
-      <header class="top-navbar">
+      <header class="top-navbar dp-fc-topbar">
         <div class="top-navbar-left">
           <button class="mobile-toggle-btn" id="mobileToggleBtn" aria-label="Buka Navigasi">{{ icon('menu') }}</button>
           
@@ -183,36 +172,45 @@
 
           <div class="page-title-box">
             <h1>{% block page_title %}DESI PRIVAT{% endblock %}</h1>
-            <p>{% block page_subtitle %}Sistem Informasi Manajemen Tempat Les Privat{% endblock %}</p>
+            <p class="dp-fc-topbar-sub">{% block page_subtitle %}Sistem Informasi Manajemen Tempat Les Privat{% endblock %}</p>
           </div>
         </div>
 
         <div class="navbar-actions">
-          <!-- SEARCH PILL SESUAI MOCKUP GAMBAR 3 -->
-          <div class="navbar-search" style="display: flex;">
-            <span class="search-icon">{{ icon('search') }}</span>
-            <input type="text" class="navbar-search-input" placeholder="Cari data..." id="topNavbarSearch" onkeyup="if(event.key==='Enter'){window.location.href='{{ url_for('admin.students') if (current_user and current_user.role=='admin') else '#' }}?q='+encodeURIComponent(this.value);}">
-          </div>
+          {% if current_user and current_user.role == 'owner' %}
+            <span class="dp-fc-readonly-label">Mode Baca Saja</span>
+          {% else %}
+            <div class="navbar-search dp-fc-search" style="display: flex;">
+              <span class="search-icon">{{ icon('search') }}</span>
+              <input type="text" class="navbar-search-input" placeholder="Cari..." id="topNavbarSearch" onkeyup="if(event.key==='Enter'){window.location.href='{{ url_for('admin.students') if (current_user and current_user.role=='admin') else '#' }}?q='+encodeURIComponent(this.value);}">
+            </div>
+          {% endif %}
 
           {% if current_user %}
             {% if current_user.role == 'admin' %}
-              <a href="{{ url_for('admin.notifications_center') }}" class="notif-bell-btn" title="Pusat Notifikasi">
+              <a href="{{ url_for('admin.notifications_center') }}" class="notif-bell-btn dp-fc-bell" title="Pusat Notifikasi" aria-label="Pusat Notifikasi">
                 {{ icon('bell') }}
                 {% if unread_count > 0 %}
-                  <span class="notif-badge-count">{{ unread_count }}</span>
+                  <span class="notif-dot"></span>
                 {% else %}
                   <span class="notif-dot"></span>
                 {% endif %}
               </a>
             {% else %}
-              <span class="notif-bell-btn" title="Notifikasi Sistem" style="cursor: pointer;">
+              <span class="notif-bell-btn dp-fc-bell" title="Notifikasi Sistem" aria-label="Notifikasi Sistem" style="cursor: pointer;">
                 {{ icon('bell') }}
                 <span class="notif-dot"></span>
               </span>
             {% endif %}
-            <a href="{{ url_for('auth.logout') }}" class="navbar-logout-btn" title="Keluar dari sistem">
-              {{ icon('logout') }} <span class="logout-text">Keluar</span>
-            </a>
+
+            <div class="dp-fc-user-chip">
+              <span class="dp-fc-user-avatar">
+                {{ current_user.full_name[:2]|upper if (current_user and current_user.full_name) else 'DP' }}
+              </span>
+              <span class="dp-fc-user-name">
+                {{ current_user.full_name if (current_user and current_user.full_name) else 'Pengguna' }}
+              </span>
+            </div>
           {% endif %}
         </div>
       </header>
@@ -232,10 +230,6 @@
 
         {% block content %}{% endblock %}
       </main>
-
-      <footer style="padding: 16px 28px; text-align: center; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border-subtle); background: var(--white);">
-        &copy; {{ current_year }} <strong>DESI PRIVAT</strong> - Sistem Informasi Manajemen Tempat Les Privat. Hak cipta dilindungi undang-undang.
-      </footer>
     </div>
   </div>
 
@@ -297,7 +291,7 @@
     </nav>
   {% endif %}
 
-  <script src="{{ url_for('static', filename='js/main.js') }}?v=14" defer></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}?v=15" defer></script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

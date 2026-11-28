@@ -7347,6 +7347,370 @@ img,
   background: transparent !important;
 }
 
+/* ==========================================================================
+   V15 FIGCRAFT 1:1 DASHBOARD SHELL & GLOBAL COMPONENT UNIFICATION
+   MATCHES `00 - desi private.figcraft` PAGES 02–06 (ADMIN, OWNER, MENTOR, PARENT)
+   ========================================================================== */
+
+/* 1. Kill legacy cyan/lavender top stripes & old glass cards on ALL pages */
+.stat-card::after,
+.kpi-card::after {
+  content: none !important;
+  display: none !important;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 18px 20px;
+  background: #FFFFFF !important;
+  border: 1px solid #E5E7EB !important;
+  border-radius: 16px !important;
+  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.04) !important;
+}
+
+.stat-card:hover {
+  transform: none !important;
+  border-color: #BAE4F8 !important;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.05) !important;
+}
+
+/* Hide decorative colored stat-icon blobs on legacy sub-pages so KPI strip stays clean like FigCraft */
+.stat-card .stat-icon {
+  display: none !important;
+}
+
+/* 2. FigCraft Sidebar (Pure White 248px, Sky Active Pill + 3.5px Blue Indicator, Quiet Keluar Footer) */
+.sidebar {
+  width: 248px !important;
+  background: #FFFFFF !important;
+  border-right: 1px solid #E5E7EB !important;
+}
+
+.main-wrapper {
+  margin-left: 248px;
+  width: calc(100% - 248px);
+}
+
+.sidebar-header {
+  height: 76px;
+  padding: 0 20px !important;
+  background: #FFFFFF !important;
+  border-bottom: 1px solid #E5E7EB !important;
+}
+
+.sidebar-nav {
+  padding: 14px 14px !important;
+  gap: 4px !important;
+}
+
+.sidebar-nav .nav-section-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #9CA3AF;
+  padding: 12px 12px 4px 12px;
+}
+
+.sidebar .nav-link {
+  height: 40px;
+  padding: 0 12px !important;
+  border-radius: 12px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #374151 !important;
+  border: 1px solid transparent !important;
+  border-left: 1px solid transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+  position: relative;
+}
+
+.sidebar .nav-link:hover {
+  background: #F7F7F5 !important;
+  color: #111827 !important;
+  transform: none !important;
+}
+
+.sidebar .nav-link.active {
+  background: #EBF7FD !important;
+  color: #0072A8 !important;
+  font-weight: 700 !important;
+  border: 1px solid #BAE4F8 !important;
+  box-shadow: none !important;
+}
+
+.sidebar .nav-link.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3.5px;
+  border-radius: 99px;
+  background: #0093D6;
+}
+
+.sidebar .nav-link .nav-icon {
+  width: 20px;
+  height: 20px;
+  color: #6B7280;
+}
+
+.sidebar .nav-link.active .nav-icon,
+.sidebar .nav-link.active .svg-icon {
+  color: #0072A8 !important;
+  stroke: #0072A8 !important;
+}
+
+.dp-fc-sidebar-footer {
+  padding: 12px 14px !important;
+  border-top: 1px solid #E5E7EB !important;
+  background: #FFFFFF !important;
+}
+
+.dp-fc-logout-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6B7280;
+  text-decoration: none;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.dp-fc-logout-link:hover {
+  background: #FEF2F2;
+  color: #B91C1C;
+}
+
+/* 3. FigCraft Minimalist Topbar (76px, Single-Line Title, Search 12px, Bell 36x36, Avatar + Name) */
+.dp-fc-topbar {
+  height: 76px !important;
+  padding: 0 32px !important;
+  background: #FFFFFF !important;
+  border-bottom: 1px solid #E5E7EB !important;
+}
+
+.dp-fc-topbar .page-title-box h1 {
+  font-family: var(--font-display, 'Plus Jakarta Sans', sans-serif);
+  font-size: 19px !important;
+  font-weight: 800 !important;
+  color: #111827 !important;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.dp-fc-topbar-sub {
+  display: none !important;
+}
+
+.dp-fc-search {
+  height: 36px !important;
+  width: 210px;
+  padding: 0 12px !important;
+  border-radius: 12px !important;
+  background: #F7F7F5 !important;
+  border: 1px solid #E5E7EB !important;
+  box-shadow: none !important;
+}
+
+.dp-fc-search .navbar-search-input {
+  font-size: 12.5px;
+  color: #111827;
+  background: transparent;
+}
+
+.dp-fc-bell {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 12px !important;
+  background: #F7F7F5 !important;
+  border: 1px solid #E5E7EB !important;
+  box-shadow: none !important;
+  color: #374151 !important;
+}
+
+.dp-fc-bell:hover {
+  background: #EBF7FD !important;
+  border-color: #BAE4F8 !important;
+  color: #0072A8 !important;
+  transform: none !important;
+}
+
+.dp-fc-readonly-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #8A5629;
+  padding: 0 6px;
+}
+
+.dp-fc-user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 4px;
+}
+
+.dp-fc-user-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 9999px;
+  background: #EBF7FD;
+  color: #0072A8;
+  font-size: 11px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dp-fc-user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  white-space: nowrap;
+}
+
+/* 4. FigCraft Primary/Secondary/Caramel Solid Buttons (12px Radius, No Muddy Gradients) */
+.btn-primary {
+  background: #0093D6 !important;
+  border: 1px solid #0093D6 !important;
+  color: #FFFFFF !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+
+.btn-primary:hover {
+  background: #0072A8 !important;
+  border-color: #0072A8 !important;
+  color: #FFFFFF !important;
+}
+
+.btn-secondary {
+  background: #FFFFFF !important;
+  border: 1px solid #E5E7EB !important;
+  color: #111827 !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+
+.btn-secondary:hover {
+  background: #F7F7F5 !important;
+  border-color: #D1D5DB !important;
+}
+
+.btn-terracotta {
+  background: #A66B37 !important;
+  border: 1px solid #A66B37 !important;
+  color: #FFFFFF !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+
+.btn-terracotta:hover {
+  background: #8A5629 !important;
+  border-color: #8A5629 !important;
+}
+
+.btn-danger {
+  background: #B91C1C !important;
+  border: 1px solid #B91C1C !important;
+  color: #FFFFFF !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+
+/* 5. FigCraft Clean Tables & Scrollable Agenda Viewport across ALL Pages */
+.card-header {
+  background: #FFFFFF !important;
+  border-bottom: 1px solid #E5E7EB !important;
+  padding: 18px 22px !important;
+}
+
+.table-desi thead th {
+  background: #F7F7F5 !important;
+  color: #6B7280 !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom: 1px solid #E5E7EB !important;
+  padding: 12px 16px !important;
+}
+
+.table-desi tbody td {
+  background: #FFFFFF;
+  color: #374151;
+  font-size: 13px;
+  padding: 14px 16px !important;
+  border-bottom: 1px solid #F1F1EE !important;
+}
+
+.table-desi tbody tr:hover td {
+  background: #FAFAF8 !important;
+}
+
+.dp-admin-grid-v13 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 24px;
+  align-items: start;
+}
+
+.dp-agenda-scroll-wrap {
+  background: #F7F7F5;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.dp-agenda-scroll {
+  max-height: 460px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 4px;
+}
+
+.dp-agenda-item {
+  background: #FFFFFF !important;
+  border: 1px solid #E5E7EB !important;
+  border-radius: 12px !important;
+  padding: 12px 14px !important;
+  box-shadow: none !important;
+}
+
+@media (max-width: 1120px) {
+  .dp-admin-grid-v13 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1023px) {
+  .main-wrapper {
+    margin-left: 0;
+    width: 100%;
+  }
+  .dp-fc-topbar {
+    padding: 0 16px !important;
+  }
+  .dp-fc-search,
+  .dp-fc-user-name {
+    display: none !important;
+  }
+}
+
 
 
 
