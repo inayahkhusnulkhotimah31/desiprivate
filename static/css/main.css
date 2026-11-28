@@ -6643,8 +6643,6 @@ body {
 .dp-float-icon-btn,
 .dp-mobile-menu-btn,
 .notif-bell-btn,
-.mobile-toggle-btn,
-.sidebar-close-btn,
 .modal-close-btn,
 .dp-drawer-close,
 .nav-icon {
@@ -6654,6 +6652,11 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+.mobile-toggle-btn,
+.sidebar-close-btn {
+  display: none !important;
 }
 
 .dp-eye-btn svg,

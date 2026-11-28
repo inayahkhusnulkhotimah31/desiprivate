@@ -192,12 +192,14 @@ function initMain() {
     if (!document.querySelector(".modal-overlay.active")) document.body.style.overflow = "";
   }
 
-  if (toggleBtn && sidebar) {
-    toggleBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (sidebar.classList.contains("show")) closeSidebar();
-      else openSidebar();
-    });
+  if (sidebar) {
+    if (toggleBtn) {
+      toggleBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (sidebar.classList.contains("show")) closeSidebar();
+        else openSidebar();
+      });
+    }
     if (closeBtn) closeBtn.addEventListener("click", closeSidebar);
     if (backdrop) backdrop.addEventListener("click", closeSidebar);
     sidebar.querySelectorAll(".sidebar-nav a").forEach((link) => {

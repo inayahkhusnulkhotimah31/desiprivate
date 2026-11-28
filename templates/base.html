@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=28">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=29">
   <script>
     (function () {
       try {
@@ -40,7 +40,6 @@
             <div class="sidebar-brand-title"><span class="brand-desi" style="color: var(--blue-primary);">DESI</span> <span class="brand-privat" style="color: var(--caramel);">PRIVAT</span></div>
           </div>
         </a>
-        <button type="button" class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Tutup Menu">{{ icon('close') }}</button>
       </div>
 
       <nav class="sidebar-nav">
@@ -179,8 +178,6 @@
     <div class="main-wrapper">
       <header class="top-navbar dp-fc-topbar">
         <div class="top-navbar-left">
-          <button class="mobile-toggle-btn" id="mobileToggleBtn" aria-label="Buka Navigasi">{{ icon('menu') }}</button>
-          
           <!-- BRAND LOGO UNTUK MOBILE TOPBAR (KLIK KEMBALI KE HOME) -->
           <a href="/" class="mobile-brand-center dp-brand-home-link" style="display: none;" aria-label="Kembali ke Beranda DESI PRIVAT" title="Kembali ke Beranda">
             <img src="{{ url_for('static', filename='images/client/logo_desi_privat.webp') }}" class="dp-brand-logo-photo dp-brand-logo-photo--sm" width="30" height="30" draggable="false" decoding="async" alt="Logo DESI PRIVAT">
@@ -308,7 +305,7 @@
     </nav>
   {% endif %}
 
-  <script src="{{ url_for('static', filename='js/main.js') }}?v=28" defer></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}?v=29" defer></script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>
