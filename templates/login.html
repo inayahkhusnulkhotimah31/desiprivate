@@ -8,10 +8,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" type="image/webp" href="{{ url_for('static', filename='images/client/logo_desi_privat.webp') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=27">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=28">
   <script>
     (function () {
       try {
+        sessionStorage.removeItem("dp_gate_open");
         if (sessionStorage.getItem("dp_gate_arrived") === "1") {
           sessionStorage.removeItem("dp_gate_arrived");
           document.documentElement.classList.add("dp-from-gate");
@@ -55,92 +56,85 @@
       </div>
     </section>
 
-    <!-- GERBANG KANAN: PANEL PUTIH BERSIH, ELEMEN FORM MUNCUL SATU PER SATU BELAKANGAN -->
+    <!-- GERBANG KANAN: PANEL PUTIH BERSIH GAYA EDITORIAL MINIMALIS (FACEBOOK-STYLE) -->
     <main class="dp-login-panel dp-login-gate-right">
       <div class="dp-login-card-wrap">
-        <div class="dp-login-card">
-        <h2 class="login-card-title dp-gate-stagger" style="--stagger-i: 1; margin: 0 0 24px 0; font-size: 24px; color: var(--text-main);">
-          Masuk <span style="display:none;">Masuk ke Sistem</span>
-        </h2>
+        <div class="dp-login-card dp-login-card--fb">
+          <h2 class="login-card-title dp-login-fb-title dp-gate-stagger" style="--stagger-i: 1;">
+            Masuk ke DESI PRIVAT<span style="display:none;"> Masuk ke Sistem</span>
+          </h2>
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert-box alert-{{ category }} dp-gate-stagger" style="--stagger-i: 2; margin-bottom: 18px;">
-                <div>{{ message }}</div>
-                <button type="button" onclick="this.parentElement.style.display='none'" style="background:none;border:none;cursor:pointer;font-weight:700;" aria-label="Tutup">&times;</button>
-              </div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              {% for category, message in messages %}
+                <div class="alert-box alert-{{ category }} dp-gate-stagger" style="--stagger-i: 2; margin-bottom: 16px;">
+                  <div>{{ message }}</div>
+                  <button type="button" onclick="this.parentElement.style.display='none'" style="background:none;border:none;cursor:pointer;font-weight:700;" aria-label="Tutup">&times;</button>
+                </div>
+              {% endfor %}
+            {% endif %}
+          {% endwith %}
 
-        <form method="POST" action="{{ url_for('auth.login') }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <form method="POST" action="{{ url_for('auth.login') }}" id="dpLoginForm" class="dp-login-fb-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-          <div class="form-group dp-gate-stagger" style="--stagger-i: 2; margin-bottom: 18px;">
-            <label class="form-label" for="usernameInput" style="font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; display: block;">
-              ID Pengguna
-            </label>
-            <input
-              type="text"
-              class="login-form-input"
-              id="usernameInput"
-              name="username"
-              autocomplete="username"
-              placeholder="Masukkan ID pengguna Anda"
-              required
-              autofocus
-              style="font-size: 15px; min-height: 48px;"
-            >
-          </div>
-
-          <div class="form-group dp-gate-stagger" style="--stagger-i: 3; margin-bottom: 14px;">
-            <label class="form-label" for="passwordInput" style="font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; display: block;">
-              Kata Sandi
-            </label>
-            <div class="login-input-group">
+            <div class="dp-login-fb-field dp-gate-stagger" style="--stagger-i: 2;">
+              <label class="dp-sr-only" for="usernameInput">ID Pengguna</label>
               <input
-                type="password"
-                class="login-form-input"
-                id="passwordInput"
-                name="password"
-                autocomplete="current-password"
-                placeholder="Masukkan kata sandi"
+                type="text"
+                class="login-form-input dp-login-fb-input"
+                id="usernameInput"
+                name="username"
+                autocomplete="username"
+                placeholder="ID Pengguna"
                 required
-                style="padding-right: 54px; font-size: 15px; min-height: 48px;"
+                autofocus
               >
-              <button type="button" class="dp-eye-toggle-btn" id="togglePasswordBtn" aria-label="Tampilkan kata sandi" aria-pressed="false" title="Tampilkan kata sandi">
-                <svg class="dp-eye-svg dp-eye-swap dp-eye-swap--open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path class="dp-eye-lid" d="M2 12C4.5 7.5 8 5.5 12 5.5C16 5.5 19.5 7.5 22 12C19.5 16.5 16 18.5 12 18.5C8 18.5 4.5 16.5 2 12Z"/>
-                  <circle class="dp-eye-iris" cx="12" cy="12" r="3.2"/>
-                  <circle class="dp-eye-pupil" cx="12" cy="12" r="1.15" fill="currentColor" stroke="none"/>
-                </svg>
-                <svg class="dp-eye-svg dp-eye-swap dp-eye-swap--closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
-                  <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5.5c3.9 0 7.4 2 9.8 6.5a13.16 13.16 0 0 1-1.67 2.68"/>
-                  <path d="M6.61 6.61A13.526 13.526 0 0 0 2.2 12c2.4 4.5 5.9 6.5 9.8 6.5a9.74 9.74 0 0 0 5.39-1.61"/>
-                  <line x1="2" y1="2" x2="22" y2="22"/>
-                </svg>
-              </button>
             </div>
+
+            <div class="dp-login-fb-field dp-gate-stagger" style="--stagger-i: 3;">
+              <label class="dp-sr-only" for="passwordInput">Kata Sandi</label>
+              <div class="login-input-group">
+                <input
+                  type="password"
+                  class="login-form-input dp-login-fb-input"
+                  id="passwordInput"
+                  name="password"
+                  autocomplete="current-password"
+                  placeholder="Kata sandi"
+                  required
+                  style="padding-right: 54px;"
+                >
+                <button type="button" class="dp-eye-toggle-btn" id="togglePasswordBtn" aria-label="Tampilkan kata sandi" aria-pressed="false" title="Tampilkan kata sandi">
+                  <svg class="dp-eye-svg dp-eye-swap dp-eye-swap--open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path class="dp-eye-lid" d="M2 12C4.5 7.5 8 5.5 12 5.5C16 5.5 19.5 7.5 22 12C19.5 16.5 16 18.5 12 18.5C8 18.5 4.5 16.5 2 12Z"/>
+                    <circle class="dp-eye-iris" cx="12" cy="12" r="3.2"/>
+                    <circle class="dp-eye-pupil" cx="12" cy="12" r="1.15" fill="currentColor" stroke="none"/>
+                  </svg>
+                  <svg class="dp-eye-svg dp-eye-swap dp-eye-swap--closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                    <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5.5c3.9 0 7.4 2 9.8 6.5a13.16 13.16 0 0 1-1.67 2.68"/>
+                    <path d="M6.61 6.61A13.526 13.526 0 0 0 2.2 12c2.4 4.5 5.9 6.5 9.8 6.5a9.74 9.74 0 0 0 5.39-1.61"/>
+                    <line x1="2" y1="2" x2="22" y2="22"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" class="login-btn-submit dp-btn dp-btn-caramel dp-login-fb-submit dp-gate-stagger" style="--stagger-i: 4;">
+              Masuk
+            </button>
+          </form>
+
+          <div class="dp-login-fb-forgot dp-gate-stagger" style="--stagger-i: 5;">
+            <a href="#forgotPasswordModal" onclick="openModal('forgotPasswordModal'); return false;">Lupa kata sandi?</a>
           </div>
 
-          <div class="login-remember-row dp-gate-stagger" style="--stagger-i: 4; margin-bottom: 22px; font-size: 14px;">
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;">
-              <input type="checkbox" name="remember" style="accent-color: var(--caramel); width: 16px; height: 16px;">
-              <span>Ingat Saya</span>
-            </label>
-            <a href="#forgotPasswordModal" onclick="openModal('forgotPasswordModal'); return false;" style="color: var(--caramel-hover); font-weight: 700; text-decoration: none;">Lupa Kata Sandi?</a>
+          <div class="dp-login-fb-secondary dp-gate-stagger" style="--stagger-i: 6;">
+            <a href="https://wa.me/6285242009811" target="_blank" rel="noopener noreferrer" class="dp-login-fb-outline-btn">
+              Hubungi Admin
+            </a>
           </div>
-
-          <button type="submit" class="login-btn-submit dp-btn dp-btn-caramel dp-gate-stagger" style="--stagger-i: 5; width: 100%; min-height: 48px; font-size: 15px; font-weight: 700; border: none;">
-            Masuk
-          </button>
-        </form>
-
-        <div class="login-help-link dp-gate-stagger" style="--stagger-i: 6; margin-top: 20px; font-size: 13.5px; color: var(--text-muted); text-align: center;">
-          Butuh bantuan? <a href="https://wa.me/6285242009811" target="_blank" rel="noopener noreferrer" style="color: var(--caramel-hover); font-weight: 700; text-decoration: none;">Hubungi Admin</a>
-        </div>
         </div>
       </div>
     </main>
@@ -174,6 +168,6 @@
     </div>
   </div>
 
-  <script src="{{ url_for('static', filename='js/main.js') }}?v=23" defer></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}?v=28" defer></script>
 </body>
 </html>

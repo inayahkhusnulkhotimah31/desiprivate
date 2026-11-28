@@ -79,7 +79,7 @@ let dpLoginSubmitting = false;
 window.addEventListener("pageshow", (e) => {
   const isLanding = document.body && document.body.classList.contains("dp-landing-body") && !document.body.classList.contains("dp-login-page");
   const openGate = document.getElementById("dpOpenGate");
-  const shouldKeepOpening = isLanding && document.documentElement.classList.contains("dp-opening-gate");
+  const shouldKeepOpening = Boolean(openGate) && document.documentElement.classList.contains("dp-opening-gate");
 
   // Always remove any leftover closing curtain without interrupting an active opening gate
   const curtain = document.getElementById("dpGateCurtain");
@@ -89,8 +89,8 @@ window.addEventListener("pageshow", (e) => {
     document.body.style.overflow = "";
   }
 
+  let fromLoginBack = false;
   if (isLanding) {
-    let fromLoginBack = false;
     try {
       const leftTs = Number(sessionStorage.getItem("dp_left_login") || "0");
       if (leftTs && Date.now() - leftTs < 4000) {
@@ -100,10 +100,10 @@ window.addEventListener("pageshow", (e) => {
         sessionStorage.removeItem("dp_left_login");
       }
     } catch (_) {}
+  }
 
-    if ((shouldKeepOpening || (e.persisted && fromLoginBack) || fromLoginBack) && (!openGate || openGate.dataset.animating !== "1")) {
-      playOpenGateAnimation();
-    }
+  if (openGate && (shouldKeepOpening || (isLanding && fromLoginBack)) && openGate.dataset.animating !== "1") {
+    playOpenGateAnimation();
   }
 });
 
@@ -116,7 +116,8 @@ window.addEventListener("pagehide", () => {
 
 function initMain() {
   const isLanding = document.body && document.body.classList.contains("dp-landing-body") && !document.body.classList.contains("dp-login-page");
-  const hasOpeningFlag = isLanding && document.documentElement.classList.contains("dp-opening-gate");
+  const openGate = document.getElementById("dpOpenGate");
+  const hasOpeningFlag = Boolean(openGate) && document.documentElement.classList.contains("dp-opening-gate");
   if (!hasOpeningFlag) {
     cleanupGateCurtain();
   } else {
@@ -126,10 +127,24 @@ function initMain() {
   }
   if (document.body && document.body.classList.contains("dp-login-page")) {
     dpLoginSubmitting = false;
-    try { sessionStorage.removeItem("dp_left_login"); } catch (_) {}
+    try {
+      sessionStorage.removeItem("dp_left_login");
+      sessionStorage.removeItem("dp_gate_open");
+    } catch (_) {}
+    const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     document.querySelectorAll("form").forEach((f) => {
-      f.addEventListener("submit", () => {
+      f.addEventListener("submit", (e) => {
+        if (dpLoginSubmitting) return;
+        if (typeof f.checkValidity === "function" && !f.checkValidity()) return;
         dpLoginSubmitting = true;
+        if (!reduced) {
+          e.preventDefault();
+          document.body.classList.add("dp-login-leaving");
+          try { sessionStorage.setItem("dp_gate_open", "1"); } catch (_) {}
+          window.setTimeout(() => {
+            f.submit();
+          }, 140);
+        }
       });
     });
   } else if (!isLanding) {
@@ -257,40 +272,54 @@ function initMain() {
         document.body.style.overflow = "";
       }
     };
+    const openProgramDrawer = (btn) => {
+      if (!btn) return;
+      const titleEl = document.getElementById("dpDrawerTitle");
+      const descEl = document.getElementById("dpDrawerDesc");
+      const focusEl = document.getElementById("dpDrawerFocus");
+      const leadEl = document.getElementById("dpDrawerCadenceLead");
+      const cadEl = document.getElementById("dpDrawerCadence");
+      if (titleEl) titleEl.textContent = btn.getAttribute("data-prog-title") || "Program Bimbingan";
+      if (descEl) descEl.textContent = btn.getAttribute("data-prog-desc") || "";
+      if (focusEl) {
+        focusEl.textContent = "";
+        const rawFocus = btn.getAttribute("data-prog-focus") || "";
+        rawFocus.split("|").map((s) => s.trim()).filter(Boolean).forEach((item) => {
+          const li = document.createElement("li");
+          li.textContent = item;
+          focusEl.appendChild(li);
+        });
+      }
+      if (leadEl) {
+        leadEl.textContent = btn.getAttribute("data-prog-cadence-lead") || "8 Sesi / periode · 90 Menit / sesi";
+      }
+      if (cadEl) cadEl.textContent = btn.getAttribute("data-prog-cadence") || "";
+      drawer.classList.add("is-open");
+      drawerBd.classList.add("is-open");
+      drawer.setAttribute("aria-hidden", "false");
+      drawerBd.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+    };
+
+    document.querySelectorAll(".dp-program-simple-card").forEach((card) => {
+      const progBtn = card.querySelector(".dp-prog-open-btn");
+      if (!progBtn) return;
+      card.addEventListener("click", () => {
+        openProgramDrawer(progBtn);
+      });
+      card.addEventListener("keydown", (e) => {
+        if (e.target !== card) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openProgramDrawer(progBtn);
+        }
+      });
+    });
+
     document.querySelectorAll(".dp-prog-open-btn").forEach((btn) => {
+      if (btn.closest(".dp-program-simple-card")) return;
       btn.addEventListener("click", () => {
-        const titleEl = document.getElementById("dpDrawerTitle");
-        const descEl = document.getElementById("dpDrawerDesc");
-        const focusEl = document.getElementById("dpDrawerFocus");
-        const chipsEl = document.getElementById("dpDrawerCadenceChips");
-        const cadEl = document.getElementById("dpDrawerCadence");
-        if (titleEl) titleEl.textContent = btn.getAttribute("data-prog-title") || "Program Bimbingan";
-        if (descEl) descEl.textContent = btn.getAttribute("data-prog-desc") || "";
-        if (focusEl) {
-          focusEl.textContent = "";
-          const rawFocus = btn.getAttribute("data-prog-focus") || "";
-          rawFocus.split("|").map((s) => s.trim()).filter(Boolean).forEach((item) => {
-            const li = document.createElement("li");
-            li.textContent = item;
-            focusEl.appendChild(li);
-          });
-        }
-        if (chipsEl) {
-          chipsEl.textContent = "";
-          const rawHighlights = btn.getAttribute("data-prog-highlights") || "8 Sesi / periode|90 Menit / sesi";
-          rawHighlights.split("|").map((s) => s.trim()).filter(Boolean).forEach((label) => {
-            const chip = document.createElement("span");
-            chip.className = "dp-drawer-chip";
-            chip.textContent = label;
-            chipsEl.appendChild(chip);
-          });
-        }
-        if (cadEl) cadEl.textContent = btn.getAttribute("data-prog-cadence") || "";
-        drawer.classList.add("is-open");
-        drawerBd.classList.add("is-open");
-        drawer.setAttribute("aria-hidden", "false");
-        drawerBd.setAttribute("aria-hidden", "false");
-        document.body.style.overflow = "hidden";
+        openProgramDrawer(btn);
       });
     });
     if (drawerClose) drawerClose.addEventListener("click", closeDrawer);

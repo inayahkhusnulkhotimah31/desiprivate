@@ -9,10 +9,27 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=19">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=28">
+  <script>
+    (function () {
+      try {
+        if (sessionStorage.getItem("dp_gate_open") === "1") {
+          sessionStorage.removeItem("dp_gate_open");
+          document.documentElement.classList.add("dp-opening-gate");
+        }
+      } catch (_) {}
+    })();
+  </script>
   {% block extra_css %}{% endblock %}
 </head>
 <body>
+  <div class="dp-gate-curtain dp-gate-curtain--open" id="dpOpenGate" aria-hidden="true">
+    <div class="dp-gate-door dp-gate-door--left">
+      <img class="dp-gate-door-photo" src="{{ url_for('static', filename='images/client/galeri_02.webp') }}" alt="" draggable="false">
+      <div class="dp-gate-door-fade"></div>
+    </div>
+    <div class="dp-gate-door dp-gate-door--right"></div>
+  </div>
   <div class="app-container">
     <!-- SIDEBAR NAVIGASI (DESKTOP & DRAWER MOBILE) -->
     <aside class="sidebar" id="sidebar">
@@ -291,7 +308,7 @@
     </nav>
   {% endif %}
 
-  <script src="{{ url_for('static', filename='js/main.js') }}?v=17" defer></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}?v=28" defer></script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

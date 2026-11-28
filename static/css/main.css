@@ -4858,25 +4858,12 @@ body.dp-page-leaving .dp-login-shell {
   background: var(--blue-primary, #0093D6);
 }
 
-.dp-drawer-cadence-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 10px;
-}
-
-.dp-drawer-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 10px;
-  border-radius: 8px;
-  background: #EBF7FD;
-  border: 1px solid #BAE4F8;
-  color: #083A54;
-  font-size: 12px;
+.dp-drawer-cadence-lead {
+  margin: 0 0 6px 0;
+  font-size: 13.5px;
   font-weight: 700;
-  line-height: 1.3;
-  white-space: nowrap;
+  color: #111827;
+  line-height: 1.45;
 }
 
 .dp-drawer-cadence-note {
@@ -4886,12 +4873,19 @@ body.dp-page-leaving .dp-login-shell {
   line-height: 1.5;
 }
 
-/* Full-card clickable Pencapaian Siswa */
-.dp-sophie-card[role="button"] {
+.dp-drawer-cta {
+  width: 100%;
+  border-radius: 12px;
+}
+
+/* Full-card clickable Pencapaian Siswa & Program Bimbingan */
+.dp-sophie-card[role="button"],
+.dp-program-simple-card[role="button"] {
   cursor: pointer;
 }
 
-.dp-sophie-card[role="button"]:focus-visible {
+.dp-sophie-card[role="button"]:focus-visible,
+.dp-program-simple-card[role="button"]:focus-visible {
   outline: 2px solid var(--blue-primary, #0093D6);
   outline-offset: 2px;
 }
@@ -4900,6 +4894,10 @@ body.dp-page-leaving .dp-login-shell {
   background: #083A54;
   border-color: #083A54;
   color: #FFFFFF;
+}
+
+.dp-program-simple-card[role="button"]:hover .dp-flight-cta {
+  background: #0072A8;
 }
 
 .dp-drawer-actions {
@@ -7520,7 +7518,19 @@ img,
   flex-shrink: 0;
 }
 
-/* Login Page Top-Right Back Button + Dominant Left Photo Split & Card Right-Aligned to Back Button */
+/* Login Page Top-Right Back Button + Dominant Left Photo Split & Facebook-Style Borderless Right Form */
+.dp-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .dp-login-shell {
   position: relative;
   grid-template-columns: var(--dp-login-cols);
@@ -7528,15 +7538,126 @@ img,
 
 .dp-login-page .dp-login-panel {
   position: relative;
+  border-left: 1px solid #E5E7EB;
   align-items: flex-end;
-  padding: 40px 56px 40px 40px;
+  padding: 40px 56px 40px 44px;
 }
 
 .dp-login-card-wrap {
   width: 100%;
-  max-width: 460px;
+  max-width: 440px;
   display: flex;
   flex-direction: column;
+}
+
+.dp-login-card--fb {
+  max-width: 100%;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+}
+
+.dp-login-fb-title {
+  margin: 0 0 18px 0;
+  font-family: var(--font-display, 'Plus Jakarta Sans', sans-serif);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #111827;
+  text-align: left;
+  letter-spacing: -0.01em;
+}
+
+.dp-login-fb-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dp-login-fb-input {
+  width: 100%;
+  height: 54px;
+  min-height: 54px;
+  padding: 0 18px;
+  border-radius: 14px !important;
+  border: 1px solid #CBD5E1;
+  background: #FFFFFF;
+  font-size: 15px;
+  color: #111827;
+  box-shadow: none;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.dp-login-fb-input::placeholder {
+  color: #6B7280;
+}
+
+.dp-login-fb-input:focus {
+  border-color: #111827;
+  box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.08);
+  outline: none;
+}
+
+.dp-login-fb-submit {
+  width: 100%;
+  height: 48px;
+  min-height: 48px;
+  margin-top: 6px;
+  border-radius: 9999px !important;
+  border: none;
+  font-size: 15px;
+  font-weight: 700;
+  box-shadow: none !important;
+}
+
+.dp-login-fb-forgot {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.dp-login-fb-forgot a {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+
+.dp-login-fb-forgot a:hover {
+  color: var(--caramel-hover);
+  text-decoration: underline;
+}
+
+.dp-login-fb-secondary {
+  margin-top: 36px;
+}
+
+.dp-login-fb-outline-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 46px;
+  border-radius: 9999px;
+  border: 1.5px solid var(--caramel);
+  background: #FFFFFF;
+  color: var(--caramel-hover);
+  font-size: 14.5px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease, transform 160ms var(--ease-snappy);
+}
+
+.dp-login-fb-outline-btn:hover {
+  background: #FDF8F3;
+  border-color: var(--caramel-hover);
+  color: var(--caramel-hover);
+}
+
+.dp-login-fb-outline-btn:active {
+  transform: scale(0.985);
 }
 
 .dp-login-home-btn {
@@ -7598,6 +7719,7 @@ img,
     grid-template-columns: 1fr;
   }
   .dp-login-page .dp-login-panel {
+    border-left: none;
     align-items: center;
     padding: 36px 28px;
   }
