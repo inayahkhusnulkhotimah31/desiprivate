@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" type="image/webp" href="{{ url_for('static', filename='images/client/logo_desi_privat.webp') }}">
   <link rel="prefetch" href="{{ url_for('auth.login') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=15">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=16">
 </head>
 <body class="dp-landing-body" data-login-photo="{{ url_for('static', filename='images/client/galeri_02.webp') }}">
   <div id="dpScrollProgress" aria-hidden="true"></div>
@@ -313,10 +313,7 @@
       <div class="dp-container">
         <div class="dp-closing-card dp-scroll-reveal">
           <div class="dp-closing-card-copy">
-            <h2 class="dp-h2" style="margin: 0 0 8px 0;">Pantau Jadwal &amp; Progres Belajar Anak.</h2>
-            <p class="dp-section-lead" style="margin: 0;">
-              Masuk ke portal wali murid, mentor, atau admin untuk melihat jadwal dan laporan belajar.
-            </p>
+            <h2 class="dp-h2" style="margin: 0;">Pantau Jadwal &amp; Progres Belajar Anak.</h2>
           </div>
           <div class="dp-closing-card-actions">
             <a href="https://wa.me/6285242009811" target="_blank" rel="noopener noreferrer" class="dp-btn dp-btn-ghost-dark">
@@ -382,9 +379,9 @@
     </div>
   </aside>
 
-  <!-- MODAL PRATINJAU POSTER PENCAPAIAN (VIEWPORT-FIXED, CONCENTRIC 28/20 RADIUS) -->
+  <!-- MODAL PRATINJAU POSTER PENCAPAIAN (VIEWPORT-FIXED, CONCENTRIC 28/18 RADIUS, BALANCED WHITESPACE) -->
   <div class="modal-overlay" id="dpPosterModal" role="dialog" aria-modal="true" aria-labelledby="dpPosterModalTitle">
-    <div class="modal-dialog dp-poster-modal-dialog" style="max-width: 520px;">
+    <div class="modal-dialog dp-poster-modal-dialog">
       <div class="modal-header">
         <div class="modal-title" id="dpPosterModalTitle">Pencapaian Siswa</div>
         <button type="button" class="modal-close-btn" onclick="closeModal('dpPosterModal')" aria-label="Tutup">
@@ -412,6 +409,6 @@
     </button>
   </div>
 
-  <script src="{{ url_for('static', filename='js/main.js') }}?v=15" defer></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}?v=16" defer></script>
 </body>
 </html>

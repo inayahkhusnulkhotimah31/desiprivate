@@ -1078,7 +1078,6 @@ def build_page_01_public_auth(b: FigBuilder):
     cta_portal = b.pill(f, 558, 452, 162, 44, "Lihat Program", SECONDARY, SURFACE, size=14, weight="Bold", elevate=True, radius=12)
     cta_consult = b.pill(f, 736, 452, 146, 44, "Kontak Kami", "#FFFFFF22", SURFACE, size=14, weight="Bold", stroke="#FFFFFF88", radius=12)
 
-    b.rect(f, 360, 588, 720, 1, fill="#FFFFFF28", radius=0, name="Hero Metrics Hairline")
     hero_metrics = [("84+", "Siswa Aktif"), ("18+", "Mentor"), ("8+", "Program"), ("98%", "Kepuasan Wali")]
     for i, (num, lbl) in enumerate(hero_metrics):
         mx = 360 + i * 180
@@ -1128,12 +1127,11 @@ def build_page_01_public_auth(b: FigBuilder):
         prog_btns.append(pbtn)
 
     # SCREEN 4: PENUTUP RINGKAS + KONTAK TRANSPARAN
-    sec_kontak = b.rect(f, 72, 2556, 1296, 160, fill=SURFACE, radius=24, stroke=HAIRLINE, name="Light Closing CTA Card")
+    sec_kontak = b.rect(f, 72, 2556, 1296, 136, fill=SURFACE, radius=24, stroke=HAIRLINE, name="Light Closing CTA Card")
     b.shadow(sec_kontak, blur=8, y=2, opacity=0.04)
-    b.text(f, "Pantau Jadwal & Progres Belajar Anak.", 112, 2594, size=24, color=INK, weight="Bold", family=FONT_HEAD, width=680, max_lines=1)
-    b.text(f, "Masuk ke portal wali murid, mentor, atau admin untuk melihat jadwal dan laporan belajar.", 112, 2632, size=14.5, color=BODY, width=680, max_lines=1)
-    cta_wa = b.pill(f, 1020, 2612, 136, 44, "WhatsApp", SURFACE, INK, size=13.5, weight="Bold", stroke=HAIRLINE, radius=12)
-    cta_close = b.pill(f, 1170, 2612, 158, 44, "Masuk Portal", SECONDARY, SURFACE, size=13.5, weight="Bold", elevate=True, radius=12)
+    b.text(f, "Pantau Jadwal & Progres Belajar Anak.", 112, 2608, size=24, color=INK, weight="Bold", family=FONT_HEAD, width=680, max_lines=1)
+    cta_wa = b.pill(f, 1020, 2602, 136, 44, "WhatsApp", SURFACE, INK, size=13.5, weight="Bold", stroke=HAIRLINE, radius=12)
+    cta_close = b.pill(f, 1170, 2602, 158, 44, "Masuk Portal", SECONDARY, SURFACE, size=13.5, weight="Bold", elevate=True, radius=12)
 
     # Transparent Minimal Contact Line (No Solid Footer Color Block)
     b.rect(f, 72, 2784, 1296, 1, fill=HAIRLINE, radius=0, name="Minimal Contact Hairline")
@@ -1181,14 +1179,13 @@ def build_page_01_public_auth(b: FigBuilder):
     b.rect(f2, 718, 0, 4, 920, fill="#38BDF866", radius=0, name="Closing Gate Center Seam")
 
     # --- 3. Post-Click Interactive Layers on Page 01 ---
-    ov_poster = b.frame("Overlay: Lightbox Poster Pencapaian", 1560, 1020, 480, 620, fill=SURFACE, radius=28, stroke=HAIRLINE)
+    ov_poster = b.frame("Overlay: Lightbox Poster Pencapaian", 1560, 1020, 440, 600, fill=SURFACE, radius=28, stroke=HAIRLINE)
     b.shadow(ov_poster, blur=20, y=8, opacity=0.14)
-    b.text(ov_poster, "Poster Pencapaian Siswa", 24, 22, size=17, color=INK, weight="Bold", family=FONT_HEAD, width=360, max_lines=1)
-    ov_poster_x = b.pill(ov_poster, 420, 16, 36, 36, "×", ALABASTER, INK, size=16, weight="Bold", stroke=HAIRLINE, radius=12)
+    b.text(ov_poster, "Poster Pencapaian Siswa", 20, 20, size=16, color=INK, weight="Bold", family=FONT_HEAD, width=340, max_lines=1)
+    ov_poster_x = b.pill(ov_poster, 384, 14, 36, 36, "×", ALABASTER, INK, size=16, weight="Bold", stroke=HAIRLINE, radius=12)
     b.close_overlay_link(ov_poster_x)
-    b.rect(ov_poster, 24, 68, 432, 492, fill=ALABASTER, radius=20, stroke=HAIRLINE, name="Poster Rounded 20px Frame")
-    b.image(ov_poster, "pencapaian_01.webp", 24, 68, 432, 492, mode="fill", name="Poster Lightbox Preview")
-    b.text(ov_poster, "M. Ian Ramadhan, Juara 3 Olimpiade Matematika Expo SMAFT 2026", 24, 574, size=12.5, color=BODY, width=432, max_lines=1)
+    b.rect(ov_poster, 10, 62, 420, 528, fill=ALABASTER, radius=18, stroke=HAIRLINE, name="Poster Rounded 18px Frame")
+    b.image(ov_poster, "pencapaian_01.webp", 10, 62, 420, 528, mode="fill", name="Poster Lightbox Preview")
 
     ov_prog = b.frame("Overlay: Drawer Detail Program", 2100, 1020, 460, 520, fill=SURFACE, radius=16, stroke=HAIRLINE)
     b.shadow(ov_prog, blur=16, y=6, opacity=0.10)

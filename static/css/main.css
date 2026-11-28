@@ -3930,7 +3930,7 @@ body.dp-page-leaving .dp-login-shell {
   color: #FFFFFF;
 }
 
-.dp-login-photo img {
+.dp-login-photo > img {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -6752,9 +6752,9 @@ body {
 .dp-hero-metrics-bar {
   width: 100%;
   max-width: 720px;
-  margin: 52px auto 0 auto;
-  padding-top: 28px;
-  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  margin: 48px auto 0 auto;
+  padding-top: 8px;
+  border-top: none;
 }
 
 /* Remove costly GPU backdrop-filter on scrolling achievement frost cards */
@@ -7314,37 +7314,69 @@ img,
 .dp-poster-modal-dialog {
   --r-poster-outer: 28px;
   --r-poster-pad: 10px;
+  width: min(440px, calc(100vw - 32px)) !important;
+  max-width: 440px !important;
   border-radius: var(--r-poster-outer) !important;
   overflow: hidden;
+  background: #FFFFFF;
+}
+
+.dp-poster-modal-dialog .modal-header {
+  padding: 18px 20px 12px 20px !important;
+  border-bottom: none !important;
+  background: #FFFFFF !important;
+}
+
+.dp-poster-modal-dialog .modal-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #111827;
 }
 
 .dp-poster-modal-body {
-  padding: 12px 14px 16px 14px !important;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  padding: 0 var(--r-poster-pad) var(--r-poster-pad) var(--r-poster-pad) !important;
+  display: block;
 }
 
 .dp-poster-modal-frame {
-  width: fit-content;
-  max-width: 100%;
-  border-radius: 20px;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  border-radius: calc(var(--r-poster-outer) - var(--r-poster-pad));
   overflow: hidden;
   background: #F7F7F5;
   border: 1px solid var(--alpha-border);
-  box-shadow: 0 6px 20px rgba(17, 24, 39, 0.08);
 }
 
 .dp-poster-modal-img {
-  width: auto !important;
-  max-width: 100%;
-  max-height: 74dvh;
-  height: auto;
+  width: 100% !important;
+  height: 100% !important;
+  max-height: none;
   display: block;
-  border-radius: 20px !important;
+  border-radius: inherit !important;
   object-fit: cover;
   border: none !important;
   background: transparent !important;
+}
+
+/* Consistent whitespace & aligned baseline across all 6 Pencapaian Siswa cards */
+.dp-sophie-frost {
+  min-height: 174px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 54px 20px 18px 20px;
+}
+
+.dp-sophie-desc {
+  min-height: 40px;
+}
+
+.dp-login-photo .dp-brand-logo-photo {
+  position: static !important;
+  inset: auto !important;
+  width: 38px !important;
+  height: 38px !important;
+  flex-shrink: 0;
 }
 
 /* ==========================================================================
