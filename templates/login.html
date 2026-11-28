@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" type="image/webp" href="{{ url_for('static', filename='images/client/logo_desi_privat.webp') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=20">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=22">
   <script>
     (function () {
       try {
@@ -49,15 +49,17 @@
 
     <!-- GERBANG KANAN: PANEL PUTIH BERSIH, ELEMEN FORM MUNCUL SATU PER SATU BELAKANGAN -->
     <main class="dp-login-panel dp-login-gate-right">
-      <a href="/" class="dp-login-home-btn dp-gate-stagger" style="--stagger-i: 0;" aria-label="Kembali ke Beranda" title="Beranda">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M3 10.5L12 3l9 7.5"/>
-          <path d="M5 9.5V19a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9.5"/>
-          <path d="M9.5 21v-6a1.5 1.5 0 0 1 1.5-1.5h2a1.5 1.5 0 0 1 1.5 1.5v6"/>
-        </svg>
-      </a>
+      <div class="dp-login-card-wrap">
+        <div class="dp-login-top-row dp-gate-stagger" style="--stagger-i: 0;">
+          <a href="/" class="dp-login-home-btn" aria-label="Kembali ke Beranda" title="Kembali">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M19 12H5"/>
+              <path d="M12 19l-7-7 7-7"/>
+            </svg>
+          </a>
+        </div>
 
-      <div class="dp-login-card">
+        <div class="dp-login-card">
         <h2 class="login-card-title dp-gate-stagger" style="--stagger-i: 1; margin: 0 0 24px 0; font-size: 24px; color: var(--text-main);">
           Masuk <span style="display:none;">Masuk ke Sistem</span>
         </h2>
@@ -139,6 +141,7 @@
 
         <div class="login-help-link dp-gate-stagger" style="--stagger-i: 6; margin-top: 20px; font-size: 13.5px; color: var(--text-muted); text-align: center;">
           Butuh bantuan? <a href="https://wa.me/6285242009811" target="_blank" rel="noopener noreferrer" style="color: var(--caramel-hover); font-weight: 700; text-decoration: none;">Hubungi Admin</a>
+        </div>
         </div>
       </div>
     </main>

@@ -1154,8 +1154,8 @@ def build_page_01_public_auth(b: FigBuilder):
     b.text(f2, "Belajar Lebih Teratur.", 64, 386, size=38, color=SURFACE, weight="Bold", family=FONT_HEAD, width=540, max_lines=1)
     b.text(f2, "Jadwal, absensi, dan laporan perkembangan dalam satu portal.", 64, 444, size=16, color="#EBF7FD", width=480, line_h=25)
 
-    back_home_btn = b.rect(f2, 1344, 32, 44, 44, fill=ALABASTER, radius=12, stroke=HAIRLINE, name="Login Top-Right Home Icon")
-    b.icon(f2, "home", 1356, 44, size=20, color=INK, stroke_w=1.75)
+    back_home_btn = b.rect(f2, 1266, 152, 44, 44, fill=ALABASTER, radius=12, stroke=HAIRLINE, name="Login Card-Aligned Right Back Icon")
+    b.icon(f2, "arrow-left", 1278, 164, size=20, color=INK, stroke_w=1.75)
     card = b.rect(f2, 850, 208, 460, 504, fill=SURFACE, radius=20, stroke=HAIRLINE, name="Centered Login Card")
     b.shadow(card, blur=12, y=4, opacity=0.05)
     b.text(f2, "Masuk", 890, 250, size=24, color=INK, weight="Bold", family=FONT_HEAD, width=380, max_lines=1)
@@ -2438,8 +2438,8 @@ def build_page_08_mobile(b: FigBuilder):
     b.gradient_rect(mlog, 0, 0, 390, 260, ["#083A54F2", "#0093D6C8"], start=(0.0, 1.0), end=(1.0, 0.0))
     draw_brand_mark(b, mlog, 20, 20, size=30, light=True)
     b.text(mlog, "DESI PRIVAT", 58, 25, size=14.5, color=SURFACE, weight="Bold", family=FONT_HEAD, width=140, max_lines=1)
-    mlog_back = b.rect(mlog, 334, 18, 36, 36, fill=SURFACE, radius=12, stroke=HAIRLINE, name="Mobile Login Home Icon")
-    b.icon(mlog, "home", 343, 27, size=18, color=INK, stroke_w=1.75)
+    mlog_back = b.rect(mlog, 334, 18, 36, 36, fill=SURFACE, radius=12, stroke=HAIRLINE, name="Mobile Login Back Icon")
+    b.icon(mlog, "arrow-left", 343, 27, size=18, color=INK, stroke_w=1.75)
     b.text(mlog, "Belajar Lebih Teratur.", 24, 172, size=24, color=SURFACE, weight="Bold", family=FONT_HEAD, width=342, max_lines=1)
 
     mc = b.rect(mlog, 20, 284, 350, 480, fill=SURFACE, radius=16, stroke=HAIRLINE)
