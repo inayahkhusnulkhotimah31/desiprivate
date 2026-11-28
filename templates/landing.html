@@ -14,7 +14,7 @@
   <link rel="preload" as="image" type="image/webp" href="{{ url_for('static', filename='images/client/galeri_03.webp') }}">
   <link rel="preload" as="image" type="image/webp" href="{{ url_for('static', filename='images/client/galeri_04.webp') }}">
   <link rel="prefetch" href="{{ url_for('auth.login') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=24">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=25">
   <script>
     (function () {
       try {
@@ -162,7 +162,7 @@
         {% endset %}
 
         <div class="dp-achievement-grid">
-          <article class="dp-sophie-card dp-scroll-reveal">
+          <article class="dp-sophie-card dp-scroll-reveal" role="button" tabindex="0" aria-label="Lihat poster pencapaian Muhammad Ian Ramadhan">
             <div class="dp-sophie-inner">
               <img src="{{ url_for('static', filename='images/client/pencapaian_01.webp') }}" alt="Juara 3 Olimpiade Matematika SD Expo SMAFT 2026" class="dp-sophie-img" width="640" height="800" loading="lazy" decoding="async">
               <div class="dp-sophie-frost">
@@ -182,7 +182,7 @@
             </div>
           </article>
 
-          <article class="dp-sophie-card dp-scroll-reveal">
+          <article class="dp-sophie-card dp-scroll-reveal" role="button" tabindex="0" aria-label="Lihat poster Silver IOB Rising Star Mathematics">
             <div class="dp-sophie-inner">
               <img src="{{ url_for('static', filename='images/client/pencapaian_02.webp') }}" alt="Predikat Silver IOB Rising Star Mathematics" class="dp-sophie-img" width="640" height="800" loading="lazy" decoding="async">
               <div class="dp-sophie-frost">
@@ -202,7 +202,7 @@
             </div>
           </article>
 
-          <article class="dp-sophie-card dp-scroll-reveal">
+          <article class="dp-sophie-card dp-scroll-reveal" role="button" tabindex="0" aria-label="Lihat poster Kontingen DESI PRIVAT KMSI 2026">
             <div class="dp-sophie-inner">
               <img src="{{ url_for('static', filename='images/client/pencapaian_03.webp') }}" alt="Kontingen DESI PRIVAT KMSI 2026 Final Provinsi" class="dp-sophie-img" width="640" height="800" loading="lazy" decoding="async">
               <div class="dp-sophie-frost">
@@ -222,7 +222,7 @@
             </div>
           </article>
 
-          <article class="dp-sophie-card dp-scroll-reveal">
+          <article class="dp-sophie-card dp-scroll-reveal" role="button" tabindex="0" aria-label="Lihat poster Gold Medals Muhammad Izhar Ismed">
             <div class="dp-sophie-inner">
               <img src="{{ url_for('static', filename='images/client/pencapaian_04.webp') }}" alt="Gold Medals Venus Kompetisi Rayon Makassar" class="dp-sophie-img" width="640" height="800" loading="lazy" decoding="async">
               <div class="dp-sophie-frost">
@@ -242,7 +242,7 @@
             </div>
           </article>
 
-          <article class="dp-sophie-card dp-scroll-reveal">
+          <article class="dp-sophie-card dp-scroll-reveal" role="button" tabindex="0" aria-label="Lihat poster SEACOM 2026 Muhammad Izhar Ismed">
             <div class="dp-sophie-inner">
               <img src="{{ url_for('static', filename='images/client/pencapaian_05.webp') }}" alt="Lomba Cerdas Cermat SEACOM 2026 Muhammad Izhar Ismed" class="dp-sophie-img" width="640" height="800" loading="lazy" decoding="async">
               <div class="dp-sophie-frost">
@@ -262,7 +262,7 @@
             </div>
           </article>
 
-          <article class="dp-sophie-card dp-scroll-reveal">
+          <article class="dp-sophie-card dp-scroll-reveal" role="button" tabindex="0" aria-label="Lihat poster SEACOM 2026 Muhammad Ian Ramadhan">
             <div class="dp-sophie-inner">
               <img src="{{ url_for('static', filename='images/client/pencapaian_06.webp') }}" alt="Lomba Cerdas Cermat SEACOM 2026 Muhammad Ian Ramadhan Hamzah" class="dp-sophie-img" width="640" height="800" loading="lazy" decoding="async">
               <div class="dp-sophie-frost">
@@ -298,7 +298,7 @@
             <div class="dp-program-num">01</div>
             <h3>Privat SD</h3>
             <p>Tematik, berhitung dasar, dan pendampingan PR harian.</p>
-            <button type="button" class="dp-flight-cta dp-prog-open-btn" data-prog-title="Privat SD" data-prog-desc="Pendampingan belajar tematik harian di rumah bersama mentor sabar untuk membangun kebiasaan belajar mandiri." data-prog-focus="Matematika dasar, Bahasa Indonesia, IPA terpadu, serta pendampingan PR &amp; ulangan harian." data-prog-cadence="8 Sesi per periode (90 menit per sesi) dengan laporan perkembangan langsung.">
+            <button type="button" class="dp-flight-cta dp-prog-open-btn" data-prog-title="Privat SD" data-prog-desc="Pendampingan tematik di rumah untuk membangun kebiasaan belajar mandiri sejak dini." data-prog-focus="Matematika &amp; berhitung dasar|Bahasa Indonesia &amp; literasi|IPA terpadu tematik|Pendampingan PR &amp; ulangan harian" data-prog-highlights="8 Sesi / periode|90 Menit / sesi|Tatap Muka" data-prog-cadence="Laporan perkembangan belajar disampaikan langsung kepada orang tua.">
               Rincian
             </button>
           </article>
@@ -307,7 +307,7 @@
             <div class="dp-program-num">02</div>
             <h3>Privat SMP</h3>
             <p>Matematika, IPA terpadu, dan kesiapan ujian sekolah.</p>
-            <button type="button" class="dp-flight-cta dp-prog-open-btn" data-prog-title="Privat SMP" data-prog-desc="Penguatan konsep inti Matematika, IPA, dan Bahasa Inggris dengan latihan soal terstruktur sesuai ritme siswa." data-prog-focus="Aljabar, geometri, fisika dasar, biologi terpadu, dan strategi pengerjaan asesmen sekolah." data-prog-cadence="8 Sesi per periode (90 menit per sesi) lengkap dengan evaluasi topik sulit.">
+            <button type="button" class="dp-flight-cta dp-prog-open-btn" data-prog-title="Privat SMP" data-prog-desc="Penguatan konsep inti dan latihan soal terstruktur sesuai ritme belajar siswa." data-prog-focus="Aljabar &amp; geometri inti|Fisika &amp; biologi terpadu|Bahasa Inggris akademik|Strategi asesmen &amp; ujian sekolah" data-prog-highlights="8 Sesi / periode|90 Menit / sesi|Tatap Muka" data-prog-cadence="Dilengkapi evaluasi berkala khusus untuk menuntaskan topik sulit.">
               Rincian
             </button>
           </article>
@@ -316,7 +316,7 @@
             <div class="dp-program-num">03</div>
             <h3>Privat SMA &amp; SNBT</h3>
             <p>Pendalaman Saintek, Soshum, dan persiapan masuk PTN.</p>
-            <button type="button" class="dp-flight-cta dp-prog-open-btn" data-prog-title="Privat SMA &amp; SNBT" data-prog-desc="Bimbingan intensif peminatan SMA dan pemetaan strategi lolos PTN melalui bedah soal analitis." data-prog-focus="Matematika Lanjut, Fisika, Kimia, Ekonomi, Penalaran Umum, dan Literasi SNBT." data-prog-cadence="8 Sesi per periode (90 menit per sesi) disertai simulasi target capaian.">
+            <button type="button" class="dp-flight-cta dp-prog-open-btn" data-prog-title="Privat SMA &amp; SNBT" data-prog-desc="Pendalaman materi peminatan SMA serta strategi bedah soal analitis untuk lolos PTN." data-prog-focus="Matematika Lanjut, Fisika &amp; Kimia|Ekonomi &amp; peminatan Soshum|Penalaran Umum &amp; Kuantitatif|Literasi &amp; latihan soal SNBT" data-prog-highlights="8 Sesi / periode|90 Menit / sesi|Simulasi Target" data-prog-cadence="Disertai simulasi berkala dan pemetaan target capaian masuk PTN.">
               Rincian
             </button>
           </article>
@@ -325,7 +325,7 @@
             <div class="dp-program-num">04</div>
             <h3>Inggris &amp; Calistung</h3>
             <p>Percakapan aktif serta dasar membaca, menulis, berhitung.</p>
-            <button type="button" class="dp-flight-cta dp-prog-open-btn" data-prog-title="Inggris &amp; Calistung" data-prog-desc="Program fondasi membaca, menulis, berhitung tanpa tekanan serta latihan berbicara Bahasa Inggris aktif." data-prog-focus="Fonik interaktif, motorik tulis, berhitung logis, dan percakapan sehari-hari." data-prog-cadence="8 Sesi per periode (90 menit per sesi) yang ramah bagi anak.">
+            <button type="button" class="dp-flight-cta dp-prog-open-btn" data-prog-title="Inggris &amp; Calistung" data-prog-desc="Fondasi membaca, menulis, berhitung tanpa tekanan serta latihan percakapan Inggris aktif." data-prog-focus="Fonik &amp; membaca interaktif|Motorik tulis halus|Berhitung logis bertahap|Percakapan Bahasa Inggris aktif" data-prog-highlights="8 Sesi / periode|90 Menit / sesi|Ramah Anak" data-prog-cadence="Tempo santai dan menyenangkan menyesuaikan kenyamanan belajar anak.">
               Rincian
             </button>
           </article>
@@ -391,11 +391,12 @@
       <p class="dp-drawer-desc" id="dpDrawerDesc"></p>
       <div class="dp-drawer-block">
         <div class="dp-drawer-label">Fokus Pembelajaran</div>
-        <p id="dpDrawerFocus"></p>
+        <ul class="dp-drawer-focus-list" id="dpDrawerFocus"></ul>
       </div>
-      <div class="dp-drawer-block">
+      <div class="dp-drawer-block dp-drawer-block--cadence">
         <div class="dp-drawer-label">Ritme Pertemuan</div>
-        <p id="dpDrawerCadence"></p>
+        <div class="dp-drawer-cadence-chips" id="dpDrawerCadenceChips"></div>
+        <p class="dp-drawer-cadence-note" id="dpDrawerCadence"></p>
       </div>
     </div>
     <div class="dp-drawer-actions">
@@ -434,6 +435,6 @@
     </button>
   </div>
 
-  <script src="{{ url_for('static', filename='js/main.js') }}?v=23" defer></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}?v=25" defer></script>
 </body>
 </html>

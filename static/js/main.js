@@ -262,10 +262,29 @@ function initMain() {
         const titleEl = document.getElementById("dpDrawerTitle");
         const descEl = document.getElementById("dpDrawerDesc");
         const focusEl = document.getElementById("dpDrawerFocus");
+        const chipsEl = document.getElementById("dpDrawerCadenceChips");
         const cadEl = document.getElementById("dpDrawerCadence");
         if (titleEl) titleEl.textContent = btn.getAttribute("data-prog-title") || "Program Bimbingan";
         if (descEl) descEl.textContent = btn.getAttribute("data-prog-desc") || "";
-        if (focusEl) focusEl.textContent = btn.getAttribute("data-prog-focus") || "";
+        if (focusEl) {
+          focusEl.textContent = "";
+          const rawFocus = btn.getAttribute("data-prog-focus") || "";
+          rawFocus.split("|").map((s) => s.trim()).filter(Boolean).forEach((item) => {
+            const li = document.createElement("li");
+            li.textContent = item;
+            focusEl.appendChild(li);
+          });
+        }
+        if (chipsEl) {
+          chipsEl.textContent = "";
+          const rawHighlights = btn.getAttribute("data-prog-highlights") || "8 Sesi / periode|90 Menit / sesi";
+          rawHighlights.split("|").map((s) => s.trim()).filter(Boolean).forEach((label) => {
+            const chip = document.createElement("span");
+            chip.className = "dp-drawer-chip";
+            chip.textContent = label;
+            chipsEl.appendChild(chip);
+          });
+        }
         if (cadEl) cadEl.textContent = btn.getAttribute("data-prog-cadence") || "";
         drawer.classList.add("is-open");
         drawerBd.classList.add("is-open");
@@ -282,16 +301,36 @@ function initMain() {
     });
   }
 
-  // 6. Achievement Poster Lightbox Modal (.dp-poster-open-btn)
+  // 6. Achievement Poster Lightbox Modal (Clickable full card + eye button)
+  const openPosterModal = (trigger) => {
+    if (!trigger) return;
+    const src = trigger.getAttribute("data-poster-src") || "";
+    const ttl = trigger.getAttribute("data-poster-title") || "Pencapaian Siswa";
+    const imgEl = document.getElementById("dpPosterModalImg");
+    const ttlEl = document.getElementById("dpPosterModalTitle");
+    if (imgEl && src) imgEl.src = src;
+    if (ttlEl) ttlEl.textContent = ttl;
+    window.openModal("dpPosterModal");
+  };
+
+  document.querySelectorAll(".dp-sophie-card").forEach((card) => {
+    const posterBtn = card.querySelector(".dp-poster-open-btn");
+    if (!posterBtn) return;
+    card.addEventListener("click", () => {
+      openPosterModal(posterBtn);
+    });
+    card.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openPosterModal(posterBtn);
+      }
+    });
+  });
+
   document.querySelectorAll(".dp-poster-open-btn").forEach((btn) => {
+    if (btn.closest(".dp-sophie-card")) return;
     btn.addEventListener("click", () => {
-      const src = btn.getAttribute("data-poster-src") || "";
-      const ttl = btn.getAttribute("data-poster-title") || "Pencapaian Siswa";
-      const imgEl = document.getElementById("dpPosterModalImg");
-      const ttlEl = document.getElementById("dpPosterModalTitle");
-      if (imgEl && src) imgEl.src = src;
-      if (ttlEl) ttlEl.textContent = ttl;
-      window.openModal("dpPosterModal");
+      openPosterModal(btn);
     });
   });
 

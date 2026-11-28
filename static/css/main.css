@@ -4801,16 +4801,16 @@ body.dp-page-leaving .dp-login-shell {
 
 .dp-drawer-desc {
   margin: 0;
-  font-size: 14.5px;
-  color: #374151;
-  line-height: 1.65;
+  font-size: 13.5px;
+  color: #4B5563;
+  line-height: 1.55;
 }
 
 .dp-drawer-block {
   background: #F7F7F5;
   border: 1px solid #EAEAE6;
   border-radius: 14px;
-  padding: 14px 16px;
+  padding: 15px 16px;
 }
 
 .dp-drawer-label {
@@ -4819,14 +4819,87 @@ body.dp-page-leaving .dp-login-shell {
   color: #0072A8;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  margin-bottom: 6px;
+  margin-bottom: 10px;
 }
 
 .dp-drawer-block p {
   margin: 0;
+  font-size: 13px;
+  color: #4B5563;
+  line-height: 1.55;
+}
+
+.dp-drawer-focus-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dp-drawer-focus-list li {
+  position: relative;
+  padding-left: 16px;
   font-size: 13.5px;
+  font-weight: 500;
   color: #1F2937;
-  line-height: 1.6;
+  line-height: 1.45;
+}
+
+.dp-drawer-focus-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--blue-primary, #0093D6);
+}
+
+.dp-drawer-cadence-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.dp-drawer-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: #EBF7FD;
+  border: 1px solid #BAE4F8;
+  color: #083A54;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.dp-drawer-cadence-note {
+  margin: 0;
+  font-size: 13px;
+  color: #4B5563;
+  line-height: 1.5;
+}
+
+/* Full-card clickable Pencapaian Siswa */
+.dp-sophie-card[role="button"] {
+  cursor: pointer;
+}
+
+.dp-sophie-card[role="button"]:focus-visible {
+  outline: 2px solid var(--blue-primary, #0093D6);
+  outline-offset: 2px;
+}
+
+.dp-sophie-card[role="button"]:hover .dp-eye-btn {
+  background: #083A54;
+  border-color: #083A54;
+  color: #FFFFFF;
 }
 
 .dp-drawer-actions {
