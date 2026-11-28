@@ -5680,10 +5680,11 @@ body.dp-page-leaving .dp-login-shell {
   position: absolute;
   top: 0;
   bottom: 0;
-  left: 50%;
+  left: auto;
+  right: var(--dp-login-panel-w, clamp(540px, 40%, 580px));
   width: 2px;
   background: linear-gradient(180deg, transparent 0%, #38BDF8 35%, #FFFFFF 50%, #A66B37 65%, transparent 100%);
-  transform: translateX(-50%);
+  transform: translateX(50%);
   opacity: 0;
   z-index: 20;
   pointer-events: none;
@@ -6895,6 +6896,8 @@ html:has(.dp-login-page) {
    ========================================================================== */
 :root {
   --dp-login-fade: linear-gradient(155deg, rgba(8, 58, 84, 0.94) 0%, rgba(0, 147, 214, 0.8) 65%, rgba(0, 147, 214, 0.62) 100%);
+  --dp-login-panel-w: clamp(540px, 40%, 580px);
+  --dp-login-cols: minmax(0, 1fr) var(--dp-login-panel-w);
 }
 
 .dp-gate-curtain {
@@ -6907,7 +6910,7 @@ html:has(.dp-login-page) {
   z-index: 10000 !important;
   pointer-events: none;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: var(--dp-login-cols);
   overflow: hidden;
 }
 
@@ -7517,13 +7520,16 @@ img,
   flex-shrink: 0;
 }
 
-/* Login Page Top-Right Back Button (Pixel-Matched Style & Position to Landing 'Masuk' Button) */
+/* Login Page Top-Right Back Button + Dominant Left Photo Split & Card Right-Aligned to Back Button */
 .dp-login-shell {
   position: relative;
+  grid-template-columns: var(--dp-login-cols);
 }
 
 .dp-login-page .dp-login-panel {
   position: relative;
+  align-items: flex-end;
+  padding: 40px 56px 40px 40px;
 }
 
 .dp-login-card-wrap {
@@ -7587,6 +7593,13 @@ img,
   .dp-nav-bar.dp-nav-hero .dp-nav-inner {
     min-height: 60px;
     padding: 0 12px;
+  }
+  .dp-login-shell {
+    grid-template-columns: 1fr;
+  }
+  .dp-login-page .dp-login-panel {
+    align-items: center;
+    padding: 36px 28px;
   }
   .dp-login-home-btn {
     top: 30px;
