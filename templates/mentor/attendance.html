@@ -44,7 +44,7 @@
                   data-next-meeting="{{ st.next_meeting_str }}"
                   {% if (preselect_student_id and preselect_student_id|string == st.id|string) or (not preselect_student_id and loop.first and students|length == 1) %}selected{% endif %}
                 >
-                  {{ st.full_name }} &bull; {{ st.program_name or 'Les Privat' }} [Siklus: {{ st.next_meeting_str }}]
+                  {{ st.full_name }} - {{ st.program_name or 'Les Privat' }} [Siklus: {{ st.next_meeting_str }}]
                 </option>
               {% endfor %}
             </select>
@@ -133,7 +133,7 @@
                   data-progress="{{ sc.progress_notes or '' }}"
                   data-notes="{{ sc.attendance_notes or '' }}"
                 >
-                  {{ sc.schedule_date|date_indo }} ({{ sc.start_time }}) &bull; {{ sc.student_name }} - {{ sc.program_name }}
+                  {{ sc.schedule_date|date_indo }} ({{ sc.start_time }}) - {{ sc.student_name }} - {{ sc.program_name }}
                   {% if sc.attendance_status %} [Sudah Absen: {{ sc.attendance_status|upper }}]{% endif %}
                 </option>
               {% endfor %}

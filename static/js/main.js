@@ -293,7 +293,7 @@ function initMain() {
         });
       }
       if (leadEl) {
-        leadEl.textContent = btn.getAttribute("data-prog-cadence-lead") || "8 Sesi / periode · 90 Menit / sesi";
+        leadEl.textContent = btn.getAttribute("data-prog-cadence-lead") || "8 Sesi per periode, 90 menit per sesi";
       }
       if (cadEl) cadEl.textContent = btn.getAttribute("data-prog-cadence") || "";
       drawer.classList.add("is-open");

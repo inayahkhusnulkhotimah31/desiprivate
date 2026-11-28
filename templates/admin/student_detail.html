@@ -35,7 +35,7 @@
           </div>
           <div style="font-size: 12.5px; color: var(--text-muted); margin-top: 3px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
             <span>{{ icon('school') }} {{ student.school or 'Sekolah belum diisi' }} (Kelas {{ student.grade or '-' }})</span>
-            <span>&bull;</span>
+            <span>-</span>
             <span>{{ icon('family') }} Wali: <strong>{{ student.parent_name }}</strong> (<a href="tel:{{ student.parent_phone }}" style="color: var(--blue-brand); text-decoration: none;">{{ student.parent_phone }}</a>)</span>
           </div>
         </div>
@@ -180,7 +180,7 @@
           <div class="progress-header" style="display: flex; justify-content: space-between; align-items: center;">
             <div>
               <strong style="color: var(--navy-primary); font-size: 15px;">{{ prog.program_name }}</strong>
-              <div style="font-size: 12px; color: var(--gray-500);">Mentor: {{ prog.mentor_name }} &bull; Tanggal Sesi: {{ prog.session_date|date_indo }}</div>
+              <div style="font-size: 12px; color: var(--gray-500);">Mentor: {{ prog.mentor_name }} - Tanggal Sesi: {{ prog.session_date|date_indo }}</div>
             </div>
             {% if prog.documentation_photo %}
               <a href="{{ url_for('serve_session_photo', filename=prog.documentation_photo) }}" target="_blank" class="btn btn-sm btn-outline-primary" style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 4px 8px;">
@@ -529,7 +529,7 @@
             <option value="">-- Pilih Program Les --</option>
             {% for p in all_programs %}
               <option value="{{ p.id }}" data-service="{{ p.service_type or 'Private Tutoring' }}" data-level="{{ p.level or 'SD' }}" data-name="{{ p.name }}">
-                {{ p.name }} ({{ p.level or 'Umum' }} &bull; {{ p.service_type or 'Private Tutoring' }})
+                {{ p.name }} ({{ p.level or 'Umum' }} - {{ p.service_type or 'Private Tutoring' }})
               </option>
             {% endfor %}
           </select>

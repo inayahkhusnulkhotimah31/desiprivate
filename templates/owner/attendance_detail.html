@@ -59,7 +59,7 @@
         {{ student.full_name }}
       </h2>
       <div style="font-size: 12.5px; color: var(--text-muted); margin-top: 4px;">
-        {{ student.school or 'Sekolah' }} &bull; {{ student.grade or '-' }} &bull; Wali: <strong>{{ student.parent_name or '-' }}</strong>
+        {{ student.school or 'Sekolah' }} - {{ student.grade or '-' }} - Wali: <strong>{{ student.parent_name or '-' }}</strong>
         {% if student.parent_phone %}
           ({{ student.parent_phone }})
         {% endif %}
@@ -124,7 +124,7 @@
             <td>
               {% if a.meeting_number and a.period_number %}
                 <span class="badge" style="background: #e0f2fe; color: #0369a1; font-size: 11.5px; font-weight: 700; border-radius: 4px;">
-                  Periode {{ a.period_number }} &bull; Pertemuan {{ a.meeting_number }}
+                  Periode {{ a.period_number }} - Pertemuan {{ a.meeting_number }}
                 </span>
                 {% if a.cumulative_meeting %}
                   <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px;">
@@ -168,14 +168,14 @@
                     src="{{ url_for('serve_session_photo', filename=a.documentation_photo) }}"
                     alt="Foto Sesi"
                     class="doc-thumb"
-                    onclick="openPhotoLightbox('{{ url_for('serve_session_photo', filename=a.documentation_photo) }}', '{{ student.full_name }}', '{{ a.program_name }}', '{{ a.schedule_date|date_indo }}', 'Periode {{ a.period_number }} • Pertemuan {{ a.meeting_number }}')"
+                    onclick="openPhotoLightbox('{{ url_for('serve_session_photo', filename=a.documentation_photo) }}', '{{ student.full_name }}', '{{ a.program_name }}', '{{ a.schedule_date|date_indo }}', 'Periode {{ a.period_number }} - Pertemuan {{ a.meeting_number }}')"
                     title="Klik untuk memperbesar foto bukti"
                   >
                   <button
                     type="button"
                     class="btn btn-link btn-sm"
                     style="font-size: 10.5px; padding: 0; color: var(--blue-brand); text-decoration: none;"
-                    onclick="openPhotoLightbox('{{ url_for('serve_session_photo', filename=a.documentation_photo) }}', '{{ student.full_name }}', '{{ a.program_name }}', '{{ a.schedule_date|date_indo }}', 'Periode {{ a.period_number }} • Pertemuan {{ a.meeting_number }}')"
+                    onclick="openPhotoLightbox('{{ url_for('serve_session_photo', filename=a.documentation_photo) }}', '{{ student.full_name }}', '{{ a.program_name }}', '{{ a.schedule_date|date_indo }}', 'Periode {{ a.period_number }} - Pertemuan {{ a.meeting_number }}')"
                   >
                     Perbesar
                   </button>
@@ -237,7 +237,7 @@
     if (modal && img) {
       img.src = photoUrl;
       title.textContent = "Bukti Foto: " + studentName + " (" + programName + ")";
-      subtitle.textContent = sessionDate + " &bull; " + meetingStr;
+      subtitle.textContent = sessionDate + " - " + meetingStr;
       modal.style.display = "flex";
     }
   }

@@ -132,7 +132,7 @@
             <td>
               <strong style="color: var(--navy-dark); font-size: 14.5px;">{{ st.full_name }}</strong>
               <div style="font-size: 11.5px; color: var(--navy-muted); margin-top: 2px;">
-                {{ st.school or '-' }} &bull; {{ st.grade or '-' }}
+                {{ st.school or '-' }} - {{ st.grade or '-' }}
               </div>
             </td>
             <td>
@@ -156,7 +156,7 @@
                   <div style="text-align: right;">
                     {% if ps.total_meetings > 0 %}
                       <span class="badge" style="background: #e0f2fe; color: #0369a1; font-size: 11px; font-weight: 700; border-radius: 4px;">
-                        Periode {{ ps.last_period }} &bull; Pertemuan {{ ps.last_meeting }}
+                        Periode {{ ps.last_period }} - Pertemuan {{ ps.last_meeting }}
                       </span>
                     {% else %}
                       <span class="badge badge-secondary" style="font-size: 11px;">Baru Mulai (Pertemuan 1)</span>

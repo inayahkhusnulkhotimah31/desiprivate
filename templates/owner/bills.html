@@ -207,9 +207,9 @@
               <div style="font-size: 11px; color: var(--text-muted);">
                 Dibayar: Rp {{ "{:,.0f}".format(st.initial_paid_amount or 0).replace(",", ".") }}
                 {% if st.initial_remaining and st.initial_remaining > 0 %}
-                  &bull; <span style="color: #ef4444; font-weight: 700;">Sisa: Rp {{ "{:,.0f}".format(st.initial_remaining).replace(",", ".") }}</span>
+                  - <span style="color: #ef4444; font-weight: 700;">Sisa: Rp {{ "{:,.0f}".format(st.initial_remaining).replace(",", ".") }}</span>
                 {% else %}
-                  &bull; <span style="color: #16a34a; font-weight: 700;">Lunas</span>
+                  - <span style="color: #16a34a; font-weight: 700;">Lunas</span>
                 {% endif %}
               </div>
             {% else %}
@@ -542,7 +542,7 @@
       calcBox.style.background = "#fffbeb";
       calcBox.style.borderColor = "#fde68a";
       calcText.style.color = "#b45309";
-      calcText.innerHTML = "Status: <strong>Sedang Mencicil</strong> &bull; Sisa Tunggakan: <strong style='color:#dc2626;'>Rp " + remainingNew.toLocaleString("id-ID") + "</strong>";
+      calcText.innerHTML = "Status: <strong>Sedang Mencicil</strong> - Sisa Tunggakan: <strong style='color:#dc2626;'>Rp " + remainingNew.toLocaleString("id-ID") + "</strong>";
     }
   }
 

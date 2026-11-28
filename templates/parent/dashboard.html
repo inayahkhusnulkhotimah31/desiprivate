@@ -270,7 +270,7 @@
         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
           <div>
             <strong style="font-size: 14px; color: var(--navy-dark);">{{ a.program_name }}</strong>
-            <span style="font-size: 12px; color: var(--text-muted); margin-left: 6px;">&bull; Mentor: <strong>{{ a.mentor_name }}</strong></span>
+            <span style="font-size: 12px; color: var(--text-muted); margin-left: 6px;">- Mentor: <strong>{{ a.mentor_name }}</strong></span>
           </div>
           <div>
             {% if a.status == 'hadir' and (a.session_status == 'terlaksana' or not a.session_status) %}
@@ -285,7 +285,7 @@
 
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
           <span style="font-size: 12.5px; font-weight: 600; color: var(--navy-primary);">
-            {{ a.schedule_date|date_indo }} &bull; {{ a.start_time }} - {{ a.end_time }}
+            {{ a.schedule_date|date_indo }} - {{ a.start_time }} - {{ a.end_time }}
           </span>
           {% if a.meeting_number and a.period_number %}
             <span class="badge badge-info">
@@ -325,7 +325,7 @@
         <div class="progress-header">
           <div>
             <strong style="color: var(--navy-primary); font-size: 14px;">{{ latest_progress.program_name }}</strong>
-            <div style="font-size: 11px; color: var(--gray-500);">Mentor: {{ latest_progress.mentor_name }} &bull; Tanggal Sesi: {{ latest_progress.session_date|date_indo }}</div>
+            <div style="font-size: 11px; color: var(--gray-500);">Mentor: {{ latest_progress.mentor_name }} - Tanggal Sesi: {{ latest_progress.session_date|date_indo }}</div>
           </div>
         </div>
         <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -364,4 +364,3 @@
 {% endblock %}
 
 {% block extra_js %}{% endblock %}
-{% endblock %}

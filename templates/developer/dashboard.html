@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Developer Monitoring Real-Time &bull; DESI PRIVAT</title>
+  <title>Developer Monitoring Real-Time - DESI PRIVAT</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -340,7 +340,7 @@
     </div>
     <div class="topbar-right">
       <span style="color: var(--text-muted);">Operator: <strong style="color: var(--text-main);">{{ dev_user }}</strong></span>
-      <span style="color: var(--text-dim);">&bull;</span>
+      <span style="color: var(--text-dim);">-</span>
       <a href="{{ url_for('developer.export_audit_logs', format='csv') }}" class="btn-dev" title="Download Riwayat Log CSV">
         <span>&darr;</span> Unduh CSV
       </a>
@@ -397,7 +397,7 @@
     <!-- Navigation Tabs -->
     <nav class="tab-bar">
       <button class="tab-btn active" onclick="switchTab('liveFeedTab', this)">
-        <span>&bull;</span> Live Activity Feed (<span id="feedCount">{{ activities|length }}</span>)
+        <span>-</span> Live Activity Feed (<span id="feedCount">{{ activities|length }}</span>)
       </button>
       <button class="tab-btn" onclick="switchTab('studentDiffsTab', this)">
         <span>&Delta;</span> Perubahan Data Siswa (Field Diffs)
@@ -536,10 +536,10 @@
         <div class="metric-card">
           <div class="metric-label">Status Koneksi Engine</div>
           <div style="margin-top: 12px; font-family: var(--code-font); font-size: 13px; line-height: 1.8;">
-            <div>&bull; Engine Aktif: <strong style="color: var(--accent-blue);">{{ metrics.db_engine }}</strong></div>
-            <div>&bull; Integritas SQLite: <strong style="color: var(--accent-green);">{{ metrics.db_integrity }}</strong></div>
-            <div>&bull; Waktu Server: <span style="color: var(--text-muted);">{{ metrics.server_time }}</span></div>
-            <div>&bull; Operator Terhubung: <span style="color: var(--accent-green);">{{ dev_user }}</span></div>
+            <div>- Engine Aktif: <strong style="color: var(--accent-blue);">{{ metrics.db_engine }}</strong></div>
+            <div>- Integritas SQLite: <strong style="color: var(--accent-green);">{{ metrics.db_integrity }}</strong></div>
+            <div>- Waktu Server: <span style="color: var(--text-muted);">{{ metrics.server_time }}</span></div>
+            <div>- Operator Terhubung: <span style="color: var(--accent-green);">{{ dev_user }}</span></div>
           </div>
         </div>
 
