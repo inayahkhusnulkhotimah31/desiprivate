@@ -9,8 +9,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" type="image/webp" href="{{ url_for('static', filename='images/client/logo_desi_privat.webp') }}">
+  <link rel="preload" as="image" type="image/webp" href="{{ url_for('static', filename='images/client/galeri_01.webp') }}">
+  <link rel="preload" as="image" type="image/webp" href="{{ url_for('static', filename='images/client/galeri_02.webp') }}">
+  <link rel="preload" as="image" type="image/webp" href="{{ url_for('static', filename='images/client/galeri_03.webp') }}">
+  <link rel="preload" as="image" type="image/webp" href="{{ url_for('static', filename='images/client/galeri_04.webp') }}">
   <link rel="prefetch" href="{{ url_for('auth.login') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=18">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=19">
 </head>
 <body class="dp-landing-body" data-login-photo="{{ url_for('static', filename='images/client/galeri_02.webp') }}">
   <div id="dpScrollProgress" aria-hidden="true"></div>
@@ -53,14 +57,14 @@
     <section class="dp-hero dp-hero--framed" id="hero">
       <div class="dp-hero-stage dp-hero-stage--framed">
         <div class="dp-hero-mosaic-bg dp-hero-mosaic-bg--4x2" aria-hidden="true">
-          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_01.webp') }}" alt="" width="720" height="540" decoding="async" fetchpriority="high"></div>
-          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_02.webp') }}" alt="" width="720" height="540" decoding="async" fetchpriority="high"></div>
-          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_03.webp') }}" alt="" width="720" height="540" decoding="async" fetchpriority="high"></div>
-          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_04.webp') }}" alt="" width="720" height="405" decoding="async" fetchpriority="high"></div>
-          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_05.webp') }}" alt="" width="720" height="540" decoding="async"></div>
-          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_06.webp') }}" alt="" width="720" height="541" decoding="async"></div>
-          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_07.webp') }}" alt="" width="720" height="540" decoding="async"></div>
-          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_08.webp') }}" alt="" width="720" height="540" decoding="async"></div>
+          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_01.webp') }}" alt="" width="720" height="540" draggable="false" loading="eager" decoding="sync" fetchpriority="high"></div>
+          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_02.webp') }}" alt="" width="720" height="540" draggable="false" loading="eager" decoding="sync" fetchpriority="high"></div>
+          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_03.webp') }}" alt="" width="720" height="540" draggable="false" loading="eager" decoding="sync" fetchpriority="high"></div>
+          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_04.webp') }}" alt="" width="720" height="405" draggable="false" loading="eager" decoding="sync" fetchpriority="high"></div>
+          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_05.webp') }}" alt="" width="720" height="540" draggable="false" loading="eager" decoding="sync" fetchpriority="high"></div>
+          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_06.webp') }}" alt="" width="720" height="541" draggable="false" loading="eager" decoding="sync" fetchpriority="high"></div>
+          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_07.webp') }}" alt="" width="720" height="540" draggable="false" loading="eager" decoding="sync" fetchpriority="high"></div>
+          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_08.webp') }}" alt="" width="720" height="540" draggable="false" loading="eager" decoding="sync" fetchpriority="high"></div>
         </div>
         <div class="dp-hero-mosaic-wash" aria-hidden="true"></div>
 

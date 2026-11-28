@@ -1075,14 +1075,15 @@ def build_page_01_public_auth(b: FigBuilder):
     b.text(f, "Bimbingan Belajar Privat\nyang Tenang & Terarah.", 300, 224, size=48, color=SURFACE, weight="Bold", family=FONT_HEAD, width=840, align="center", line_h=58)
     b.text(f, "Mentor terkurasi datang ke rumah dengan jadwal rapi dan laporan belajar langsung untuk orang tua.", 380, 364, size=17, color="#EBF7FD", width=680, align="center", line_h=27)
 
-    cta_portal = b.pill(f, 558, 452, 162, 44, "Lihat Program", SECONDARY, SURFACE, size=14, weight="Bold", elevate=True, radius=12)
-    cta_consult = b.pill(f, 736, 452, 146, 44, "Kontak Kami", "#FFFFFF22", SURFACE, size=14, weight="Bold", stroke="#FFFFFF88", radius=12)
+    cta_portal = b.pill(f, 558, 436, 162, 44, "Lihat Program", SECONDARY, SURFACE, size=14, weight="Bold", elevate=True, radius=12)
+    cta_consult = b.pill(f, 736, 436, 146, 44, "Kontak Kami", "#FFFFFF22", SURFACE, size=14, weight="Bold", stroke="#FFFFFF88", radius=12)
 
+    # Consistent 72px after-space between CTAs and metrics bar
     hero_metrics = [("84+", "Siswa Aktif"), ("18+", "Mentor"), ("8+", "Program"), ("98%", "Kepuasan Wali")]
     for i, (num, lbl) in enumerate(hero_metrics):
         mx = 360 + i * 180
-        b.text(f, num, mx, 612, size=28, color=SURFACE, weight="Bold", family=FONT_HEAD, width=180, align="center", max_lines=1)
-        b.text(f, lbl, mx, 650, size=13, color="#BAE4F8", weight="Medium", width=180, align="center", max_lines=1)
+        b.text(f, num, mx, 552, size=28, color=SURFACE, weight="Bold", family=FONT_HEAD, width=180, align="center", max_lines=1)
+        b.text(f, lbl, mx, 590, size=13, color="#EBF7FD", weight="Medium", width=180, align="center", max_lines=1)
 
     # SCREEN 2: 3x2 PENCAPAIAN SISWA (GAMBAR 2 CARDS + ANIMATED EYE ICON-ONLY, ALL 6 POSTERS .WEBP)
     sec_prestasi = b.rect(f, 0, 824, 1440, 1316, fill=ALABASTER, radius=0, name="Section Pencapaian Siswa")

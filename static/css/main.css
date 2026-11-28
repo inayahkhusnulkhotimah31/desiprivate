@@ -5827,14 +5827,14 @@ body.dp-page-leaving .dp-login-shell {
     0 20px 44px rgba(8, 58, 84, 0.14);
 }
 
-/* 4x2 Diagonal Collage sitting in the upper ~74% leaving clean open blue space below */
+/* 4x2 Diagonal Collage sitting in the upper ~74% (NO mask-image compositor drop bug!) */
 .dp-hero-mosaic-bg.dp-hero-mosaic-bg--4x2 {
   position: absolute;
-  top: -6%;
-  left: -3.5%;
-  right: -3.5%;
+  top: -5%;
+  left: -3%;
+  right: -3%;
   bottom: auto;
-  height: 78%;
+  height: 76%;
   z-index: 1;
   background: transparent;
   padding: 14px;
@@ -5842,11 +5842,12 @@ body.dp-page-leaving .dp-login-shell {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   grid-template-rows: repeat(2, minmax(0, 1fr));
   gap: 14px;
-  transform: rotate(-2.3deg) scale(1.04);
+  transform: rotate(-2.2deg) scale(1.04) translateZ(0);
   transform-origin: center top;
+  backface-visibility: hidden;
   pointer-events: none;
-  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 76%, transparent 100%);
-  mask-image: linear-gradient(180deg, #000 0%, #000 76%, transparent 100%);
+  -webkit-mask-image: none;
+  mask-image: none;
 }
 
 .dp-hero-mosaic-cell {
@@ -5862,30 +5863,36 @@ body.dp-page-leaving .dp-login-shell {
   height: 100%;
   object-fit: cover;
   display: block;
-  filter: saturate(0.9);
+  opacity: 1;
+  filter: saturate(0.92);
 }
 
 .dp-hero-mosaic-wash {
   position: absolute;
   inset: 0;
   z-index: 2;
-  background:
-    linear-gradient(180deg, rgba(6, 78, 119, 0.66) 0%, rgba(0, 118, 178, 0.78) 54%, rgba(8, 74, 116, 0.96) 82%, #075B8E 100%),
-    radial-gradient(circle at 50% 42%, rgba(8, 58, 84, 0.36) 0%, rgba(0, 114, 168, 0.18) 65%, rgba(6, 56, 86, 0.56) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(6, 78, 119, 0.58) 0%,
+    rgba(0, 118, 178, 0.68) 46%,
+    rgba(7, 91, 142, 0.94) 74%,
+    #075B8E 86%,
+    #075B8E 100%
+  );
   pointer-events: none;
 }
 
-/* Hack 4: OKLCH Perceptual Gradient Override */
+/* Hack 4: OKLCH Perceptual Gradient Override (crisp visible photos + seamless solid lower band) */
 @supports (background: linear-gradient(in oklch, #000, #fff)) {
   .dp-hero-mosaic-wash {
-    background:
-      linear-gradient(
-        in oklch 180deg,
-        oklch(0.38 0.095 236 / 0.66) 0%,
-        oklch(0.51 0.13 234 / 0.78) 54%,
-        oklch(0.43 0.115 236 / 0.96) 82%,
-        oklch(0.42 0.11 236) 100%
-      );
+    background: linear-gradient(
+      in oklch 180deg,
+      oklch(0.38 0.095 236 / 0.58) 0%,
+      oklch(0.51 0.13 234 / 0.68) 46%,
+      oklch(0.43 0.115 236 / 0.95) 74%,
+      oklch(0.42 0.11 236) 86%,
+      oklch(0.42 0.11 236) 100%
+    );
   }
 }
 
@@ -6270,12 +6277,12 @@ body.dp-page-leaving .dp-login-shell {
   @supports ((animation-timeline: view()) and (animation-range: entry)) {
     @keyframes dpScrollCardEnter {
       from {
-        opacity: 0.05;
-        transform: translateY(20px) scale(0.985);
+        opacity: 0.35;
+        transform: translateY(14px);
       }
       to {
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: translateY(0);
       }
     }
     .dp-scroll-reveal {
@@ -6723,13 +6730,14 @@ body {
   margin: 0 auto;
 }
 
+/* Consistent 8px Spatial Rhythm in Hero: Title->Lead 16px, Lead->CTAs 32px, CTAs->Metrics 64px */
 .dp-hero-shell--centered .dp-hero-title {
   margin: 0 auto 16px auto;
   max-width: 720px;
 }
 
 .dp-hero-shell--centered .dp-hero-lead {
-  margin: 0 auto 28px auto;
+  margin: 0 auto 32px auto;
   max-width: 560px;
 }
 
@@ -6753,8 +6761,8 @@ body {
 .dp-hero-metrics-bar {
   width: 100%;
   max-width: 720px;
-  margin: 48px auto 0 auto;
-  padding-top: 8px;
+  margin: 72px auto 0 auto;
+  padding-top: 0;
   border-top: none;
 }
 
@@ -6938,8 +6946,8 @@ body {
     padding: 112px 18px 48px 18px;
   }
   .dp-hero-metrics-bar {
-    margin-top: 36px;
-    padding-top: 20px;
+    margin-top: 48px;
+    padding-top: 0;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
   }
