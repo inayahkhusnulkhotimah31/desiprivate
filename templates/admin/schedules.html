@@ -928,18 +928,18 @@
 
       let conflictHtml = "";
       if (item.has_conflict && item.conflict_info) {
-        conflictHtml = '<div style="font-size: 11px; color: #dc2626; font-weight: 600; margin-top: 3px;">⚠️ ' +
+        conflictHtml = '<div style="font-size: 11px; color: #dc2626; font-weight: 600; margin-top: 3px;">' +
           escapeJs(item.conflict_info.message) + '</div>';
       }
 
       let expBadgeHtml = "";
       if (item.expertise_matched) {
-        expBadgeHtml = '<span class="badge badge-primary" style="font-size: 10.5px;">✓ ' + escapeJs(item.expertise_label) + '</span>';
+        expBadgeHtml = '<span class="badge badge-primary" style="font-size: 10.5px;">' + escapeJs(item.expertise_label) + '</span>';
       } else {
         expBadgeHtml = '<span class="badge badge-light" style="font-size: 10.5px; border: 1px solid #cbd5e1; color: #64748b;">' + escapeJs(item.expertise_label) + '</span>';
       }
 
-      let distHtml = '<span style="font-size: 11px; color: var(--text-muted); display: inline-flex; align-items: center; gap: 3px;">📍 Jarak: <strong>' + escapeJs(item.distance_label) + '</strong></span>';
+      let distHtml = '<span style="font-size: 11px; color: var(--text-muted); display: inline-flex; align-items: center; gap: 3px;">Jarak: <strong>' + escapeJs(item.distance_label) + '</strong></span>';
 
       card.innerHTML =
         '<div style="flex: 1;">' +

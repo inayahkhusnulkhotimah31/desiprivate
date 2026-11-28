@@ -136,7 +136,6 @@
         <!-- KOTAK PERINGATAN KUNING DETEKSI DUPLIKASI SISWA (MENCOLOK) -->
         <div id="duplicateStudentAlert" style="display: none; background: #fff8e1; border: 2.5px solid #ffb300; border-radius: 10px; padding: 14px 16px; margin-bottom: 18px; box-shadow: 0 4px 16px rgba(255, 179, 0, 0.25);">
           <div style="display: flex; gap: 12px; align-items: flex-start;">
-            <div style="font-size: 26px; line-height: 1;">⚠️</div>
             <div style="flex: 1;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
                 <strong style="color: #b78103; font-size: 13.5px; text-transform: uppercase; letter-spacing: 0.5px;">Peringatan: Siswa Kemungkinan Sudah Terdaftar</strong>
@@ -434,7 +433,7 @@
       dupAlert.scrollIntoView({ behavior: 'smooth', block: 'start' });
       const match = activeMatches[0];
       const proceed = confirm(
-        "⚠️ PERINGATAN KUNING - DUPLIKASI SISWA:\n" +
+        "PERINGATAN KUNING - DUPLIKASI SISWA:\n" +
         "Siswa bernama '" + match.full_name + "' (Wali: " + match.parent_name + ") sudah terdaftar di sistem dengan program: " + (match.programs.join(', ') || 'Belum ada') + ".\n\n" +
         "- Klik [OK] untuk MENAMBAHKAN PROGRAM KE SISWA INI (1 Siswa Multi-Program, Rekomendasi).\n" +
         "- Klik [BATAL] jika ini memang orang yang berbeda dan Anda ingin membuat siswa baru."

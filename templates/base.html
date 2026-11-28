@@ -209,16 +209,16 @@
             {% if current_user.role == 'admin' %}
               <a href="{{ url_for('admin.notifications_center') }}" class="notif-bell-btn dp-fc-bell" title="Pusat Notifikasi" aria-label="Pusat Notifikasi">
                 {{ icon('bell') }}
-                {% if unread_count > 0 %}
-                  <span class="notif-dot"></span>
-                {% else %}
+                {% if unread_count and unread_count > 0 %}
                   <span class="notif-dot"></span>
                 {% endif %}
               </a>
             {% else %}
               <span class="notif-bell-btn dp-fc-bell" title="Notifikasi Sistem" aria-label="Notifikasi Sistem" style="cursor: pointer;">
                 {{ icon('bell') }}
-                <span class="notif-dot"></span>
+                {% if unread_count and unread_count > 0 %}
+                  <span class="notif-dot"></span>
+                {% endif %}
               </span>
             {% endif %}
 
