@@ -1127,13 +1127,11 @@ def build_page_01_public_auth(b: FigBuilder):
         pbtn = b.pill(f, px + 20, 2414, 272, 38, "Rincian", PRIMARY_DEEP, SURFACE, size=12.5, weight="Bold", elevate=True, radius=12)
         prog_btns.append(pbtn)
 
-    # SCREEN 4: PENUTUP RINGKAS (DENGAN galeri_09.webp CONCENTRIC 14px) + KONTAK TRANSPARAN
+    # SCREEN 4: PENUTUP RINGKAS + KONTAK TRANSPARAN
     sec_kontak = b.rect(f, 72, 2556, 1296, 160, fill=SURFACE, radius=24, stroke=HAIRLINE, name="Light Closing CTA Card")
     b.shadow(sec_kontak, blur=8, y=2, opacity=0.04)
-    b.rect(f, 100, 2594, 112, 84, fill=ALABASTER, radius=14, stroke=HAIRLINE, name="Closing Thumb Frame")
-    b.image(f, "galeri_09.webp", 100, 2594, 112, 84, mode="fill", name="Closing Unique galeri_09")
-    b.text(f, "Pantau Jadwal & Progres Belajar Anak.", 232, 2594, size=24, color=INK, weight="Bold", family=FONT_HEAD, width=620, max_lines=1)
-    b.text(f, "Masuk ke portal wali murid, mentor, atau admin untuk melihat jadwal dan laporan belajar.", 232, 2632, size=14.5, color=BODY, width=640, max_lines=1)
+    b.text(f, "Pantau Jadwal & Progres Belajar Anak.", 112, 2594, size=24, color=INK, weight="Bold", family=FONT_HEAD, width=680, max_lines=1)
+    b.text(f, "Masuk ke portal wali murid, mentor, atau admin untuk melihat jadwal dan laporan belajar.", 112, 2632, size=14.5, color=BODY, width=680, max_lines=1)
     cta_wa = b.pill(f, 1020, 2612, 136, 44, "WhatsApp", SURFACE, INK, size=13.5, weight="Bold", stroke=HAIRLINE, radius=12)
     cta_close = b.pill(f, 1170, 2612, 158, 44, "Masuk Portal", SECONDARY, SURFACE, size=13.5, weight="Bold", elevate=True, radius=12)
 
