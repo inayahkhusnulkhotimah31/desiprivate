@@ -26,20 +26,115 @@ window.closeModal = function(modalId) {
   }
 };
 
+let dpOpenGateTimer = null;
+
 function cleanupGateCurtain() {
   const curtain = document.getElementById("dpGateCurtain");
   if (curtain) curtain.remove();
-  document.body.classList.remove("dp-page-leaving");
+  const openGate = document.getElementById("dpOpenGate");
+  if (openGate) {
+    openGate.classList.remove("is-opening");
+    delete openGate.dataset.animating;
+  }
+  if (dpOpenGateTimer) {
+    window.clearTimeout(dpOpenGateTimer);
+    dpOpenGateTimer = null;
+  }
+  document.documentElement.classList.remove("dp-opening-gate");
+  document.body.classList.remove("dp-page-leaving", "dp-login-leaving");
   if (!document.querySelector(".modal-overlay.active, .dp-drawer-panel.is-open")) {
     document.body.style.overflow = "";
   }
 }
 
-window.addEventListener("pageshow", cleanupGateCurtain);
-window.addEventListener("pagehide", cleanupGateCurtain);
+function playOpenGateAnimation() {
+  const openGate = document.getElementById("dpOpenGate");
+  const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!openGate || reduced) {
+    document.documentElement.classList.remove("dp-opening-gate");
+    return;
+  }
+  if (openGate.dataset.animating === "1") return;
+  openGate.dataset.animating = "1";
+  document.documentElement.classList.add("dp-opening-gate");
+  openGate.classList.remove("is-opening");
+  // Force layout so browser paints closed doors on frame 0 before sliding open
+  void openGate.offsetWidth;
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      openGate.classList.add("is-opening");
+    });
+  });
+  if (dpOpenGateTimer) window.clearTimeout(dpOpenGateTimer);
+  dpOpenGateTimer = window.setTimeout(() => {
+    document.documentElement.classList.remove("dp-opening-gate");
+    openGate.classList.remove("is-opening");
+    delete openGate.dataset.animating;
+    dpOpenGateTimer = null;
+  }, 420);
+}
+
+let dpLoginSubmitting = false;
+
+window.addEventListener("pageshow", (e) => {
+  const isLanding = document.body && document.body.classList.contains("dp-landing-body") && !document.body.classList.contains("dp-login-page");
+  const openGate = document.getElementById("dpOpenGate");
+  const shouldKeepOpening = isLanding && document.documentElement.classList.contains("dp-opening-gate");
+
+  // Always remove any leftover closing curtain without interrupting an active opening gate
+  const curtain = document.getElementById("dpGateCurtain");
+  if (curtain) curtain.remove();
+  document.body.classList.remove("dp-page-leaving", "dp-login-leaving");
+  if (!document.querySelector(".modal-overlay.active, .dp-drawer-panel.is-open")) {
+    document.body.style.overflow = "";
+  }
+
+  if (isLanding) {
+    let fromLoginBack = false;
+    try {
+      const leftTs = Number(sessionStorage.getItem("dp_left_login") || "0");
+      if (leftTs && Date.now() - leftTs < 4000) {
+        sessionStorage.removeItem("dp_left_login");
+        fromLoginBack = true;
+      } else if (leftTs) {
+        sessionStorage.removeItem("dp_left_login");
+      }
+    } catch (_) {}
+
+    if ((shouldKeepOpening || (e.persisted && fromLoginBack) || fromLoginBack) && (!openGate || openGate.dataset.animating !== "1")) {
+      playOpenGateAnimation();
+    }
+  }
+});
+
+window.addEventListener("pagehide", () => {
+  cleanupGateCurtain();
+  if (document.body && document.body.classList.contains("dp-login-page") && !dpLoginSubmitting) {
+    try { sessionStorage.setItem("dp_left_login", String(Date.now())); } catch (_) {}
+  }
+});
 
 function initMain() {
-  cleanupGateCurtain();
+  const isLanding = document.body && document.body.classList.contains("dp-landing-body") && !document.body.classList.contains("dp-login-page");
+  const hasOpeningFlag = isLanding && document.documentElement.classList.contains("dp-opening-gate");
+  if (!hasOpeningFlag) {
+    cleanupGateCurtain();
+  } else {
+    const curtain = document.getElementById("dpGateCurtain");
+    if (curtain) curtain.remove();
+    playOpenGateAnimation();
+  }
+  if (document.body && document.body.classList.contains("dp-login-page")) {
+    dpLoginSubmitting = false;
+    try { sessionStorage.removeItem("dp_left_login"); } catch (_) {}
+    document.querySelectorAll("form").forEach((f) => {
+      f.addEventListener("submit", () => {
+        dpLoginSubmitting = true;
+      });
+    });
+  } else if (!isLanding) {
+    try { sessionStorage.removeItem("dp_left_login"); } catch (_) {}
+  }
   // 0. Normalize /landing -> / so Landing Page always displays root URL
   if (window.location.pathname === "/landing" && window.history && typeof window.history.replaceState === "function") {
     window.history.replaceState(null, "", "/" + window.location.search + window.location.hash);
@@ -242,6 +337,17 @@ function initMain() {
         }, 210);
         // Safety fallback if navigation is cancelled or restored without pagehide
         window.setTimeout(cleanupGateCurtain, 1800);
+        return;
+      }
+
+      // Login -> Home: fade out login texts first, then open gate cleanly on Landing Page
+      if (document.body.classList.contains("dp-login-page") && (destPath === "/" || destPath === "/landing")) {
+        e.preventDefault();
+        document.body.classList.add("dp-login-leaving");
+        try { sessionStorage.setItem("dp_gate_open", "1"); } catch (_) {}
+        window.setTimeout(() => {
+          window.location.href = "/";
+        }, 140);
       }
     });
   }

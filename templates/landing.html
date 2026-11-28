@@ -14,9 +14,30 @@
   <link rel="preload" as="image" type="image/webp" href="{{ url_for('static', filename='images/client/galeri_03.webp') }}">
   <link rel="preload" as="image" type="image/webp" href="{{ url_for('static', filename='images/client/galeri_04.webp') }}">
   <link rel="prefetch" href="{{ url_for('auth.login') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=21">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=23">
+  <script>
+    (function () {
+      try {
+        var openFlag = sessionStorage.getItem("dp_gate_open") === "1";
+        var leftTs = Number(sessionStorage.getItem("dp_left_login") || "0");
+        var freshBack = leftTs > 0 && Date.now() - leftTs < 4000;
+        if (openFlag || freshBack) {
+          sessionStorage.removeItem("dp_gate_open");
+          sessionStorage.removeItem("dp_left_login");
+          document.documentElement.classList.add("dp-opening-gate");
+        }
+      } catch (_) {}
+    })();
+  </script>
 </head>
 <body class="dp-landing-body" data-login-photo="{{ url_for('static', filename='images/client/galeri_02.webp') }}">
+  <div class="dp-gate-curtain dp-gate-curtain--open" id="dpOpenGate" aria-hidden="true">
+    <div class="dp-gate-door dp-gate-door--left">
+      <img class="dp-gate-door-photo" src="{{ url_for('static', filename='images/client/galeri_02.webp') }}" alt="" draggable="false">
+      <div class="dp-gate-door-fade"></div>
+    </div>
+    <div class="dp-gate-door dp-gate-door--right"></div>
+  </div>
   <div id="dpScrollProgress" aria-hidden="true"></div>
 
   <header class="dp-nav-bar dp-nav-hero" id="dpLandingNav">
@@ -413,6 +434,6 @@
     </button>
   </div>
 
-  <script src="{{ url_for('static', filename='js/main.js') }}?v=17" defer></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}?v=23" defer></script>
 </body>
 </html>
