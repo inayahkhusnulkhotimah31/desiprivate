@@ -1,67 +1,33 @@
 /**
- * DESI PRIVAT - Main JavaScript File
- * Mengelola interaktivitas UI:
- * - Modal dialogs (Global & Immediate availability)
- * - Toggle navigasi mobile
- * - Show/Hide password
- * - Deteksi bentrokan jadwal dinamis (AJAX/Fetch)
- * - Transisi halaman & inisialisasi Scroll-Craft
+ * DESI PRIVAT - Lightweight Core UI Script (V12)
+ * Zero heavy vendor dependencies for instant load & smooth 60fps interaction:
+ * - Viewport-centered modals & drawers
+ * - Responsive sidebar & landing mobile menu
+ * - Animated password eye swap
+ * - Seamless Login Closing-Gate (Left photo + Right empty white panel, text after)
+ * - Live schedule conflict & mentor replacement handlers
  */
 
-// ============================================================================
-// 1. MODAL DIALOG HANDLERS (DEFINED AT TOP-LEVEL FOR IMMEDIATE GLOBAL AVAILABILITY)
-// ============================================================================
 window.openModal = function(modalId) {
   const modal = document.getElementById(modalId);
-  if (modal) {
-    modal.classList.add("active");
-    document.body.style.overflow = "hidden";
-    const bodyEl = modal.querySelector(".modal-body");
-    if (bodyEl) {
-      bodyEl.scrollTop = 0;
-    }
-    const card = modal.querySelector(".modal-dialog, .modal-content");
-    if (card && window.gsap) {
-      window.gsap.fromTo(
-        card,
-        { opacity: 0, scale: 0.95, y: 8 },
-        { opacity: 1, scale: 1, y: 0, duration: 0.24, ease: "power3.out", clearProps: "transform" }
-      );
-    }
-  }
+  if (!modal) return;
+  modal.classList.add("active");
+  document.body.style.overflow = "hidden";
+  const bodyEl = modal.querySelector(".modal-body");
+  if (bodyEl) bodyEl.scrollTop = 0;
 };
 
 window.closeModal = function(modalId) {
   const modal = document.getElementById(modalId);
-  if (modal) {
-    const finishClose = () => {
-      modal.classList.remove("active");
-      const hasOther = document.querySelector(".modal-overlay.active");
-      if (!hasOther) {
-        document.body.style.overflow = "";
-      }
-    };
-    const card = modal.querySelector(".modal-dialog, .modal-content");
-    if (card && window.gsap && modal.classList.contains("active")) {
-      window.gsap.to(card, {
-        opacity: 0,
-        scale: 0.96,
-        duration: 0.18,
-        ease: "power2.in",
-        onComplete: () => {
-          card.style.opacity = "";
-          card.style.transform = "";
-          finishClose();
-        },
-      });
-    } else {
-      finishClose();
-    }
+  if (!modal) return;
+  modal.classList.remove("active");
+  if (!document.querySelector(".modal-overlay.active")) {
+    document.body.style.overflow = "";
   }
 };
 
 function initMain() {
-  // 1. Toggle Sidebar & Drawer Mobile/Tablet (Responsif Modern)
+  // 1. Sidebar & Drawer Mobile/Tablet
   const toggleBtn = document.getElementById("mobileToggleBtn");
   const sidebar = document.getElementById("sidebar");
   const closeBtn = document.getElementById("sidebarCloseBtn");
@@ -70,53 +36,34 @@ function initMain() {
   function openSidebar() {
     if (sidebar) sidebar.classList.add("show");
     if (backdrop) backdrop.classList.add("active");
-    if (window.innerWidth <= 1023) {
-      document.body.style.overflow = "hidden";
-    }
+    if (window.innerWidth <= 1023) document.body.style.overflow = "hidden";
   }
 
   function closeSidebar() {
     if (sidebar) sidebar.classList.remove("show");
     if (backdrop) backdrop.classList.remove("active");
-    document.body.style.overflow = "";
+    if (!document.querySelector(".modal-overlay.active")) document.body.style.overflow = "";
   }
 
   if (toggleBtn && sidebar) {
     toggleBtn.addEventListener("click", (e) => {
       e.stopPropagation();
-      if (sidebar.classList.contains("show")) {
-        closeSidebar();
-      } else {
-        openSidebar();
-      }
+      if (sidebar.classList.contains("show")) closeSidebar();
+      else openSidebar();
     });
-
-    if (closeBtn) {
-      closeBtn.addEventListener("click", closeSidebar);
-    }
-
-    if (backdrop) {
-      backdrop.addEventListener("click", closeSidebar);
-    }
-
-    // Tutup drawer otomatis setelah klik tautan menu di layar tablet & smartphone
-    sidebar.querySelectorAll(".sidebar-nav a").forEach(link => {
+    if (closeBtn) closeBtn.addEventListener("click", closeSidebar);
+    if (backdrop) backdrop.addEventListener("click", closeSidebar);
+    sidebar.querySelectorAll(".sidebar-nav a").forEach((link) => {
       link.addEventListener("click", () => {
-        if (window.innerWidth <= 1023) {
-          closeSidebar();
-        }
+        if (window.innerWidth <= 1023) closeSidebar();
       });
     });
-
-    // Menangani resize window: jika kembali ke desktop (>1023px), reset overflow & drawer
     window.addEventListener("resize", () => {
-      if (window.innerWidth > 1023) {
-        closeSidebar();
-      }
+      if (window.innerWidth > 1023) closeSidebar();
     });
   }
 
-  // 2. Toggle Tampilkan / Sembunyikan Password (Animated Blurred Eye Swap)
+  // 2. Animated Password Eye Toggle (Blurred Icon Swap)
   const togglePwBtn = document.getElementById("togglePasswordBtn");
   const pwInput = document.getElementById("passwordInput");
   if (togglePwBtn && pwInput) {
@@ -138,102 +85,62 @@ function initMain() {
       const opened = landingMenu.classList.toggle("is-open");
       landingToggle.setAttribute("aria-expanded", opened ? "true" : "false");
     });
-    landingMenu.querySelectorAll("a").forEach(a => {
-      a.addEventListener("click", () => landingMenu.classList.remove("is-open"));
+    landingMenu.querySelectorAll("a").forEach((a) => {
+      a.addEventListener("click", () => {
+        landingMenu.classList.remove("is-open");
+        landingToggle.setAttribute("aria-expanded", "false");
+      });
     });
   }
 
-  // 4. Floating Transparent-to-Glass Navbar State
+  // 4. Floating Navbar, Top Scroll Progress & Icon-Only Back-to-Top (Passive rAF-free scroll)
   const heroNav = document.querySelector(".dp-nav-bar.dp-nav-hero");
-  const syncHeroNav = () => {
-    if (!heroNav) return;
-    heroNav.classList.toggle("is-scrolled", (window.scrollY || 0) > 40);
+  const floatBar = document.getElementById("dpFloatBar");
+  const progressBar = document.getElementById("dpScrollProgress");
+  let scrollTick = false;
+
+  const syncScrollUI = () => {
+    scrollTick = false;
+    const y = window.scrollY || 0;
+    if (heroNav) heroNav.classList.toggle("is-scrolled", y > 48);
+    if (floatBar) floatBar.classList.toggle("is-visible", y > 360);
+    if (progressBar) {
+      const docH = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = docH > 0 ? Math.min(1, Math.max(0, y / docH)) : 0;
+      progressBar.style.transform = `scaleX(${pct})`;
+    }
   };
-  syncHeroNav();
 
-  // 5. Mount Scroll-Craft + Lenis + Native CSS Scroll-Driven Animations
-  const prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let scApi = null;
-  if (window.ScrollCraft && document.querySelector("[data-sc-act]")) {
-    scApi = window.ScrollCraft.mount(document);
+  syncScrollUI();
+  window.addEventListener("scroll", () => {
+    if (!scrollTick) {
+      scrollTick = true;
+      window.requestAnimationFrame(syncScrollUI);
+    }
+  }, { passive: true });
+
+  const topBtn = document.getElementById("dpFloatTopBtn");
+  if (topBtn) {
+    topBtn.addEventListener("click", () => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
   }
 
-  if (!prefersReduced && window.Lenis && document.body.classList.contains("dp-landing-body")) {
-    const lenis = new window.Lenis({
-      duration: 1.15,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: true,
-      wheelMultiplier: 0.95,
-      autoRaf: true,
-    });
-    window.__dpLenis = lenis;
-    lenis.on("scroll", () => {
-      syncHeroNav();
-      if (scApi && typeof scApi.read === "function") {
-        scApi.read();
+  // 5. Program Detail Drawer (Viewport-Fixed, stays on user's screen)
+  const drawer = document.getElementById("dpProgramDrawer");
+  const drawerBd = document.getElementById("dpDrawerBackdrop");
+  const drawerClose = document.getElementById("dpDrawerCloseBtn");
+  const drawerDismiss = document.getElementById("dpDrawerDismissBtn");
+  if (drawer && drawerBd) {
+    const closeDrawer = () => {
+      drawer.classList.remove("is-open");
+      drawerBd.classList.remove("is-open");
+      drawer.setAttribute("aria-hidden", "true");
+      drawerBd.setAttribute("aria-hidden", "true");
+      if (!document.querySelector(".modal-overlay.active")) {
+        document.body.style.overflow = "";
       }
-      if (window.ScrollTrigger) {
-        window.ScrollTrigger.update();
-      }
-    });
-    document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
-      anchor.addEventListener("click", (e) => {
-        const id = anchor.getAttribute("href");
-        if (!id || id === "#") return;
-        const target = document.querySelector(id);
-        if (!target) return;
-        e.preventDefault();
-        lenis.scrollTo(target, { offset: -72, duration: 1.2 });
-      });
-    });
-  } else {
-    window.addEventListener("scroll", syncHeroNav, { passive: true });
-  }
-
-  // 5b. Interactive Portal Tabs, FAQ Accordion & Program Detail Drawer
-  const portalTabs = document.querySelectorAll(".dp-portal-tab");
-  if (portalTabs.length > 0) {
-    portalTabs.forEach((tab) => {
-      tab.addEventListener("click", () => {
-        const targetId = tab.getAttribute("data-portal-target");
-        portalTabs.forEach((t) => {
-          t.classList.remove("is-active");
-          t.setAttribute("aria-selected", "false");
-        });
-        document.querySelectorAll(".dp-portal-pane").forEach((pane) => {
-          pane.classList.remove("is-active");
-          pane.setAttribute("hidden", "");
-        });
-        tab.classList.add("is-active");
-        tab.setAttribute("aria-selected", "true");
-        const activePane = targetId ? document.getElementById(targetId) : null;
-        if (activePane) {
-          activePane.removeAttribute("hidden");
-          activePane.classList.add("is-active");
-        }
-      });
-    });
-  }
-
-  document.querySelectorAll(".dp-faq-trigger").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const expanded = btn.getAttribute("aria-expanded") === "true";
-      const panel = btn.nextElementSibling;
-      btn.setAttribute("aria-expanded", expanded ? "false" : "true");
-      if (panel) panel.classList.toggle("is-open", !expanded);
-    });
-  });
-
-  const drawerPanel = document.getElementById("dpProgramDrawer");
-  const drawerBackdrop = document.getElementById("dpDrawerBackdrop");
-  const closeDrawer = () => {
-    if (!drawerPanel || !drawerBackdrop) return;
-    drawerPanel.classList.remove("is-open");
-    drawerBackdrop.classList.remove("is-open");
-    drawerPanel.setAttribute("aria-hidden", "true");
-    document.body.style.overflow = "";
-  };
-  if (drawerPanel && drawerBackdrop) {
+    };
     document.querySelectorAll(".dp-prog-open-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         const titleEl = document.getElementById("dpDrawerTitle");
@@ -244,43 +151,22 @@ function initMain() {
         if (descEl) descEl.textContent = btn.getAttribute("data-prog-desc") || "";
         if (focusEl) focusEl.textContent = btn.getAttribute("data-prog-focus") || "";
         if (cadEl) cadEl.textContent = btn.getAttribute("data-prog-cadence") || "";
-        drawerPanel.classList.add("is-open");
-        drawerBackdrop.classList.add("is-open");
-        drawerPanel.setAttribute("aria-hidden", "false");
+        drawer.classList.add("is-open");
+        drawerBd.classList.add("is-open");
+        drawer.setAttribute("aria-hidden", "false");
+        drawerBd.setAttribute("aria-hidden", "false");
         document.body.style.overflow = "hidden";
       });
     });
-    drawerBackdrop.addEventListener("click", closeDrawer);
-    const closeBtn1 = document.getElementById("dpDrawerCloseBtn");
-    const closeBtn2 = document.getElementById("dpDrawerDismissBtn");
-    const consultBtn = document.getElementById("dpDrawerConsultBtn");
-    if (closeBtn1) closeBtn1.addEventListener("click", closeDrawer);
-    if (closeBtn2) closeBtn2.addEventListener("click", closeDrawer);
-    if (consultBtn) {
-      consultBtn.addEventListener("click", (e) => {
-        const href = consultBtn.getAttribute("href") || "";
-        closeDrawer();
-        if (href.startsWith("#")) {
-          e.preventDefault();
-          const target = document.querySelector(href);
-          if (target) {
-            if (window.__dpLenis && typeof window.__dpLenis.scrollTo === "function") {
-              window.__dpLenis.scrollTo(target, { offset: -40, duration: 1.0 });
-            } else {
-              target.scrollIntoView({ behavior: prefersReduced ? "auto" : "smooth" });
-            }
-          }
-        }
-      });
-    }
+    if (drawerClose) drawerClose.addEventListener("click", closeDrawer);
+    if (drawerDismiss) drawerDismiss.addEventListener("click", closeDrawer);
+    drawerBd.addEventListener("click", closeDrawer);
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && drawerPanel.classList.contains("is-open")) {
-        closeDrawer();
-      }
+      if (e.key === "Escape" && drawer.classList.contains("is-open")) closeDrawer();
     });
   }
 
-  // 5c. Achievement Poster Lightbox Modal (.dp-poster-open-btn)
+  // 6. Achievement Poster Lightbox Modal (.dp-poster-open-btn)
   document.querySelectorAll(".dp-poster-open-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       const src = btn.getAttribute("data-poster-src") || "";
@@ -293,16 +179,8 @@ function initMain() {
     });
   });
 
-  window.addEventListener("load", () => {
-    if (scApi && typeof scApi.layout === "function") scApi.layout();
-  });
-  if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(() => {
-      if (scApi && typeof scApi.layout === "function") scApi.layout();
-    });
-  }
-
-  // 6. Dynamic Page Transition: Closing-Gate Curtain for /login, Clean Fade Otherwise
+  // 7. Login-Matched Closing Gate Transition (Left photo panel + Right clean white panel, text enters after)
+  const prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (!prefersReduced) {
     document.addEventListener("click", (e) => {
       if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
@@ -319,53 +197,53 @@ function initMain() {
       } catch (_) {
         return;
       }
-      e.preventDefault();
+
       if (destPath === "/login" || destPath.endsWith("/login")) {
+        e.preventDefault();
         let curtain = document.getElementById("dpGateCurtain");
         if (!curtain) {
+          const photoUrl = document.body.getAttribute("data-login-photo") || "/static/images/client/galeri_02.webp";
           curtain = document.createElement("div");
           curtain.id = "dpGateCurtain";
           curtain.className = "dp-gate-curtain";
-          curtain.innerHTML = '<div class="dp-gate-door dp-gate-door--left"></div><div class="dp-gate-door dp-gate-door--right"></div>';
+          curtain.innerHTML =
+            '<div class="dp-gate-door dp-gate-door--left">' +
+              '<img class="dp-gate-door-photo" src="' + photoUrl + '" alt="">' +
+              '<div class="dp-gate-door-fade"></div>' +
+            '</div>' +
+            '<div class="dp-gate-door dp-gate-door--right"></div>';
           document.body.appendChild(curtain);
         }
-        window.requestAnimationFrame(() => curtain.classList.add("is-closing"));
+        try { sessionStorage.setItem("dp_gate_arrived", "1"); } catch (_) {}
+        window.requestAnimationFrame(() => {
+          window.requestAnimationFrame(() => curtain.classList.add("is-closing"));
+        });
         window.setTimeout(() => {
           window.location.href = link.href;
-        }, 290);
-        return;
+        }, 380);
       }
-      document.body.classList.add("dp-page-leaving");
-      window.setTimeout(() => {
-        window.location.href = link.href;
-      }, 170);
     });
   }
 
-  // 3. Modal Overlay & Keyboard Event Listeners
-  document.querySelectorAll(".modal-overlay").forEach(overlay => {
+  // 8. Modal Overlay Backdrop & Escape Close
+  document.querySelectorAll(".modal-overlay").forEach((overlay) => {
     overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) {
-        window.closeModal(overlay.id);
-      }
+      if (e.target === overlay) window.closeModal(overlay.id);
     });
   });
 
-  // Tutup modal atau drawer dengan tombol keyboard Escape
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       const activeModals = document.querySelectorAll(".modal-overlay.active");
       if (activeModals.length > 0) {
-        activeModals.forEach(m => m.classList.remove("active"));
+        activeModals.forEach((m) => m.classList.remove("active"));
         document.body.style.overflow = "";
       }
-      if (sidebar && sidebar.classList.contains("show")) {
-        closeSidebar();
-      }
+      if (sidebar && sidebar.classList.contains("show")) closeSidebar();
     }
   });
 
-  // 4. Deteksi Bentrokan Jadwal Dinamis (Frontend live check)
+  // 9. Deteksi Bentrokan Jadwal Dinamis (Admin Schedule Form)
   const scheduleForm = document.getElementById("scheduleForm");
   if (scheduleForm) {
     const mentorSelect = scheduleForm.querySelector("[name='mentor_id']");
@@ -377,24 +255,19 @@ function initMain() {
 
     async function checkConflictLive() {
       if (!mentorSelect || !studentSelect || !dateInput || !timeInput || !conflictAlertBox) return;
-
       const mId = mentorSelect.value;
       const sId = studentSelect.value;
       const sDate = dateInput.value;
       const sTime = timeInput.value;
       const duration = durationInput ? durationInput.value : 90;
-
       if (!mId || !sId || !sDate || !sTime) {
         conflictAlertBox.style.display = "none";
         return;
       }
-
       try {
         const csrfInput = scheduleForm.querySelector("[name='csrf_token']");
         const headers = { "Content-Type": "application/json" };
-        if (csrfInput && csrfInput.value) {
-          headers["X-CSRF-Token"] = csrfInput.value;
-        }
+        if (csrfInput && csrfInput.value) headers["X-CSRF-Token"] = csrfInput.value;
         const resp = await fetch("/admin/api/check-conflict", {
           method: "POST",
           headers,
@@ -403,8 +276,8 @@ function initMain() {
             student_id: sId,
             schedule_date: sDate,
             start_time: sTime,
-            duration: duration
-          })
+            duration: duration,
+          }),
         });
         const data = await resp.json();
         conflictAlertBox.replaceChildren();
@@ -424,40 +297,50 @@ function initMain() {
       }
     }
 
-    [mentorSelect, studentSelect, dateInput, timeInput, durationInput].forEach(el => {
+    [mentorSelect, studentSelect, dateInput, timeInput, durationInput].forEach((el) => {
       if (el) el.addEventListener("change", checkConflictLive);
     });
   }
 
-  // 6. Modal Pergantian Mentor Dinamis
+  // 10. Modal Pergantian Mentor Dinamis
   window.prepareMentorReplacementModal = async function(scheduleId, currentMentorName) {
     const modal = document.getElementById("replacementModal");
     const schedIdInput = document.getElementById("replaceScheduleId");
     const currentMentorSpan = document.getElementById("currentMentorSpan");
     const mentorSelect = document.getElementById("replacementMentorSelect");
-
     if (!modal || !schedIdInput || !mentorSelect) return;
 
     schedIdInput.value = scheduleId;
     if (currentMentorSpan) currentMentorSpan.innerText = currentMentorName;
-
-    mentorSelect.innerHTML = "<option value=''>-- Memuat daftar mentor yang memenuhi syarat... --</option>";
+    mentorSelect.replaceChildren();
+    const loadingOpt = document.createElement("option");
+    loadingOpt.value = "";
+    loadingOpt.textContent = "-- Memuat daftar mentor yang memenuhi syarat... --";
+    mentorSelect.appendChild(loadingOpt);
     window.openModal("replacementModal");
 
     try {
       const resp = await fetch(`/admin/api/eligible-replacements/${scheduleId}`);
       const list = await resp.json();
-      mentorSelect.innerHTML = "<option value=''>-- Pilih Mentor Pengganti --</option>";
-      list.forEach(item => {
+      mentorSelect.replaceChildren();
+      const defOpt = document.createElement("option");
+      defOpt.value = "";
+      defOpt.textContent = "-- Pilih Mentor Pengganti --";
+      mentorSelect.appendChild(defOpt);
+      list.forEach((item) => {
         const m = item.mentor;
         const opt = document.createElement("option");
         opt.value = m.id;
         opt.disabled = item.has_conflict;
-        opt.innerText = `${m.full_name} (${m.expertise}) ${item.has_conflict ? ' [BENTROK]' : ' [TERSEDIA]'}`;
+        opt.textContent = `${m.full_name} (${m.expertise}) ${item.has_conflict ? " [BENTROK]" : " [TERSEDIA]"}`;
         mentorSelect.appendChild(opt);
       });
-    } catch (e) {
-      mentorSelect.innerHTML = "<option value=''>Gagal memuat mentor pengganti</option>";
+    } catch (_) {
+      mentorSelect.replaceChildren();
+      const errOpt = document.createElement("option");
+      errOpt.value = "";
+      errOpt.textContent = "Gagal memuat mentor pengganti";
+      mentorSelect.appendChild(errOpt);
     }
   };
 }

@@ -5,26 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>DESI PRIVAT: Bimbingan Belajar Privat di Rumah</title>
   <meta name="description" content="Bimbingan belajar les privat tatap muka di rumah untuk SD, SMP, SMA, SNBT, Bahasa Inggris, dan Calistung bersama mentor terkurasi.">
-  <meta name="page-type" content="service">
-  <meta name="site-kind" content="other">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" type="image/webp" href="{{ url_for('static', filename='images/client/logo_desi_privat.webp') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/scrollcraft.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/lenis.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=12">
 </head>
-<body class="dp-landing-body dp-page-enter">
+<body class="dp-landing-body" data-login-photo="{{ url_for('static', filename='images/client/galeri_02.webp') }}">
   <div id="dpScrollProgress" aria-hidden="true"></div>
-  <div data-sc-progress aria-hidden="true"></div>
 
-  <header class="dp-nav-bar dp-nav-hero">
+  <header class="dp-nav-bar dp-nav-hero" id="dpLandingNav">
     <div class="dp-container dp-nav-inner">
-      <a href="#hero" class="dp-brand">
+      <a href="{{ url_for('auth.index') }}" class="dp-brand" aria-label="DESI PRIVAT Beranda">
         <img
           src="{{ url_for('static', filename='images/client/logo_desi_privat.webp') }}"
           class="dp-brand-logo-photo"
+          width="38"
+          height="38"
+          decoding="async"
+          fetchpriority="high"
           alt="Logo DESI PRIVAT"
         >
         <div class="dp-brand-name">
@@ -41,9 +40,13 @@
 
       <div class="dp-nav-actions">
         <button type="button" class="dp-mobile-menu-btn" id="landingMobileToggle" aria-label="Buka Menu" aria-expanded="false">
-          {{ icon('menu') }}
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="4" y1="7" x2="20" y2="7"/>
+            <line x1="4" y1="12" x2="20" y2="12"/>
+            <line x1="4" y1="17" x2="20" y2="17"/>
+          </svg>
         </button>
-        <a href="{{ url_for('auth.login') }}" class="dp-btn dp-btn-caramel" data-sc-magnet="0.18">
+        <a href="{{ url_for('auth.login') }}" class="dp-btn dp-btn-caramel dp-nav-login-btn">
           Masuk
         </a>
       </div>
@@ -51,80 +54,71 @@
   </header>
 
   <main>
-    <!-- SCREEN 1: HERO DENGAN KOLASE 4x2 MIRING DI ATAS + WHITE SPACE (8 FOTO UNIK, ZERO DUPLIKAT) -->
-    <section class="dp-hero dp-hero--framed" id="hero" data-sc-act="pin" data-sc-span="1.55" data-sc-drift="#083A54">
-      <div class="dp-hero-stage dp-hero-stage--framed" data-sc-stage>
+    <!-- SCREEN 1: FRAMED HERO DENGAN WHITE SPACE + KOLASE 4x2 MIRING DI ATAS (8 FOTO UNIK, ZERO DUPLIKAT) -->
+    <section class="dp-hero dp-hero--framed" id="hero">
+      <div class="dp-hero-stage dp-hero-stage--framed">
         <div class="dp-hero-mosaic-bg dp-hero-mosaic-bg--4x2" aria-hidden="true">
-          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_01.webp') }}" alt=""></div>
-          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_02.webp') }}" alt=""></div>
-          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_03.webp') }}" alt=""></div>
-          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_04.webp') }}" alt=""></div>
-          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_05.webp') }}" alt=""></div>
-          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_06.webp') }}" alt=""></div>
-          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_07.webp') }}" alt=""></div>
-          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_08.webp') }}" alt=""></div>
+          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_01.webp') }}" alt="" width="720" height="540" decoding="async" fetchpriority="high"></div>
+          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_02.webp') }}" alt="" width="720" height="540" decoding="async" fetchpriority="high"></div>
+          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_03.webp') }}" alt="" width="720" height="540" decoding="async" fetchpriority="high"></div>
+          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_04.webp') }}" alt="" width="720" height="405" decoding="async" fetchpriority="high"></div>
+          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_05.webp') }}" alt="" width="720" height="540" decoding="async"></div>
+          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_06.webp') }}" alt="" width="720" height="541" decoding="async"></div>
+          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_07.webp') }}" alt="" width="720" height="540" decoding="async"></div>
+          <div class="dp-hero-mosaic-cell"><img src="{{ url_for('static', filename='images/client/galeri_08.webp') }}" alt="" width="720" height="540" decoding="async"></div>
         </div>
         <div class="dp-hero-mosaic-wash" aria-hidden="true"></div>
 
         <div class="dp-container dp-hero-shell dp-hero-shell--centered">
-          <div class="dp-hero-beats">
-            <div class="dp-hero-beat dp-hero-beat--a" data-sc-cue="0 0.72 0">
-              <h1 class="dp-hero-title">
-                Bimbingan Privat yang Tenang &amp; Terarah di Rumah.
-              </h1>
-              <p class="dp-hero-lead">
-                Mentor terkurasi datang ke rumah dengan jadwal rapi dan laporan belajar langsung untuk orang tua.
-              </p>
-              <div class="dp-hero-actions">
-                <a href="#program" class="dp-btn dp-btn-caramel" data-sc-magnet="0.2">
-                  Lihat Program
-                </a>
-                <a href="#kontak" class="dp-btn dp-btn-ghost-light">
-                  Kontak
-                </a>
-              </div>
+          <div class="dp-hero-content">
+            <h1 class="dp-hero-title">
+              Bimbingan Privat yang Tenang &amp; Terarah di Rumah.
+            </h1>
+            <p class="dp-hero-lead">
+              Mentor terkurasi datang ke rumah dengan jadwal rapi dan laporan belajar langsung untuk orang tua.
+            </p>
+            <div class="dp-hero-actions">
+              <a href="#program" class="dp-btn dp-btn-caramel">
+                Lihat Program
+              </a>
+              <a href="#kontak" class="dp-btn dp-btn-ghost-light">
+                Kontak
+              </a>
             </div>
+          </div>
 
-            <div class="dp-hero-beat dp-hero-beat--b" data-sc-cue="0.54 1 0.22 0.14">
-              <h2 class="dp-hero-subhead">
-                Terpercaya oleh Keluarga.
-              </h2>
-              <div class="dp-metrics-grid">
-                <div>
-                  <div class="dp-metric-val">
-                    <span data-sc-count="0 {{ student_count|default(0) }}">{{ student_count|default(0) }}</span>{% if student_count and student_count > 0 %}+{% endif %}
-                  </div>
-                  <div class="dp-metric-lbl">Siswa Aktif</div>
-                </div>
-                <div>
-                  <div class="dp-metric-val">
-                    <span data-sc-count="0 {{ mentor_count|default(0) }}">{{ mentor_count|default(0) }}</span>{% if mentor_count and mentor_count > 0 %}+{% endif %}
-                  </div>
-                  <div class="dp-metric-lbl">Mentor</div>
-                </div>
-                <div>
-                  <div class="dp-metric-val">
-                    <span data-sc-count="0 {{ program_count|default(0) }}">{{ program_count|default(0) }}</span>{% if program_count and program_count > 0 %}+{% endif %}
-                  </div>
-                  <div class="dp-metric-lbl">Program</div>
-                </div>
-                <div>
-                  <div class="dp-metric-val">
-                    <span data-sc-count="0 {{ satisfaction_rate|default(98) }}">{{ satisfaction_rate|default(98) }}</span>%
-                  </div>
-                  <div class="dp-metric-lbl">Kepuasan Wali</div>
-                </div>
+          <div class="dp-metrics-grid dp-hero-metrics-bar">
+            <div class="dp-hero-metric-item">
+              <div class="dp-metric-val">
+                {{ student_count|default(0) }}{% if student_count and student_count > 0 %}+{% endif %}
               </div>
+              <div class="dp-metric-lbl">Siswa Aktif</div>
+            </div>
+            <div class="dp-hero-metric-item">
+              <div class="dp-metric-val">
+                {{ mentor_count|default(0) }}{% if mentor_count and mentor_count > 0 %}+{% endif %}
+              </div>
+              <div class="dp-metric-lbl">Mentor</div>
+            </div>
+            <div class="dp-hero-metric-item">
+              <div class="dp-metric-val">
+                {{ program_count|default(0) }}{% if program_count and program_count > 0 %}+{% endif %}
+              </div>
+              <div class="dp-metric-lbl">Program</div>
+            </div>
+            <div class="dp-hero-metric-item">
+              <div class="dp-metric-val">
+                {{ satisfaction_rate|default(98) }}%
+              </div>
+              <div class="dp-metric-lbl">Kepuasan Wali</div>
             </div>
           </div>
         </div>
-
-        <div class="dp-seam-fade-to-alabaster" aria-hidden="true"></div>
       </div>
     </section>
 
-    <!-- SCREEN 2: PENCAPAIAN SISWA (KARTU FROSTED GLASS SEPERTI GAMBAR 2, SEMUA 6 FOTO PENCAPAIAN) -->
-    <section class="dp-section-simple dp-section-alabaster" id="pencapaian" data-sc-act="flow" data-sc-drift="#F7F7F5">
+    <!-- SCREEN 2: PENCAPAIAN SISWA (KARTU CONCENTRIC + IKON MATA BERANIMASI CENTERED) -->
+    <section class="dp-section-simple dp-section-alabaster dp-cv-auto" id="pencapaian">
       <div class="dp-container">
         <div class="dp-section-head">
           <h2 class="dp-h2">Pencapaian Siswa.</h2>
@@ -141,7 +135,7 @@
 
         {% set animated_eye_svg %}
           <svg class="dp-eye-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path class="dp-eye-lid" d="M2.2 12C4.6 7.5 8.1 5.5 12 5.5C15.9 5.5 19.4 7.5 21.8 12C19.4 16.5 15.9 18.5 12 18.5C8.1 18.5 4.6 16.5 2.2 12Z"/>
+            <path class="dp-eye-lid" d="M2 12C4.5 7.5 8 5.5 12 5.5C16 5.5 19.5 7.5 22 12C19.5 16.5 16 18.5 12 18.5C8 18.5 4.5 16.5 2 12Z"/>
             <circle class="dp-eye-iris" cx="12" cy="12" r="3.2"/>
             <circle class="dp-eye-pupil" cx="12" cy="12" r="1.15" fill="currentColor" stroke="none"/>
           </svg>
@@ -150,7 +144,7 @@
         <div class="dp-achievement-grid">
           <article class="dp-sophie-card dp-scroll-reveal">
             <div class="dp-sophie-inner">
-              <img src="{{ url_for('static', filename='images/client/pencapaian_01.webp') }}" alt="Juara 3 Olimpiade Matematika SD Expo SMAFT 2026" class="dp-sophie-img" loading="lazy">
+              <img src="{{ url_for('static', filename='images/client/pencapaian_01.webp') }}" alt="Juara 3 Olimpiade Matematika SD Expo SMAFT 2026" class="dp-sophie-img" width="640" height="800" loading="lazy" decoding="async">
               <div class="dp-sophie-frost">
                 <div class="dp-sophie-name-row">
                   <h3 class="dp-sophie-name">Muhammad Ian Ramadhan</h3>
@@ -170,7 +164,7 @@
 
           <article class="dp-sophie-card dp-scroll-reveal">
             <div class="dp-sophie-inner">
-              <img src="{{ url_for('static', filename='images/client/pencapaian_02.webp') }}" alt="Predikat Silver IOB Rising Star Mathematics" class="dp-sophie-img" loading="lazy">
+              <img src="{{ url_for('static', filename='images/client/pencapaian_02.webp') }}" alt="Predikat Silver IOB Rising Star Mathematics" class="dp-sophie-img" width="640" height="800" loading="lazy" decoding="async">
               <div class="dp-sophie-frost">
                 <div class="dp-sophie-name-row">
                   <h3 class="dp-sophie-name">Muhammad Ian Ramadhan</h3>
@@ -190,7 +184,7 @@
 
           <article class="dp-sophie-card dp-scroll-reveal">
             <div class="dp-sophie-inner">
-              <img src="{{ url_for('static', filename='images/client/pencapaian_03.webp') }}" alt="Kontingen DESI PRIVAT KMSI 2026 Final Provinsi" class="dp-sophie-img" loading="lazy">
+              <img src="{{ url_for('static', filename='images/client/pencapaian_03.webp') }}" alt="Kontingen DESI PRIVAT KMSI 2026 Final Provinsi" class="dp-sophie-img" width="640" height="800" loading="lazy" decoding="async">
               <div class="dp-sophie-frost">
                 <div class="dp-sophie-name-row">
                   <h3 class="dp-sophie-name">Kontingen DESI PRIVAT</h3>
@@ -210,7 +204,7 @@
 
           <article class="dp-sophie-card dp-scroll-reveal">
             <div class="dp-sophie-inner">
-              <img src="{{ url_for('static', filename='images/client/pencapaian_04.webp') }}" alt="Gold Medals Venus Kompetisi Rayon Makassar" class="dp-sophie-img" loading="lazy">
+              <img src="{{ url_for('static', filename='images/client/pencapaian_04.webp') }}" alt="Gold Medals Venus Kompetisi Rayon Makassar" class="dp-sophie-img" width="640" height="800" loading="lazy" decoding="async">
               <div class="dp-sophie-frost">
                 <div class="dp-sophie-name-row">
                   <h3 class="dp-sophie-name">Muhammad Izhar Ismed</h3>
@@ -230,7 +224,7 @@
 
           <article class="dp-sophie-card dp-scroll-reveal">
             <div class="dp-sophie-inner">
-              <img src="{{ url_for('static', filename='images/client/pencapaian_05.webp') }}" alt="Lomba Cerdas Cermat SEACOM 2026 Muhammad Izhar Ismed" class="dp-sophie-img" loading="lazy">
+              <img src="{{ url_for('static', filename='images/client/pencapaian_05.webp') }}" alt="Lomba Cerdas Cermat SEACOM 2026 Muhammad Izhar Ismed" class="dp-sophie-img" width="640" height="800" loading="lazy" decoding="async">
               <div class="dp-sophie-frost">
                 <div class="dp-sophie-name-row">
                   <h3 class="dp-sophie-name">Muhammad Izhar Ismed</h3>
@@ -250,7 +244,7 @@
 
           <article class="dp-sophie-card dp-scroll-reveal">
             <div class="dp-sophie-inner">
-              <img src="{{ url_for('static', filename='images/client/pencapaian_06.webp') }}" alt="Lomba Cerdas Cermat SEACOM 2026 Muhammad Ian Ramadhan Hamzah" class="dp-sophie-img" loading="lazy">
+              <img src="{{ url_for('static', filename='images/client/pencapaian_06.webp') }}" alt="Lomba Cerdas Cermat SEACOM 2026 Muhammad Ian Ramadhan Hamzah" class="dp-sophie-img" width="640" height="800" loading="lazy" decoding="async">
               <div class="dp-sophie-frost">
                 <div class="dp-sophie-name-row">
                   <h3 class="dp-sophie-name">Muhammad Ian Ramadhan</h3>
@@ -272,7 +266,7 @@
     </section>
 
     <!-- SCREEN 3: PROGRAM BIMBINGAN (RINGKAS 1 BARIS, 4 KARTU SERAGAM) -->
-    <section class="dp-section-simple dp-section-surface" id="program" data-sc-act="flow" data-sc-drift="#FFFFFF">
+    <section class="dp-section-simple dp-section-surface dp-cv-auto" id="program">
       <div class="dp-container">
         <div class="dp-section-head">
           <h2 class="dp-h2">Program Bimbingan.</h2>
@@ -280,7 +274,7 @@
         </div>
 
         <div class="dp-program-simple-grid">
-          <article class="dp-program-simple-card">
+          <article class="dp-program-simple-card dp-scroll-reveal">
             <div class="dp-program-num">01</div>
             <h3>Privat SD</h3>
             <p>Tematik, berhitung dasar, dan pendampingan PR harian.</p>
@@ -289,7 +283,7 @@
             </button>
           </article>
 
-          <article class="dp-program-simple-card">
+          <article class="dp-program-simple-card dp-scroll-reveal">
             <div class="dp-program-num">02</div>
             <h3>Privat SMP</h3>
             <p>Matematika, IPA terpadu, dan kesiapan ujian sekolah.</p>
@@ -298,7 +292,7 @@
             </button>
           </article>
 
-          <article class="dp-program-simple-card">
+          <article class="dp-program-simple-card dp-scroll-reveal">
             <div class="dp-program-num">03</div>
             <h3>Privat SMA &amp; SNBT</h3>
             <p>Pendalaman Saintek, Soshum, dan persiapan masuk PTN.</p>
@@ -307,7 +301,7 @@
             </button>
           </article>
 
-          <article class="dp-program-simple-card">
+          <article class="dp-program-simple-card dp-scroll-reveal">
             <div class="dp-program-num">04</div>
             <h3>Inggris &amp; Calistung</h3>
             <p>Percakapan aktif serta dasar membaca, menulis, berhitung.</p>
@@ -320,12 +314,12 @@
     </section>
 
     <!-- SCREEN 4: PENUTUP & KONTAK TRANSPARAN (TANPA FOOTER WARNA SOLID) -->
-    <section class="dp-closing-minimal" id="kontak" data-sc-act="flow" data-sc-drift="#F7F7F5">
+    <section class="dp-closing-minimal dp-cv-auto" id="kontak">
       <div class="dp-container">
         <div class="dp-closing-card dp-scroll-reveal">
           <div class="dp-closing-card-lead">
             <div class="dp-closing-thumb-wrap">
-              <img src="{{ url_for('static', filename='images/client/galeri_09.webp') }}" alt="Sesi belajar privat DESI PRIVAT di rumah" class="dp-closing-thumb" loading="lazy">
+              <img src="{{ url_for('static', filename='images/client/galeri_09.webp') }}" alt="Sesi belajar privat DESI PRIVAT di rumah" class="dp-closing-thumb" width="720" height="541" loading="lazy" decoding="async">
             </div>
             <div class="dp-closing-card-copy">
               <h2 class="dp-h2" style="margin: 0 0 8px 0;">Pantau Jadwal &amp; Progres Belajar Anak.</h2>
@@ -338,21 +332,25 @@
             <a href="https://wa.me/6285242009811" target="_blank" rel="noopener noreferrer" class="dp-btn dp-btn-ghost-dark">
               WhatsApp
             </a>
-            <a href="{{ url_for('auth.login') }}" class="dp-btn dp-btn-caramel" data-sc-magnet="0.18">
+            <a href="{{ url_for('auth.login') }}" class="dp-btn dp-btn-caramel">
               Masuk Portal
             </a>
           </div>
         </div>
 
         <div class="dp-contact-strip" id="footerKontak">
-          <div class="dp-contact-brand">
+          <a href="{{ url_for('auth.index') }}" class="dp-contact-brand">
             <img
               src="{{ url_for('static', filename='images/client/logo_desi_privat.webp') }}"
               class="dp-contact-logo"
+              width="30"
+              height="30"
+              loading="lazy"
+              decoding="async"
               alt="Logo DESI PRIVAT"
             >
             <span>DESI PRIVAT</span>
-          </div>
+          </a>
           <div class="dp-contact-links">
             <a href="https://wa.me/6285242009811" target="_blank" rel="noopener noreferrer">0852-4200-9811</a>
             <a href="https://instagram.com/desi_private" target="_blank" rel="noopener noreferrer">@desi_private</a>
@@ -364,12 +362,17 @@
     </section>
   </main>
 
-  <!-- INTERACTIVE PROGRAM DETAIL DRAWER (UNIFIED DIALOG GRAMMAR) -->
+  <!-- INTERACTIVE PROGRAM DETAIL DRAWER (VIEWPORT-FIXED) -->
   <div class="dp-drawer-backdrop" id="dpDrawerBackdrop" aria-hidden="true"></div>
   <aside class="dp-drawer-panel" id="dpProgramDrawer" role="dialog" aria-modal="true" aria-labelledby="dpDrawerTitle" aria-hidden="true">
     <div class="dp-drawer-head">
       <h3 class="dp-drawer-title" id="dpDrawerTitle">Program Bimbingan</h3>
-      <button type="button" class="dp-drawer-close" id="dpDrawerCloseBtn" aria-label="Tutup Rincian">&times;</button>
+      <button type="button" class="dp-drawer-close" id="dpDrawerCloseBtn" aria-label="Tutup Rincian">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
     </div>
     <div class="dp-drawer-body">
       <p class="dp-drawer-desc" id="dpDrawerDesc"></p>
@@ -388,34 +391,34 @@
     </div>
   </aside>
 
-  <!-- MODAL PRATINJAU POSTER PENCAPAIAN (UNIFIED DIALOG) -->
+  <!-- MODAL PRATINJAU POSTER PENCAPAIAN (VIEWPORT-FIXED) -->
   <div class="modal-overlay" id="dpPosterModal" role="dialog" aria-modal="true" aria-labelledby="dpPosterModalTitle">
     <div class="modal-dialog" style="max-width: 520px;">
       <div class="modal-header">
         <div class="modal-title" id="dpPosterModalTitle">Pencapaian Siswa</div>
-        <button type="button" class="modal-close-btn" onclick="closeModal('dpPosterModal')" aria-label="Tutup">&times;</button>
+        <button type="button" class="modal-close-btn" onclick="closeModal('dpPosterModal')" aria-label="Tutup">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
       </div>
-      <div class="modal-body" style="padding: 16px;">
+      <div class="modal-body" style="padding: 12px;">
         <img id="dpPosterModalImg" src="" alt="Poster Pencapaian DESI PRIVAT" class="dp-poster-modal-img">
       </div>
     </div>
   </div>
 
-  <!-- FLOATING BACK TO TOP (ICON ONLY) -->
+  <!-- FLOATING BACK TO TOP (ICON ONLY, PERFECTLY CENTERED) -->
   <div class="dp-float-bar" id="dpFloatBar" role="region" aria-label="Kembali ke atas">
     <button type="button" class="dp-float-icon-btn" id="dpFloatTopBtn" aria-label="Kembali ke atas" title="Kembali ke atas">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M12 19V5"/>
         <path d="M5 12l7-7 7 7"/>
       </svg>
     </button>
   </div>
 
-  <script src="{{ url_for('static', filename='vendor/lenis.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='vendor/gsap.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='vendor/ScrollTrigger.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/scrollcraft.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/desi-gsap.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}?v=12" defer></script>
 </body>
 </html>

@@ -114,7 +114,7 @@
           {{ selected_child.full_name }}
         </h2>
         <div style="font-size: 13px; color: var(--gray-500);">
-          {{ selected_child.school or 'Sekolah' }} &bull; {{ selected_child.grade or '-' }}
+          {{ selected_child.school or 'Sekolah' }}, {{ selected_child.grade or '-' }}
         </div>
         <div style="margin-top: 8px;">
           {{ selected_child.status|status_badge|safe }}

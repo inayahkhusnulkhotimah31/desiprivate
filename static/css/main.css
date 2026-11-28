@@ -2993,14 +2993,15 @@ h1, h2, h3, .page-title-box h1, .login-card-title, .dp-hero-title, .dp-h2, .dp-b
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Route Entrance (320ms blur settle) & Exit (175ms, >20% shorter) */
-.dp-page-enter {
-  animation: dpPageEnterV2 0.32s var(--ease-enter) both;
+/* Route Entrance (Opacity-only so body/main NEVER trap position:fixed modals/overlays) */
+.dp-page-enter,
+.dp-fade-in {
+  animation: dpPageEnterV2 0.24s var(--ease-enter) both;
 }
 
 @keyframes dpPageEnterV2 {
-  from { opacity: 0; filter: blur(2px); transform: translateY(8px); }
-  to { opacity: 1; filter: blur(0); transform: translateY(0); }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 body.dp-page-leaving .main-wrapper,
@@ -6512,6 +6513,424 @@ body.dp-page-leaving .dp-login-shell {
     height: 74%;
     gap: 10px;
     transform: rotate(-1.8deg) scale(1.05);
+  }
+}
+
+/* ==========================================================================
+   V12 PIXEL-CONSISTENT HIERARCHY, BREATHING HERO TOP WHITESPACE, VIEWPORT
+   OVERLAYS, CENTERED ICONS, LOGIN-MATCHED CLOSING GATE & ULTRA-LIGHT PERF
+   ========================================================================== */
+html {
+  scroll-behavior: smooth;
+}
+
+html,
+body {
+  transform: none !important;
+  filter: none !important;
+}
+
+.dp-cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 640px;
+}
+
+.dp-brand-home-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 12px;
+  transition: opacity 0.18s ease;
+}
+
+.dp-brand-home-link:hover {
+  opacity: 0.88;
+}
+
+/* Pixel-Perfect Centering on ALL Icon-Only Buttons (fixes off-center / left-shift) */
+.dp-eye-btn,
+.dp-eye-toggle-btn,
+.dp-float-icon-btn,
+.dp-mobile-menu-btn,
+.notif-bell-btn,
+.mobile-toggle-btn,
+.sidebar-close-btn,
+.modal-close-btn,
+.dp-drawer-close,
+.nav-icon {
+  padding: 0 !important;
+  line-height: 0 !important;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dp-eye-btn svg,
+.dp-eye-toggle-btn svg,
+.dp-float-icon-btn svg,
+.dp-mobile-menu-btn svg,
+.notif-bell-btn svg,
+.mobile-toggle-btn svg,
+.sidebar-close-btn svg,
+.modal-close-btn svg,
+.dp-drawer-close svg,
+.nav-icon svg {
+  display: block;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.modal-close-btn,
+.dp-drawer-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  border: 1px solid var(--alpha-border);
+  background: #F7F7F5;
+  color: #111827;
+  cursor: pointer;
+}
+
+.modal-close-btn:hover,
+.dp-drawer-close:hover {
+  background: #E5E7EB;
+}
+
+/* Viewport-Locked Modals & Drawers (ALWAYS centered in user's active screen) */
+.modal-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 20px !important;
+  background: rgba(15, 23, 42, 0.52);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 160ms ease, visibility 160ms ease;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.modal-overlay .modal-dialog,
+.modal-overlay .modal-content {
+  margin: 0 auto !important;
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+  opacity: 0;
+  transform: scale(0.95) translateY(8px);
+  transition: transform 220ms var(--ease-snappy), opacity 180ms ease;
+}
+
+.modal-overlay.active .modal-dialog,
+.modal-overlay.active .modal-content {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.dp-drawer-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9998 !important;
+}
+
+.dp-drawer-panel {
+  position: fixed !important;
+  top: 16px !important;
+  right: 16px !important;
+  bottom: 16px !important;
+  height: auto !important;
+  border-radius: 20px !important;
+  z-index: 9999 !important;
+}
+
+/* Hero Framed Top Breathing Whitespace + Clean Floating Header */
+.dp-hero--framed {
+  background: #F7F7F5;
+  padding: 20px 24px 0 24px;
+}
+
+.dp-hero-stage--framed {
+  --r-hero-outer: 28px;
+  --r-hero-pad: 8px;
+  position: relative;
+  min-height: 82vh;
+  min-height: min(88dvh, 740px);
+  border-radius: var(--r-hero-outer);
+  overflow: hidden;
+  background: #075B8E;
+  display: flex;
+  align-items: center;
+  box-shadow:
+    inset 0 1px 0 var(--alpha-light-border),
+    0 18px 40px rgba(8, 58, 84, 0.13);
+}
+
+.dp-nav-bar.dp-nav-hero {
+  position: fixed;
+  top: 28px;
+  left: 36px;
+  right: 36px;
+  z-index: 80;
+  border-radius: 16px;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: top 220ms var(--ease-snappy), background-color 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+}
+
+.dp-nav-bar.dp-nav-hero .dp-nav-inner {
+  min-height: 68px;
+  padding: 0 20px;
+}
+
+.dp-nav-bar.dp-nav-hero.is-scrolled {
+  top: 12px;
+  left: 24px;
+  right: 24px;
+  background: rgba(255, 255, 255, 0.96);
+  border-color: var(--alpha-border);
+  box-shadow: 0 10px 28px rgba(17, 24, 39, 0.08);
+}
+
+.dp-nav-login-btn {
+  min-height: 42px;
+  padding: 9px 20px;
+  border-radius: 12px;
+}
+
+.dp-hero-shell--centered {
+  position: relative;
+  z-index: 3;
+  text-align: center;
+  padding: 132px 28px 64px 28px;
+  width: 100%;
+}
+
+.dp-hero-content {
+  max-width: 740px;
+  margin: 0 auto;
+}
+
+.dp-hero-shell--centered .dp-hero-title {
+  margin: 0 auto 16px auto;
+  max-width: 720px;
+}
+
+.dp-hero-shell--centered .dp-hero-lead {
+  margin: 0 auto 28px auto;
+  max-width: 560px;
+}
+
+.dp-hero-shell--centered .dp-hero-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  max-width: 100%;
+}
+
+.dp-hero-shell--centered .dp-hero-actions .dp-btn {
+  min-height: 44px;
+  padding: 10px 22px;
+  border-radius: 12px;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.dp-hero-metrics-bar {
+  width: 100%;
+  max-width: 720px;
+  margin: 52px auto 0 auto;
+  padding-top: 28px;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+/* Remove costly GPU backdrop-filter on scrolling achievement frost cards */
+.dp-sophie-frost {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.88) 38%,
+    rgba(255, 255, 255, 0.97) 70%,
+    #FFFFFF 100%
+  );
+}
+
+/* Uniform Consistent Pixel Radii across ALL Dashboards (16px cards, 12px controls) */
+.card,
+.stat-card,
+.kpi-card,
+.dp-an-sheet,
+.dp-an-tile,
+.dp-agenda-card,
+.dp-agenda-item,
+.dp-notice-card,
+.dp-metric-tile,
+.dp-program-simple-card,
+.overdue-alert-card {
+  border-radius: 16px !important;
+  border: 1px solid var(--alpha-border);
+}
+
+.dp-an-tile,
+.dp-agenda-item {
+  border-radius: 12px !important;
+}
+
+/* ==========================================================================
+   LOGIN-MATCHED CLOSING GATE (LEFT PHOTO + RIGHT EMPTY WHITE, TEXT AFTER)
+   ========================================================================== */
+.dp-gate-curtain {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 10000 !important;
+  pointer-events: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+}
+
+.dp-gate-door {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.dp-gate-door--left {
+  background: #083A54;
+  overflow: hidden;
+  transform: translateX(-100%);
+}
+
+.dp-gate-door-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.dp-gate-door-fade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(155deg, rgba(8, 58, 84, 0.92) 0%, rgba(0, 147, 214, 0.78) 65%, rgba(8, 58, 84, 0.86) 100%);
+}
+
+.dp-gate-door--right {
+  background: #FFFFFF;
+  border-left: 1px solid var(--alpha-border);
+  transform: translateX(100%);
+}
+
+.dp-gate-curtain.is-closing .dp-gate-door--left,
+.dp-gate-curtain.is-closing .dp-gate-door--right {
+  transform: translateX(0);
+}
+
+/* Login Page Seamless Handoff & Sequential Text/Button Entrance */
+.dp-login-page .dp-login-panel {
+  background: #FFFFFF;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:not(.dp-from-gate) .dp-login-gate-left {
+    animation: dpGateLeftIn 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  html:not(.dp-from-gate) .dp-login-gate-right {
+    animation: dpGateRightIn 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  html:not(.dp-from-gate) .dp-gate-stagger {
+    opacity: 0;
+    animation: dpGateItemIn 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(300ms + var(--stagger-i, 0) * 45ms);
+  }
+  html.dp-from-gate .dp-gate-stagger {
+    opacity: 0;
+    animation: dpGateItemIn 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(40ms + var(--stagger-i, 0) * 45ms);
+  }
+}
+
+@keyframes dpGateLeftIn {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes dpGateRightIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes dpGateItemIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .dp-hero--framed {
+    padding: 12px 12px 0 12px;
+  }
+  .dp-nav-bar.dp-nav-hero {
+    top: 20px;
+    left: 20px;
+    right: 20px;
+  }
+  .dp-nav-bar.dp-nav-hero.is-scrolled {
+    top: 8px;
+    left: 12px;
+    right: 12px;
+  }
+  .dp-nav-bar.dp-nav-hero .dp-nav-inner {
+    min-height: 60px;
+    padding: 0 14px;
+  }
+  .dp-hero-shell--centered {
+    padding: 112px 18px 48px 18px;
+  }
+  .dp-hero-metrics-bar {
+    margin-top: 36px;
+    padding-top: 20px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .dp-gate-curtain {
+    grid-template-columns: 1fr;
+    grid-template-rows: 36% 64%;
+  }
+  .dp-gate-door--left {
+    transform: translateY(-100%);
+  }
+  .dp-gate-door--right {
+    border-left: none;
+    border-top: 1px solid var(--alpha-border);
+    transform: translateY(100%);
+  }
+  .dp-gate-curtain.is-closing .dp-gate-door--left,
+  .dp-gate-curtain.is-closing .dp-gate-door--right {
+    transform: translateY(0);
   }
 }
 

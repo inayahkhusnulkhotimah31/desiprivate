@@ -1023,12 +1023,13 @@ def _draw_sophie_achievement_card(b: FigBuilder, parent, x, y, w, h, img_name, s
     # 2-Line Achievement Description
     b.text(parent, desc, tx, ty + 28, size=12.5, color=BODY, width=iw - 36, line_h=18, max_lines=2)
 
-    # Bottom Row: Metadata left + Icon-Only Animated Eye Button (44x44, concentric 14px radius) right
+    # Bottom Row: Metadata left + Icon-Only Animated Eye Button (44x44, centered 20px icon, concentric 14px radius)
     by = iy + ih - 56
     b.text(parent, meta_left, tx, by + 13, size=12, color=MUTED, weight="SemiBold", width=iw - 96, max_lines=1)
-    eye_btn = b.rect(parent, ix + iw - 60, by, 44, 44, fill=ALABASTER, radius=14, stroke=HAIRLINE, name="Animated Eye Icon Button")
+    eye_x = ix + iw - 60
+    eye_btn = b.rect(parent, eye_x, by, 44, 44, fill=ALABASTER, radius=14, stroke=HAIRLINE, name="Animated Eye Icon Button")
     b.shadow(eye_btn, blur=8, y=2, opacity=0.06)
-    b.icon(parent, "eye", ix + iw - 48, by + 12, size=20, color=INK, stroke_w=1.75)
+    b.icon(parent, "eye", eye_x + 12, by + 12, size=20, color=INK, stroke_w=1.75)
     return eye_btn
 
 
@@ -1036,54 +1037,53 @@ def build_page_01_public_auth(b: FigBuilder):
     b.page_add("01 - Public & Auth (4x2 Hero + Eye Cards)")
     b.page_bg("#EAEAE6")
 
-    # --- 1. landing.html (4-Screen Editorial: Framed 4x2 Diagonal Hero + 6 Sophie Eye Cards + 4 Programs + Closing with galeri_09) ---
+    # --- 1. landing.html (4-Screen Editorial: Framed 4x2 Diagonal Hero + Top Whitespace + 6 Sophie Eye Cards + 4 Programs + Closing with galeri_09) ---
     f = b.frame("landing.html: Beranda Publik (4x2 Hero + Whitespace + Eye Icon + Zero Duplikat)", 0, 0, 1440, 2980, fill=ALABASTER, stroke=HAIRLINE)
 
-    # SCREEN 1: FRAMED HERO WITH BREATHING WHITESPACE + 4x2 COLLAGE AT TOP (8 UNIQUE PHOTOS, ZERO DUPLICATES)
-    act1_hero = b.rect(f, 20, 16, 1400, 760, fill="#085A8C", radius=28, name="Screen 1 Framed Hero Stage (Concentric 28px)")
+    # SCREEN 1: FRAMED HERO WITH BREATHING TOP WHITESPACE + 4x2 COLLAGE AT TOP (8 UNIQUE PHOTOS, ZERO DUPLICATES)
+    act1_hero = b.rect(f, 24, 24, 1392, 752, fill="#075B8E", radius=28, name="Screen 1 Framed Hero Stage (Concentric 28px)")
     b.shadow(act1_hero, blur=24, y=10, opacity=0.12)
     hero_tiles = [
         "galeri_01.webp", "galeri_02.webp", "galeri_03.webp", "galeri_04.webp",
         "galeri_05.webp", "galeri_06.webp", "galeri_07.webp", "galeri_08.webp",
     ]
-    tile_w, tile_h, tile_gap = 330, 250, 14
+    tile_w, tile_h, tile_gap = 328, 244, 14
     for gi, gfile in enumerate(hero_tiles):
         col = gi % 4
         row = gi // 4
-        # Slight diagonal vertical offset per column for natural tilted collage composition
         diag_y = col * -8
-        gx = 36 + col * (tile_w + tile_gap)
-        gy = 38 + row * (tile_h + tile_gap) + diag_y
+        gx = 40 + col * (tile_w + tile_gap)
+        gy = 48 + row * (tile_h + tile_gap) + diag_y
         b.rect(f, gx, gy, tile_w, tile_h, fill=PRIMARY_DEEP, radius=20, name=f"Hero 4x2 Tile Frame #{gi+1}")
         b.image(f, gfile, gx, gy, tile_w, tile_h, mode="fill", name=f"Hero 4x2 Unique #{gi+1} {gfile}")
 
     # Open Blue Wash Over 4x2 Mosaic + Clean Open Lower Band (Like Gambar 1)
-    b.gradient_rect(f, 20, 16, 1400, 760, ["#064E77B8", "#0076B2CC", "#075B8EF5", "#075B8EFF"], start=(0.5, 0.0), end=(0.5, 1.0), radius=28, name="Hero OKLCH Blue Wash")
+    b.gradient_rect(f, 24, 24, 1392, 752, ["#064E77B8", "#0076B2CC", "#075B8EF5", "#075B8EFF"], start=(0.5, 0.0), end=(0.5, 1.0), radius=28, name="Hero OKLCH Blue Wash")
 
-    # Floating Transparent Hero Navbar (Unified Client Logo 12px Radius + 3 Links + Masuk CTA)
-    b.rect(f, 20, 16, 540, 2.5, fill=PRIMARY, radius=0, name="Scroll Progress Hairline")
-    draw_brand_mark(b, f, 72, 36, size=38, light=True)
-    b.text(f, "DESI PRIVAT", 122, 44, size=17, color=SURFACE, weight="Bold", family=FONT_HEAD, width=160, max_lines=1)
+    # Floating Transparent Hero Navbar with Breathing Top Space (Unified Logo 12px + Centered Nav + Masuk CTA)
+    draw_brand_mark(b, f, 68, 52, size=38, light=True)
+    b.text(f, "DESI PRIVAT", 118, 60, size=17, color=SURFACE, weight="Bold", family=FONT_HEAD, width=160, max_lines=1)
     nav_links = {}
     for idx, nav in enumerate(["Beranda", "Prestasi", "Program"]):
         nx = 580 + idx * 116
-        hit = b.rect(f, nx - 10, 38, 96, 34, fill="#FFFFFF10", radius=12, name=f"Landing Nav {nav}")
-        b.text(f, nav, nx, 45, size=13.5, color=SURFACE, weight="SemiBold" if idx == 0 else "Medium", width=80, max_lines=1)
+        hit = b.rect(f, nx - 10, 54, 96, 34, fill="#FFFFFF10", radius=12, name=f"Landing Nav {nav}")
+        b.text(f, nav, nx, 61, size=13.5, color=SURFACE, weight="SemiBold" if idx == 0 else "Medium", width=80, max_lines=1)
         nav_links[nav] = hit
-    nav_login_btn = b.pill(f, 1244, 35, 124, 40, "Masuk", SECONDARY, SURFACE, size=13.5, weight="Bold", elevate=True, radius=12)
+    nav_login_btn = b.pill(f, 1248, 50, 120, 42, "Masuk", SECONDARY, SURFACE, size=13.5, weight="Bold", elevate=True, radius=12)
 
-    # Centered Hero Copy & CTAs (Like Gambar 1 Composition, Own DESI PRIVAT Copy)
-    b.text(f, "Bimbingan Belajar Privat\nyang Tenang & Terarah.", 300, 204, size=48, color=SURFACE, weight="Bold", family=FONT_HEAD, width=840, align="center", line_h=58)
-    b.text(f, "Mentor terkurasi datang ke rumah dengan jadwal rapi dan laporan belajar langsung untuk orang tua.", 380, 344, size=17, color="#EBF7FD", width=680, align="center", line_h=27)
+    # Centered Hero Copy & Bounded CTAs with Generous Top Whitespace
+    b.text(f, "Bimbingan Belajar Privat\nyang Tenang & Terarah.", 300, 224, size=48, color=SURFACE, weight="Bold", family=FONT_HEAD, width=840, align="center", line_h=58)
+    b.text(f, "Mentor terkurasi datang ke rumah dengan jadwal rapi dan laporan belajar langsung untuk orang tua.", 380, 364, size=17, color="#EBF7FD", width=680, align="center", line_h=27)
 
-    cta_portal = b.pill(f, 548, 434, 172, 46, "Lihat Program", SECONDARY, SURFACE, size=14, weight="Bold", elevate=True, radius=12)
-    cta_consult = b.pill(f, 736, 434, 156, 46, "Kontak Kami", "#FFFFFF22", SURFACE, size=14, weight="Bold", stroke="#FFFFFF88", radius=12)
+    cta_portal = b.pill(f, 558, 452, 162, 44, "Lihat Program", SECONDARY, SURFACE, size=14, weight="Bold", elevate=True, radius=12)
+    cta_consult = b.pill(f, 736, 452, 146, 44, "Kontak Kami", "#FFFFFF22", SURFACE, size=14, weight="Bold", stroke="#FFFFFF88", radius=12)
 
+    b.rect(f, 360, 588, 720, 1, fill="#FFFFFF28", radius=0, name="Hero Metrics Hairline")
     hero_metrics = [("84+", "Siswa Aktif"), ("18+", "Mentor"), ("8+", "Program"), ("98%", "Kepuasan Wali")]
     for i, (num, lbl) in enumerate(hero_metrics):
-        mx = 240 + i * 250
-        b.text(f, num, mx, 636, size=28, color=SURFACE, weight="Bold", family=FONT_HEAD, width=180, align="center", max_lines=1)
-        b.text(f, lbl, mx, 674, size=13, color="#BAE4F8", weight="Medium", width=180, align="center", max_lines=1)
+        mx = 360 + i * 180
+        b.text(f, num, mx, 612, size=28, color=SURFACE, weight="Bold", family=FONT_HEAD, width=180, align="center", max_lines=1)
+        b.text(f, lbl, mx, 650, size=13, color="#BAE4F8", weight="Medium", width=180, align="center", max_lines=1)
 
     # SCREEN 2: 3x2 PENCAPAIAN SISWA (GAMBAR 2 CARDS + ANIMATED EYE ICON-ONLY, ALL 6 POSTERS .WEBP)
     sec_prestasi = b.rect(f, 0, 824, 1440, 1316, fill=ALABASTER, radius=0, name="Section Pencapaian Siswa")
