@@ -26,7 +26,20 @@ window.closeModal = function(modalId) {
   }
 };
 
+function cleanupGateCurtain() {
+  const curtain = document.getElementById("dpGateCurtain");
+  if (curtain) curtain.remove();
+  document.body.classList.remove("dp-page-leaving");
+  if (!document.querySelector(".modal-overlay.active, .dp-drawer-panel.is-open")) {
+    document.body.style.overflow = "";
+  }
+}
+
+window.addEventListener("pageshow", cleanupGateCurtain);
+window.addEventListener("pagehide", cleanupGateCurtain);
+
 function initMain() {
+  cleanupGateCurtain();
   // 0. Normalize /landing -> / so Landing Page always displays root URL
   if (window.location.pathname === "/landing" && window.history && typeof window.history.replaceState === "function") {
     window.history.replaceState(null, "", "/" + window.location.search + window.location.hash);
@@ -227,6 +240,8 @@ function initMain() {
         window.setTimeout(() => {
           window.location.href = link.href;
         }, 210);
+        // Safety fallback if navigation is cancelled or restored without pagehide
+        window.setTimeout(cleanupGateCurtain, 1800);
       }
     });
   }
