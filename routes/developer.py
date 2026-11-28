@@ -10,6 +10,7 @@ Dashboard Pemantauan Khusus Pengembang (Real-Time Developer Monitoring)
 import io
 import csv
 import json
+import secrets
 import time
 from datetime import datetime
 from functools import wraps
@@ -26,6 +27,15 @@ from services.audit_service import (
 )
 
 developer_bp = Blueprint("developer", __name__, url_prefix="/developer")
+
+def _parse_limit(raw, default=50, cap=5000):
+    """Parse query limit secara aman tanpa crash 500 pada input non-numerik."""
+    try:
+        val = int(raw)
+        return max(1, min(val, cap))
+    except (TypeError, ValueError):
+        return default
+
 
 def developer_required(f):
     """Dekorator otorisasi ketat khusus akun developer."""
@@ -59,13 +69,14 @@ def login():
         cfg_user = getattr(Config, "DEVELOPER_USERNAME", "developer")
         cfg_pass = getattr(Config, "DEVELOPER_PASSWORD", "DesiPrivat@Dev2026!")
 
-        if username.lower() == cfg_user.lower() and password == cfg_pass:
+        if secrets.compare_digest(username.lower(), cfg_user.lower()) and secrets.compare_digest(password, cfg_pass):
             is_valid = True
             dev_identity = cfg_user
         else:
-            # 2. Cek akun database ber-role developer atau username devlop
+            # 2. Cek akun database ber-role developer atau username devlop yang cocok dengan input
             user = query_db(
-                "SELECT * FROM users WHERE LOWER(username) IN ('devlop', 'developer') AND is_active = 1",
+                "SELECT * FROM users WHERE LOWER(username) = LOWER(?) AND LOWER(username) IN ('devlop', 'developer') AND is_active = 1",
+                (username,),
                 one=True
             )
             if user and check_password_hash(user["password_hash"], password):
@@ -73,6 +84,7 @@ def login():
                 dev_identity = user["username"]
 
         if is_valid:
+            session.clear()
             session["is_developer"] = True
             session["developer_username"] = dev_identity
             session["developer_login_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -89,7 +101,7 @@ def login():
             )
             flash("Selamat datang di Developer Real-Time Monitoring DESI PRIVAT.", "success")
             next_url = request.args.get("next")
-            if next_url and next_url.startswith("/developer"):
+            if next_url and next_url.startswith("/developer") and not next_url.startswith("//") and "\\" not in next_url:
                 return redirect(next_url)
             return redirect(url_for("developer.dashboard"))
 
@@ -235,7 +247,7 @@ def api_activities():
     action_type = request.args.get("action_type")
     start_date = request.args.get("start_date")
     end_date = request.args.get("end_date")
-    limit = int(request.args.get("limit", 50))
+    limit = _parse_limit(request.args.get("limit"), 50, 500)
 
     logs = get_audit_logs(
         limit=limit,
@@ -258,7 +270,7 @@ def api_activities():
 def api_student_diffs():
     """Mengambil riwayat diff perubahan field-level siswa."""
     student_id = request.args.get("student_id")
-    limit = int(request.args.get("limit", 30))
+    limit = _parse_limit(request.args.get("limit"), 30, 500)
     diffs = get_student_change_logs(student_id=student_id, limit=limit)
     return jsonify({"success": True, "diffs": [dict(d) for d in diffs]})
 
@@ -297,7 +309,7 @@ def api_system_health():
 def export_audit_logs():
     """Mengekspor seluruh riwayat audit log ke format CSV atau JSON."""
     fmt = request.args.get("format", "csv").lower()
-    limit = int(request.args.get("limit", 1000))
+    limit = _parse_limit(request.args.get("limit"), 1000, 5000)
     logs = get_audit_logs(limit=limit)
 
     timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")

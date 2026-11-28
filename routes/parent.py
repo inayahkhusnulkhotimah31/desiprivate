@@ -22,6 +22,10 @@ parent_bp = Blueprint("parent", __name__, url_prefix="/parent")
 def check_parent_access():
     if "user_id" not in session or session.get("role") != "parent":
         abort(403, description="Akses khusus untuk akun Orang Tua/Wali murid terdaftar.")
+    user = query_db("SELECT is_active FROM users WHERE id = ?", (session["user_id"],), one=True)
+    if not user or not user["is_active"]:
+        session.clear()
+        abort(403, description="Akun Orang Tua/Wali tidak aktif atau tidak ditemukan.")
 
 def get_parent_and_children():
     """

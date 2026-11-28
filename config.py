@@ -71,8 +71,11 @@ class Config:
     # Batas Waktu Respons Mentor (dalam Jam)
     SCHEDULE_RESPONSE_TIMEOUT_HOURS = int(os.getenv("SCHEDULE_RESPONSE_TIMEOUT_HOURS", "24"))
 
-    # Mode Uji WhatsApp
-    WHATSAPP_TEST_MODE = True
+    # Mode Uji & Konfigurasi WhatsApp Cloud API
+    WHATSAPP_TEST_MODE = os.getenv("WHATSAPP_TEST_MODE", "true").lower() in ("true", "1", "yes")
+    WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL", "https://graph.facebook.com/v19.0")
+    WHATSAPP_PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "")
+    WHATSAPP_ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN", "")
 
     # Database Configuration (PostgreSQL Supabase atau SQLite fallback)
     DATABASE_URL = os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL") or os.getenv("SUPABASE_DB_URL")

@@ -3,22 +3,13 @@ DESI PRIVAT - Aplikasi Utama Flask
 Sistem Informasi Manajemen Tempat Les Privat
 """
 import os
-import sys
-from pathlib import Path
-
-_local_venv = Path(__file__).resolve().parent / ".venv" / "Lib" / "site-packages"
-if _local_venv.exists() and str(_local_venv) not in sys.path:
-    sys.path.insert(0, str(_local_venv))
-
-_py311_site = Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Python" / "Python311" / "Lib" / "site-packages"
-if _py311_site.exists() and str(_py311_site) not in sys.path:
-    sys.path.append(str(_py311_site))
-
 from datetime import datetime
-from flask import Flask, render_template, session, g
+from flask import Flask, render_template, session, g, request
+from markupsafe import escape
 from config import Config, config_by_name
 from services.database_service import close_db, init_db, seed_initial_data, query_db
 from services.notification_service import get_unread_count
+from services.whatsapp_service import create_whatsapp_link
 from routes.auth import auth_bp, generate_csrf_token
 from routes.admin import admin_bp
 from routes.owner import owner_bp
@@ -56,21 +47,25 @@ def create_app(config_class=None):
     # Sinkronisasi Database Otomatis Antar Perangkat via Supabase Cloud
     @app.before_request
     def before_request_cloud_sync():
+        if request.endpoint == "static":
+            return
         if getattr(Config, "IS_VERCEL", False) and not getattr(Config, "TESTING", False):
             try:
                 from services.cloud_sync_service import sync_from_cloud
                 sync_from_cloud()
-            except Exception:
-                pass
+            except Exception as e:
+                app.logger.debug(f"Cloud sync pull skipped: {e}")
 
     @app.after_request
     def after_request_cloud_sync(response):
+        if request.endpoint == "static":
+            return response
         if getattr(Config, "IS_VERCEL", False) and not getattr(Config, "TESTING", False):
             try:
                 from services.cloud_sync_service import sync_to_cloud
                 sync_to_cloud()
-            except Exception:
-                pass
+            except Exception as e:
+                app.logger.debug(f"Cloud sync push skipped: {e}")
         return response
 
     # Daftarkan Blueprint Routes
@@ -126,17 +121,7 @@ def create_app(config_class=None):
     app.jinja_env.globals["svg_icon"] = render_icon
     app.template_filter("svg_icon")(render_icon)
 
-    import urllib.parse
-
     def format_wa_billing_url(phone, student_name, amount):
-        if not phone:
-            return ""
-        clean_phone = "".join(ch for ch in str(phone) if ch.isdigit())
-        if clean_phone.startswith("0"):
-            clean_phone = "62" + clean_phone[1:]
-        elif not clean_phone.startswith("62") and clean_phone.startswith("8"):
-            clean_phone = "62" + clean_phone
-
         try:
             amt = float(amount or 0)
         except (ValueError, TypeError):
@@ -153,7 +138,7 @@ def create_app(config_class=None):
             "Salam,\n"
             "*Admin DESI PRIVAT*"
         )
-        return f"https://wa.me/{clean_phone}?text={urllib.parse.quote(message)}"
+        return create_whatsapp_link(phone, message) or ""
 
     app.jinja_env.globals["wa_billing_url"] = format_wa_billing_url
 
@@ -232,7 +217,7 @@ def create_app(config_class=None):
             "menunggu": ("Menunggu Koordinasi", "badge-warning")
         }
         text, css_class = labels.get(str(status_code).lower(), (str(status_code), "badge-secondary"))
-        return f'<span class="badge {css_class}">{text}</span>'
+        return f'<span class="badge {css_class}">{escape(text)}</span>'
 
     # Penanganan Error
     @app.errorhandler(400)

@@ -36,7 +36,7 @@ def sync_from_cloud(force=False):
     Mengunduh database terbaru dari Supabase Cloud jika ada perubahan dari perangkat lain.
     """
     global _last_synced_etag, _last_check_time
-    if getattr(Config, "TESTING", False):
+    if getattr(Config, "TESTING", False) or not SUPABASE_URL or not SUPABASE_KEY:
         return False
 
     now = time.time()
@@ -57,12 +57,14 @@ def sync_from_cloud(force=False):
                 res = requests.get(download_url, headers=get_headers(), timeout=5)
                 if res.status_code == 200 and len(res.content) > 1000:
                     os.makedirs(target_path.parent, exist_ok=True)
-                    with open(target_path, "wb") as f:
+                    tmp_path = target_path.with_suffix(".db.tmp")
+                    with open(tmp_path, "wb") as f:
                         f.write(res.content)
                     try:
-                        os.chmod(target_path, 0o666)
+                        os.chmod(tmp_path, 0o666)
                     except Exception:
                         pass
+                    os.replace(tmp_path, target_path)
                     _last_synced_etag = remote_etag
                     return True
         return False
@@ -75,7 +77,7 @@ def sync_to_cloud():
     Mengunggah database lokal ke Supabase Cloud jika ada data yang baru diubah.
     """
     global _db_dirty, _last_synced_etag
-    if getattr(Config, "TESTING", False):
+    if getattr(Config, "TESTING", False) or not SUPABASE_URL or not SUPABASE_KEY:
         return False
 
     if not _db_dirty:

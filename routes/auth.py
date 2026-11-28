@@ -24,7 +24,8 @@ def generate_csrf_token():
 def validate_csrf():
     """Memvalidasi token CSRF pada permintaan form POST."""
     token = request.form.get("csrf_token") or request.headers.get("X-CSRF-Token")
-    if not token or token != session.get("_csrf_token"):
+    expected = session.get("_csrf_token")
+    if not token or not expected or not secrets.compare_digest(str(token), str(expected)):
         abort(400, description="Token CSRF tidak valid atau telah kedaluwarsa. Silakan muat ulang halaman.")
 
 def login_required(f):
@@ -170,7 +171,7 @@ def login():
 
         flash(f"Selamat datang kembali, {user['full_name']}!", "success")
         next_url = request.args.get("next")
-        if next_url and next_url.startswith("/"):
+        if next_url and next_url.startswith("/") and not next_url.startswith("//") and "\\" not in next_url:
             return redirect(next_url)
         return redirect(get_role_dashboard_url(user["role"]))
 
