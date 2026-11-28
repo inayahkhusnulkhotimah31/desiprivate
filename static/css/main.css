@@ -6687,7 +6687,7 @@ body {
 
 .dp-nav-bar.dp-nav-hero {
   position: fixed;
-  top: 28px;
+  top: 33px;
   left: 36px;
   right: 36px;
   z-index: 80;
@@ -6698,6 +6698,7 @@ body {
 }
 
 .dp-nav-bar.dp-nav-hero .dp-nav-inner {
+  max-width: none;
   min-height: 68px;
   padding: 0 20px;
 }
@@ -7426,7 +7427,11 @@ img,
   flex-shrink: 0;
 }
 
-/* Login Page Card-Aligned Top-Right Icon-Only Back Button */
+/* Login Page Top-Right Back Button (Pixel-Matched Style & Position to Landing 'Masuk' Button) */
+.dp-login-shell {
+  position: relative;
+}
+
 .dp-login-page .dp-login-panel {
   position: relative;
 }
@@ -7438,28 +7443,27 @@ img,
   flex-direction: column;
 }
 
-.dp-login-top-row {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 12px;
-}
-
 .dp-login-home-btn {
-  position: static;
-  width: 44px;
-  height: 44px;
+  position: absolute;
+  top: 46px;
+  right: 56px;
+  z-index: 12;
+  width: 42px;
+  height: 42px;
+  min-height: 42px;
   padding: 0 !important;
   margin: 0;
   line-height: 0 !important;
-  border-radius: 12px;
-  border: 1px solid var(--alpha-border);
-  background: #F7F7F5;
-  color: #111827;
+  border-radius: 12px !important;
+  border: 1px solid transparent;
+  background: var(--caramel);
+  color: #FFFFFF;
+  box-shadow: 0 6px 18px var(--caramel-shadow);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms var(--ease-snappy);
+  transition: background-color 180ms ease, box-shadow 180ms ease, transform 180ms var(--ease-snappy);
 }
 
 .dp-login-home-btn svg {
@@ -7470,8 +7474,8 @@ img,
 
 .dp-login-home-btn:hover,
 .dp-login-home-btn:focus-visible {
-  background: #083A54;
-  border-color: #083A54;
+  background: var(--caramel-hover);
+  border-color: transparent;
   color: #FFFFFF;
   outline: none;
 }
@@ -7482,6 +7486,22 @@ img,
 
 .dp-login-home-btn:active {
   transform: scale(0.96);
+}
+
+@media (max-width: 1024px) {
+  .dp-nav-bar.dp-nav-hero {
+    top: 21px;
+    left: 16px;
+    right: 16px;
+  }
+  .dp-nav-bar.dp-nav-hero .dp-nav-inner {
+    min-height: 60px;
+    padding: 0 12px;
+  }
+  .dp-login-home-btn {
+    top: 30px;
+    right: 28px;
+  }
 }
 
 /* ==========================================================================

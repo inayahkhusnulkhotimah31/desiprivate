@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" type="image/webp" href="{{ url_for('static', filename='images/client/logo_desi_privat.webp') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=23">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=24">
   <script>
     (function () {
       try {
@@ -24,6 +24,14 @@
 
   <div class="dp-login-shell dp-login-gate">
     <div class="dp-gate-seam" aria-hidden="true"></div>
+
+    <!-- TOMBOL KEMBALI: STYLE & KOORDINAT SAMA DENGAN TOMBOL MASUK DI LANDING PAGE -->
+    <a href="/" class="dp-btn dp-btn-caramel dp-login-home-btn dp-gate-stagger" style="--stagger-i: 0;" aria-label="Kembali ke Beranda" title="Kembali">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5"/>
+        <path d="M12 19l-7-7 7-7"/>
+      </svg>
+    </a>
 
     <!-- GERBANG KIRI: FOTO + FADE BIRU, TEKS MUNCUL BELAKANGAN SATU PER SATU -->
     <section class="dp-login-photo dp-login-gate-left">
@@ -50,15 +58,6 @@
     <!-- GERBANG KANAN: PANEL PUTIH BERSIH, ELEMEN FORM MUNCUL SATU PER SATU BELAKANGAN -->
     <main class="dp-login-panel dp-login-gate-right">
       <div class="dp-login-card-wrap">
-        <div class="dp-login-top-row dp-gate-stagger" style="--stagger-i: 0;">
-          <a href="/" class="dp-login-home-btn" aria-label="Kembali ke Beranda" title="Kembali">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M19 12H5"/>
-              <path d="M12 19l-7-7 7-7"/>
-            </svg>
-          </a>
-        </div>
-
         <div class="dp-login-card">
         <h2 class="login-card-title dp-gate-stagger" style="--stagger-i: 1; margin: 0 0 24px 0; font-size: 24px; color: var(--text-main);">
           Masuk <span style="display:none;">Masuk ke Sistem</span>
